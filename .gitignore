@@ -1,0 +1,19 @@
+.gradle/
+.idea/
+.kotlin/
+build/
+captures/
+local.properties
+*.iml
+*.keystore
+*.jks
+*.apk
+*.aab
+google-services.json
+supabase/functions/.env
+supabase/functions/.env.*
+
+# Local build previews and design verification captures
+artifacts/
+design-qa.md
+.DS_Store
