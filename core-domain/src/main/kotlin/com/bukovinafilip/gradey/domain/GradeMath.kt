@@ -2,6 +2,7 @@ package com.bukovinafilip.gradey.domain
 
 import com.bukovinafilip.gradey.model.Mark
 import com.bukovinafilip.gradey.model.Subject
+import com.bukovinafilip.gradey.model.SubjectInfo
 import java.text.Normalizer
 import java.util.Locale
 import kotlin.math.abs
@@ -48,17 +49,20 @@ object GradeMath {
         "5" -> 5.0
         "5+" -> 5.3
         "5-" -> 5.7
-        else -> markText.trim().replace(",", ".").toDoubleOrNull()?.takeIf { it.isFinite() && it in 1.0..5.0 }
+        else -> markText.trim().replace(",", ".").toDoubleOrNull()?.takeIf { it.isFinite() && it in 1.0..5.7 }
     }
 
     fun weightedAverage(marks: List<Mark>): Double? =
-        weightedAverage(marks, resolvedWeights(marks))
+        GradeSimulation.prepare(Subject(marks, SubjectInfo("calculation"))).calculatedAverage
 
-    fun weightedAverage(marks: List<Mark>, subject: Subject): Double? =
-        weightedAverage(marks, resolvedWeights(subject))
+    fun weightedAverage(marks: List<Mark>, subject: Subject): Double? {
+        val ids = marks.map { it.id }.toSet()
+        val selected = GradeSimulation.prepare(subject).marks.filter { it.id in ids }
+        val weight = selected.sumOf { it.weight.value }
+        return if (weight > 0) (selected.sumOf { it.value * it.weight.value } / weight).takeIf { it.isFinite() } else null
+    }
 
-    fun subjectAverage(subject: Subject): Double? =
-        parseAverageText(subject.averageText) ?: weightedAverage(subject.marks, resolvedWeights(subject))
+    fun subjectAverage(subject: Subject): Double? = parseAverageText(subject.averageText) ?: GradeSimulation.prepare(subject).calculatedAverage
 
     fun overallAverage(subjects: List<Subject>): Double? {
         val averages = subjects.mapNotNull(::subjectAverage)
@@ -72,25 +76,16 @@ object GradeMath {
         weight: Int,
     ): Double {
         require(markValue.isFinite() && markValue in 1.0..5.7) { "Enter a valid grade from 1 to 5, optionally with + or -." }
-        var totalWeight = max(1, weight).toDouble()
-        var weightedSum = markValue * totalWeight
-        val resolved = resolvedWeights(existingMarks, subjectAverageText)
-
-        existingMarks.filter(::isLocallyGradableMark).forEach { mark ->
-            val value = parseMarkValue(mark.markText) ?: return@forEach
-            val markWeight = resolved[mark.id]?.value ?: 1.0
-            totalWeight += markWeight
-            weightedSum += value * markWeight
-        }
-
-        return weightedSum / totalWeight
+        val prepared = GradeSimulation.prepare(Subject(existingMarks, SubjectInfo("calculation"), subjectAverageText))
+        return GradeSimulation.simulate(prepared, listOf(HypotheticalGrade(value = markValue, weight = weight.coerceIn(1, 10))))?.estimatedAverage
+            ?: prepared.calculatedAverage ?: 0.0
     }
 
     fun resolvedWeight(mark: Mark, subject: Subject): ResolvedMarkWeight =
-        resolvedWeights(subject)[mark.id] ?: defaultResolvedWeight(mark)
+        GradeSimulation.prepare(subject).resolvedWeights[mark.id] ?: defaultResolvedWeight(mark)
 
     fun resolvedWeights(subject: Subject): Map<String, ResolvedMarkWeight> =
-        resolvedWeights(subject.marks, subject.averageText)
+        GradeSimulation.prepare(subject).resolvedWeights
 
     fun resolvedWeights(
         marks: List<Mark>,
@@ -127,15 +122,14 @@ object GradeMath {
     fun parseAverageText(averageText: String?): Double? = averageText
         ?.trim()
         ?.replace(",", ".")
-        ?.replace(" ", "")
         ?.toDoubleOrNull()
         ?.takeIf { it.isFinite() && it in 1.0..5.7 }
 
-    fun formattedAverage(average: Double?): String =
-        average?.takeIf { it.isFinite() }?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-"
+    fun formattedAverage(average: Double?, locale: Locale = Locale.getDefault()): String =
+        average?.takeIf { it.isFinite() }?.let { String.format(locale, "%.2f", it) } ?: "-"
 
-    fun formattedWeight(weight: Double): String =
-        if (weight == round(weight)) weight.toInt().toString() else String.format(Locale.US, "%g", weight)
+    fun formattedWeight(weight: Double, locale: Locale = Locale.getDefault()): String =
+        if (!weight.isFinite()) "-" else if (weight == round(weight)) weight.toLong().toString() else String.format(locale, "%g", weight)
 
     fun band(average: Double?): GradeBand = when {
         average == null || !average.isFinite() -> GradeBand.NEUTRAL

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_help_signing_in">Pomoc s přihlášením ke škole</string>
+    <string name="login_help_verification">Pomoc s ověřením</string>
+</resources>

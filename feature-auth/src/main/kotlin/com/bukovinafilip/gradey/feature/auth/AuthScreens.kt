@@ -1,8 +1,13 @@
 package com.bukovinafilip.gradey.feature.auth
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -27,16 +32,27 @@ fun GradeyIdLoginScreen(
     isConfigured: Boolean = true,
     errorMessage: String? = null,
     onOpenUpdates: (() -> Unit)? = null,
+    appleSignInAvailable: Boolean = false,
+    onAppleSignIn: (() -> Unit)? = null,
+    onContinueWithoutAccount: (() -> Unit)? = null,
+    onOpenHelp: (() -> Unit)? = null,
 ) {
     GradeyScreen(modifier = modifier) {
         GradeyHero(
-            title = "Gradey ID",
-            subtitle = "Sync linked school accounts, grade history, and new-mark notifications across your Android devices.",
+            title = stringResource(R.string.auth_gradey_id_f6019),
+            subtitle = stringResource(R.string.auth_keep_your_linked_school_accounts_and_school_information_togeth_d8e41),
         )
 
-        GradeySectionCard(title = "Sign in") {
+        onOpenHelp?.let { action ->
+            androidx.compose.material3.TextButton(onClick = action, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.HelpOutline, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                Text(stringResource(R.string.auth_help_signing_in))
+            }
+        }
+        GradeySectionCard(title = stringResource(R.string.auth_sign_in_ada2e)) {
             Text(
-                "Use your Google account to create or open a Gradey ID. School credentials stay encrypted on device or in provider-secret storage when you link an account.",
+                if (appleSignInAvailable) stringResource(R.string.auth_choose_identity_provider)
+                else stringResource(R.string.auth_use_your_google_account_to_create_or_open_a_gradey_id_school_p_84ea1),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Button(
@@ -45,28 +61,42 @@ fun GradeyIdLoginScreen(
                 onClick = onGoogleSignIn,
             ) {
                 Icon(Icons.Default.Person, contentDescription = null)
-                Text(if (isLoading) "Signing in" else "Continue with Google")
+                Text(if (isLoading) stringResource(R.string.auth_signing_in_3819f) else stringResource(R.string.auth_continue_with_google_ccc5b))
             }
-            if (!isConfigured) Text("This preview uses demo data. Live sign-in will be available when this build is configured.", style = MaterialTheme.typography.bodySmall)
+            if (appleSignInAvailable && onAppleSignIn != null) {
+                androidx.compose.material3.OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading,
+                    onClick = onAppleSignIn,
+                ) { Text(stringResource(R.string.auth_continue_with_apple)) }
+                Text(stringResource(R.string.auth_existing_apple_account), style = MaterialTheme.typography.bodySmall)
+            }
+            if (!isConfigured && !appleSignInAvailable && onContinueWithoutAccount == null) Text(stringResource(R.string.auth_this_build_only_supports_demo_data_to_connect_your_own_school__4f094), style = MaterialTheme.typography.bodySmall)
+            onContinueWithoutAccount?.let { continueLocally ->
+                androidx.compose.material3.OutlinedButton(
+                    modifier = Modifier.fillMaxWidth(), enabled = !isLoading, onClick = continueLocally,
+                ) { Text(stringResource(R.string.auth_continue_without_id)) }
+                Text(stringResource(R.string.auth_local_school_description), style = MaterialTheme.typography.bodySmall)
+            }
             errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
                 onClick = onTestingBypass,
             ) {
-                Text("Use demo data")
+                Text(stringResource(R.string.auth_use_demo_data_7c3ca))
             }
         }
 
         GradeySectionCard {
             Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
                 Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Private by default", fontWeight = FontWeight.SemiBold)
-                Text("Gradey uses encrypted local storage and only registers push tokens after notification permission is granted.")
+                Text(stringResource(R.string.auth_private_by_default_282ef), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.auth_gradey_uses_encrypted_local_storage_and_only_registers_push_to_0d945))
             }
         }
         onOpenUpdates?.let { action ->
-            androidx.compose.material3.TextButton(onClick = action, modifier = Modifier.fillMaxWidth()) { Text("App updates") }
+            androidx.compose.material3.TextButton(onClick = action, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.auth_app_updates_16213)) }
         }
     }
 }

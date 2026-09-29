@@ -67,6 +67,25 @@ class AndroidSchoolRepositoryTest {
         assertNull(store.loadLinked("linked-second"))
     }
 
+    @Test fun permanentCacheIsSeparateFromWeeklyAndBoundToSchoolAccount() = runBlocking {
+        val store = SchoolSessionStore(MemoryJsonStore())
+        val first = session("first")
+        store.save(first)
+        val cache = RoomGradeyCache(MemoryCacheDao(), GradeyJson)
+        val actual = com.bukovinafilip.gradey.domain.DemoData.timetableFor("2026-09-28")
+        cache.saveTimetable(first.cacheScope, "2026-09-28", actual)
+        val repository = AndroidSchoolRepository(FakeBakalariClient(), OkHttpEduPageClient(), store, cache)
+        assertNull(repository.loadCachedPermanentTimetable())
+        val permanent = repository.loadPermanentTimetable()
+        assertEquals(TimetableKind.PERMANENT, permanent.kind)
+        assertEquals(permanent, repository.loadCachedPermanentTimetable())
+        assertEquals(actual, repository.loadCachedTimetable("2026-09-28"))
+        store.save(session("second"))
+        assertNull(repository.loadCachedPermanentTimetable())
+        store.save(first.copy(provider = SchoolProvider.EDU_PAGE))
+        assertNull(repository.loadCachedPermanentTimetable())
+    }
+
     private class FakeBakalariClient : BakalariClient {
         var marks: (String) -> MarksResponse = { MarksResponse() }
         var refreshCount = 0
@@ -81,6 +100,7 @@ class AndroidSchoolRepositoryTest {
         override suspend fun fetchAbsences(baseURL: String, accessToken: String) = AbsenceResponse()
         override suspend fun fetchUser(baseURL: String, accessToken: String) = UserResponse("Student")
         override suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String) = TimetableResponse()
+        override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String) = com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse()
         override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int) = subject
     }
 

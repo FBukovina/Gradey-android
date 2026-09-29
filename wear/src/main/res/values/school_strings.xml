@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_school_title">School on your watch</string>
+    <string name="wear_school_detail">Refresh without your phone nearby. School sign-in is encrypted on this watch for up to seven days. Removing access on your phone takes effect when the watch reconnects, or when access expires.</string>
+    <string name="wear_school_enable_phone">Enable this watch in Gradey account settings on your phone first.</string>
+    <string name="wear_school_expiry">Direct access until %1$s</string>
+    <string name="wear_school_connect">Connect from phone</string>
+    <string name="wear_school_refresh">Refresh directly</string>
+    <string name="wear_school_remove">Remove from watch</string>
+    <string name="wear_school_expired">Direct access expired. Connect from your phone again.</string>
+    <string name="wear_school_lock">Set a screen lock on this watch before storing a school sign-in.</string>
+    <string name="wear_school_unlock">Unlock your watch to use the school connection.</string>
+    <string name="wear_school_settings">Watch settings</string>
+    <string name="wear_school_nearby">Keep the paired phone nearby with Gradey signed in, then try connecting again.</string>
+    <string name="wear_school_identity">This school sign-in belongs to another student. Reconnect the correct account on your phone.</string>
+    <string name="wear_school_reconnect">School sign-in needs attention. Check it on your phone, then reconnect this watch.</string>
+    <string name="wear_school_verify">EduPage needs verification for this watch. Enter the code or approve the sign-in on your trusted device.</string>
+    <string name="wear_school_code">Enter verification code</string>
+    <string name="wear_school_check">Check approval</string>
+    <string name="wear_school_resend">Resend approval request</string>
+    <string name="wear_school_captcha">EduPage requires a CAPTCHA. Confirm your school sign-in on the phone and try again.</string>
+    <string name="wear_school_bad_code">The verification code was not accepted. Try again.</string>
+    <string name="wear_school_not_approved">The sign-in has not been approved yet.</string>
+    <string name="wear_school_failed">The school could not be refreshed. Check the watch connection and try again.</string>
+</resources>

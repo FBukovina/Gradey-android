@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_next">další</string>
+    <string name="widget_lesson">hodina</string>
+    <string name="widget_canceled">zrušeno</string>
+    <string name="widget_substitution">suplování</string>
+    <string name="widget_open_gradey">otevřít Gradey</string>
+</resources>

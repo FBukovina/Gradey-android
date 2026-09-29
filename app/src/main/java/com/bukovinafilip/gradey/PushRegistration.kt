@@ -15,16 +15,20 @@ import kotlinx.coroutines.tasks.await
 
 const val MARKS_CHANNEL = "gradey-marks"
 fun createNotificationChannel(context: Context) {
+    val localized = AppLanguages.localizedContext(context)
     context.getSystemService(NotificationManager::class.java).createNotificationChannel(
-        NotificationChannel(MARKS_CHANNEL, "New marks", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "Updates to your school marks" },
+        NotificationChannel(MARKS_CHANNEL, localized.getString(R.string.app_new_marks), NotificationManager.IMPORTANCE_DEFAULT).apply { description = localized.getString(R.string.app_new_marks_channel) },
     )
 }
 fun canNotify(context: Context): Boolean = Build.VERSION.SDK_INT < 33 || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-suspend fun registerPush(context: Context, graph: AndroidGradeyGraph, token: String? = null) {
-    if (graph.isDemo || !canNotify(context) || FirebaseApp.getApps(context).isEmpty()) return
+suspend fun registerPush(context: Context, graph: AndroidGradeyGraph, token: String? = null): Boolean {
+    if (graph.isDemo || !canNotify(context) || FirebaseApp.getApps(context).isEmpty()) return true
     try {
-        val session = graph.gradeyAuthRepository.bootstrapSession() ?: return
+        val session = graph.gradeyAuthRepository.bootstrapSession() ?: return true
+        if (!AccountNotifications.acceptsOwner(context, session.account.id)) return true
         val resolvedToken = token ?: FirebaseMessaging.getInstance().token.await()
-        graph.devicePushTokenClient.registerDeviceToken(resolvedToken, "android", if (BuildConfig.DEBUG) "debug" else "production", session)
-    } catch (e: Exception) { if (e is CancellationException) throw e }
+        if (!AccountNotifications.acceptsOwner(context, session.account.id) || graph.gradeyAuthRepository.cachedSession()?.account?.id != session.account.id) return true
+        graph.devicePushTokenClient.registerDeviceToken(resolvedToken, "android", if (BuildConfig.DEBUG) "sandbox" else "production", session)
+        return true
+    } catch (e: Exception) { if (e is CancellationException) throw e; return false }
 }

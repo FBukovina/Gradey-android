@@ -1,24 +1,38 @@
 package com.bukovinafilip.gradey
 
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollToNode
+
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.Lifecycle
+import androidx.test.platform.app.InstrumentationRegistry
+import android.os.Bundle
+import android.content.Intent
+import android.net.Uri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.bukovinafilip.gradey.data.SecureJsonStore
 import com.bukovinafilip.gradey.model.PlannedAbsence
+import com.bukovinafilip.gradey.model.SchoolProvider
 import com.bukovinafilip.gradey.network.GradeyJson
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
@@ -60,6 +74,11 @@ class DemoAppFlowTest {
     @Before fun startFreshDemo() {
         compose.waitUntil(15_000) { state().phase != AppPhase.CHECKING && !state().loading }
         assertTrue(state().isDemo)
+        if (compose.onAllNodesWithText("I’m 16 or older").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithText("I’m 16 or older").performScrollTo().performClick()
+            compose.onNodeWithText("I have read and agree to the Privacy Policy and Terms of Use.").performScrollTo().performClick()
+            compose.onNodeWithText("Continue to Gradey").performScrollTo().performClick()
+        }
         if (state().phase == AppPhase.SIGNED_IN) signOutThroughUi()
         compose.onNodeWithText("Use demo data").performScrollTo().performClick()
         compose.waitUntil(15_000) { state().phase == AppPhase.SIGNED_IN && !state().loading }
@@ -69,7 +88,7 @@ class DemoAppFlowTest {
     @Test fun navigationSearchAndActivityRecreationPreserveTheSelectedScreen() {
         compose.onNodeWithContentDescription("Marks").performClick()
         compose.onNodeWithContentDescription("Search subjects").performTextInput("cesky")
-        compose.onNodeWithText("Český jazyk").assertExists()
+        compose.onNodeWithContentDescription("Open Český jazyk").assertExists()
         compose.onAllNodesWithText("Matematika").assertCountEquals(0)
 
         // Activity recreation exercises the same retained ViewModel/saved Compose state as rotation.
@@ -114,6 +133,88 @@ class DemoAppFlowTest {
         compose.onNodeWithText("No planned absences yet.").assertExists()
     }
 
+    @Test fun permanentTimetableDoesNotReplaceTheDatedWeek() {
+        val datedWeek = requireNotNull(state().currentTimetable)
+        compose.onNodeWithContentDescription("Timetable").performClick()
+        compose.onNodeWithText("Permanent").performClick()
+        compose.waitUntil(10_000) { !state().permanentTimetableLoading && state().permanentTimetable != null }
+        assertEquals(com.bukovinafilip.gradey.model.TimetableKind.PERMANENT, state().permanentTimetable?.kind)
+        assertTrue(state().permanentTimetable!!.days.all { it.date == null })
+        assertEquals(datedWeek, state().currentTimetable)
+        compose.activityRule.scenario.recreate()
+        compose.waitUntil(10_000) { state().timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT }
+        compose.onNodeWithText("Regular weekly schedule without date-specific changes.").assertExists()
+        compose.onNodeWithContentDescription("Today").performClick()
+        assertEquals(datedWeek, state().currentTimetable)
+        compose.onNodeWithText("Overall average").assertExists()
+    }
+
+    @Test fun timetableSelectedDaySurvivesOpeningAttachedPlannerItemAndBack() {
+        val application = compose.activity.application as GradeyApplication
+        val snapshot = state()
+        val week = requireNotNull(snapshot.timetable)
+        val today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Prague"))
+        // Neither today's automatic selection nor the fallback Monday may accidentally pass.
+        val day = week.days.first { candidate ->
+            val date = candidate.date?.take(10)?.let(java.time.LocalDate::parse)
+            date != null && date != today && date.dayOfWeek != java.time.DayOfWeek.MONDAY && candidate.lessons.isNotEmpty()
+        }
+        val lesson = day.lessons.first()
+        val item = com.bukovinafilip.gradey.domain.PersonalPlanner.linked(lesson, day, requireNotNull(snapshot.school).cacheScope)
+            .copy(title = "Attached lesson return regression")
+        val saved = runBlocking { application.demoPlanner.save(item) }
+        compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].plannerChanged(saved) }
+        val date = java.time.LocalDate.parse(requireNotNull(day.date).take(10))
+        val locale = compose.activity.resources.configuration.locales[0]
+        val dayLabel = "${date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", locale))}, ${date.dayOfMonth}"
+        val lessonButton = hasContentDescription("Open ${lesson.subjectName ?: lesson.subjectAbbrev} lesson details", substring = true)
+        try {
+            compose.onNodeWithContentDescription("Timetable").performClick()
+            scrollTo(hasContentDescription(dayLabel))
+            compose.onNodeWithContentDescription(dayLabel).performScrollTo().performClick().assertIsSelected()
+            scrollTo(lessonButton)
+            compose.onNode(lessonButton).performClick()
+            compose.onNodeWithTag("timetable-planner-item-${item.id}").performScrollTo().performClick()
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("plannerEditor").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(AppTab.PERSONAL_PLANNER, state().tab)
+            compose.onNode(hasText(item.title) and hasAnyAncestor(hasTestTag("plannerEditor"))).assertExists()
+
+            // Drive real Activity back dispatch through the editor and Planner screen.
+            androidx.test.espresso.Espresso.pressBack()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("plannerEditor").fetchSemanticsNodes().isEmpty() }
+            assertEquals(AppTab.PERSONAL_PLANNER, state().tab)
+            androidx.test.espresso.Espresso.pressBack()
+            compose.waitUntil(5_000) { state().tab == AppTab.TIMETABLE }
+            assertEquals(snapshot.viewedWeek, state().viewedWeek)
+            scrollTo(hasContentDescription(dayLabel))
+            compose.onNodeWithContentDescription(dayLabel).assertIsSelected()
+            scrollTo(lessonButton)
+            compose.onNode(lessonButton).performClick()
+            compose.onNodeWithTag("timetable-planner-item-${item.id}").assertExists()
+            assertEquals(saved.first { it.id == item.id }, runBlocking { application.demoPlanner.load() }.first { it.id == item.id })
+            androidx.test.espresso.Espresso.pressBack()
+        } finally {
+            val remaining = runBlocking { application.demoPlanner.delete(item.id) }
+            compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].plannerChanged(remaining) }
+        }
+    }
+
+    @Test fun gradeSimulatorKeepsScenarioAcrossRotationWithoutEditingMarks() {
+        val recorded = state().dashboard.marksResponse
+        compose.onNodeWithContentDescription("Marks").performClick()
+        compose.onNodeWithContentDescription("Open Matematika").performClick()
+        compose.onNodeWithText("Grade simulator").performScrollTo().performClick()
+        compose.onNodeWithText("What if…").performClick()
+        compose.onNodeWithText("Add hypothetical mark (0/10)").performScrollTo().performClick()
+        compose.onNodeWithText("Add hypothetical mark (1/10)").performScrollTo().performClick()
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithTag("gradeSimulatorList").performScrollToNode(hasText("Add hypothetical mark (2/10)"))
+        compose.onNodeWithText("Add hypothetical mark (2/10)").assertIsDisplayed()
+        assertEquals(recorded, state().dashboard.marksResponse)
+        compose.onNodeWithText("Reset scenario").performScrollTo().performClick()
+        compose.onNodeWithText("Add hypothetical mark (0/10)").performScrollTo().assertIsDisplayed()
+    }
+
     @Test fun mealReplacementAndCancellationRequireConfirmation() {
         compose.onNodeWithContentDescription("Meals").performClick()
         scrollTo(hasText("Order meal"))
@@ -150,6 +251,225 @@ class DemoAppFlowTest {
         assertTrue(state().plans.isEmpty())
         assertFalse(compose.activity.getSharedPreferences("gradey-mode", 0).getBoolean("demo", false))
         assertNoCredentialText()
+    }
+
+    @Test fun demoSchoolControlsCannotOpenLoginOrRemoveSampleAccount() {
+        val school = state().school
+        compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithText("Explore Gradey with sample data. Real school accounts cannot be connected or changed in demo mode.").assertExists()
+        scrollTo(hasText("Add school"))
+        compose.onNodeWithText("Add school").assertIsNotEnabled().performClick()
+        scrollTo(hasText("Remove"))
+        compose.onNodeWithText("Remove").assertIsNotEnabled().performClick()
+
+        assertEquals(AppPhase.SIGNED_IN, state().phase)
+        assertEquals(school, state().school)
+        compose.onAllNodesWithText("School URL").assertCountEquals(0)
+        compose.onAllNodesWithText("Remove school account?").assertCountEquals(0)
+    }
+
+    @Test fun demoSchoolCommandsRejectRealCredentialsWithoutChangingSession() {
+        val school = requireNotNull(state().school)
+        val linkedAccounts = state().linkedAccounts
+        val commands: List<(GradeyViewModel) -> Unit> = listOf(
+            { it.addAccount() },
+            { it.login(SchoolProvider.BAKALARI, "https://school.example", "student", "private-password") },
+            { it.unlinkAccount(requireNotNull(school.linkedAccountID)) },
+        )
+        commands.forEach { command ->
+            compose.activityRule.scenario.onActivity { activity ->
+                val model = ViewModelProvider(activity)[GradeyViewModel::class.java]
+                model.dismissError()
+                command(model)
+            }
+            compose.waitUntil(10_000) { !state().loading && state().error != null }
+            assertEquals("Real school accounts cannot be connected or changed in demo mode.", state().error)
+            assertEquals(AppPhase.SIGNED_IN, state().phase)
+            assertEquals(school, state().school)
+            assertEquals(linkedAccounts, state().linkedAccounts)
+            val graph = (compose.activity.application as GradeyApplication).activeGraph
+            assertEquals(school, runBlocking { graph.schoolRepository.currentStoredSession() })
+            assertEquals(linkedAccounts, runBlocking { graph.linkedAccountRepository.cachedAccounts() })
+        }
+    }
+
+    @Test fun revokedCompanionRefreshCannotRestoreAClearedWidget() {
+        val context = compose.activity.applicationContext
+        val snapshot = state()
+        val token = CompanionSync.capture(context)
+        runBlocking {
+            CompanionSync.clear(context)
+            CompanionSync.publish(context, requireNotNull(snapshot.currentTimetable), snapshot.dashboard.user, snapshot.school?.cacheScope, token)
+        }
+        assertNull(com.bukovinafilip.gradey.widgets.WidgetSnapshotStore.load(context))
+        runBlocking { CompanionSync.publish(context, requireNotNull(snapshot.currentTimetable), snapshot.dashboard.user, snapshot.school?.cacheScope) }
+        assertTrue(com.bukovinafilip.gradey.widgets.WidgetSnapshotStore.load(context) != null)
+    }
+
+    @Test fun plannerShortcutRequiresSaveAndCanOpenAnotherDraftWhilePlannerIsVisible() {
+        val before = runBlocking { (compose.activity.application as GradeyApplication).demoPlanner.load() }
+        fun open(title: String) {
+            compose.activityRule.scenario.onActivity { activity ->
+                // ActivityScenario tracks its original launch intent; exercise the production router
+                // without replacing that intent before recreation. OS dispatch is checked separately.
+                ViewModelProvider(activity)[GradeyViewModel::class.java].openDestination(
+                    requireNotNull(gradeyDestination("gradey://planner/new?type=test&title=$title")))
+            }
+        }
+        open("Shortcut-one")
+        compose.waitUntil(5_000) { state().tab == AppTab.PERSONAL_PLANNER }
+        compose.onNodeWithText("Shortcut-one").assertExists()
+        assertEquals(before, runBlocking { (compose.activity.application as GradeyApplication).demoPlanner.load() })
+        compose.onNodeWithText("Cancel").performClick()
+        open("Shortcut-two")
+        compose.onNodeWithText("Shortcut-two").assertExists()
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("Shortcut-two").assertExists()
+        assertEquals(before, runBlocking { (compose.activity.application as GradeyApplication).demoPlanner.load() })
+        compose.onNodeWithText("Cancel").performClick()
+    }
+
+    @Test fun restoredWelcomeAcceptanceDoesNotBypassRequiredPrivacyRevision() {
+        val preferences = compose.activity.getSharedPreferences("gradey-app-preferences", 0)
+        val acceptedBefore = preferences.getInt("privacyRevision", 0)
+        try {
+            // Equivalent to a required revision advancing between the saved Activity and recreation.
+            assertTrue(preferences.edit().putInt("privacyRevision", PrivacyRevision - 1).commit())
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithText("Privacy updates").assertIsDisplayed()
+            compose.onNodeWithText("Overall average").assertDoesNotExist()
+            compose.onNodeWithText("I’m 16 or older").assertDoesNotExist()
+            assertEquals(PrivacyRevision - 1, preferences.getInt("privacyRevision", 0))
+        } finally {
+            assertTrue(preferences.edit().putInt("privacyRevision", acceptedBefore).commit())
+        }
+    }
+
+    @Test fun plannerShortcutBehindPrivacyGateSurvivesSavedStateAndFreshViewModel() {
+        val application = compose.activity.application as GradeyApplication
+        val preferences = application.getSharedPreferences("gradey-app-preferences", 0)
+        val acceptedBefore = preferences.getInt("privacyRevision", 0)
+        val before = runBlocking { application.demoPlanner.load() }
+        val title = "Preserved-after-policy"
+        val raw = "gradey://planner/new?type=test&title=$title&due=2026-10-06"
+        try {
+            assertTrue(preferences.edit().putInt("privacyRevision", PrivacyRevision - 1).commit())
+            compose.activityRule.scenario.recreate()
+            compose.onNodeWithText("Privacy updates").assertIsDisplayed()
+            dispatchLinkWithoutReplacingScenarioIntent(raw)
+            compose.waitUntil(5_000) { state().plannerDraft?.title == title }
+            compose.onNodeWithText(title).assertDoesNotExist()
+            assertTrue(hasPendingDestination())
+            val savedState = captureActivitySavedState()
+            assertEquals(raw, savedState.getString("gradey.pendingLaunchLink"))
+
+            // Rotation alone retains the ViewModel. Reconstruct a distinct store from the Activity's
+            // actual saved route to exercise losing that in-memory state as process death would.
+            assertPlannerRouteRestoresInFreshViewModel(savedState, title)
+            compose.onNodeWithText("Privacy updates").assertIsDisplayed()
+            compose.onNodeWithText("Read the full Privacy Policy").performScrollTo()
+            compose.onNodeWithText("I’ve read this — accept").performClick()
+            // PlannerRoute loads its repository before consuming an incoming draft. Compose can
+            // be idle while that IO is still running, so wait for the resulting editor semantics.
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText(title).assertExists()
+            compose.waitUntil(5_000) { !hasPendingDestination() }
+            assertEquals(before, runBlocking { application.demoPlanner.load() })
+            val consumed = captureActivitySavedState()
+            assertNull(consumed.getString("gradey.pendingLaunchLink"))
+            compose.activityRule.scenario.recreate()
+            compose.waitUntil(10_000) { compose.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText(title).assertExists()
+            assertEquals(before, runBlocking { application.demoPlanner.load() })
+            compose.onNodeWithText("Cancel").performClick()
+        } finally {
+            assertTrue(preferences.edit().putInt("privacyRevision", acceptedBefore).commit())
+        }
+    }
+
+    @Test fun dayOnlyPlannerShortcutIsAcknowledgedWithoutOpeningAnEditor() {
+        val raw = "gradey://planner?day=2026-10-06"
+        dispatchLinkWithoutReplacingScenarioIntent(raw)
+        compose.waitUntil(5_000) { state().tab == AppTab.PERSONAL_PLANNER && !hasPendingDestination() }
+        assertEquals("2026-10-06", state().plannerDay)
+        compose.onNodeWithText("Title").assertDoesNotExist()
+        assertNull(captureActivitySavedState().getString("gradey.pendingLaunchLink"))
+        // The same day is already visibly applied; another identical external intent is consumed too.
+        dispatchLinkWithoutReplacingScenarioIntent(raw)
+        compose.waitUntil(5_000) { !hasPendingDestination() }
+        assertNull(captureActivitySavedState().getString("gradey.pendingLaunchLink"))
+    }
+
+    private fun dispatchLinkWithoutReplacingScenarioIntent(raw: String) {
+        compose.activityRule.scenario.onActivity { activity ->
+            val originalLaunchIntent = activity.intent
+            try { InstrumentationRegistry.getInstrumentation().callActivityOnNewIntent(activity, Intent(activity, MainActivity::class.java).setData(Uri.parse(raw))) }
+            finally {
+                // ActivityScenario matches lifecycle events using its original launch intent.
+                // Restore that test harness identity after exercising the production intent handler.
+                activity.intent = originalLaunchIntent
+            }
+        }
+    }
+
+    private fun hasPendingDestination(): Boolean {
+        var pending = false
+        compose.activityRule.scenario.onActivity { pending = ViewModelProvider(it)[GradeyViewModel::class.java].hasPendingDestination() }
+        return pending
+    }
+
+    private fun captureActivitySavedState(): Bundle {
+        val saved = Bundle()
+        compose.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+        compose.activityRule.scenario.onActivity {
+            InstrumentationRegistry.getInstrumentation().callActivityOnSaveInstanceState(it, saved)
+        }
+        compose.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+        compose.waitForIdle()
+        return saved
+    }
+
+    private fun assertPlannerRouteRestoresInFreshViewModel(saved: Bundle, title: String) {
+        val application = compose.activity.application as GradeyApplication
+        val originalGraph = application.activeGraph
+        val store = ViewModelStore()
+        val owner = object : ViewModelStoreOwner { override val viewModelStore = store }
+        lateinit var restored: GradeyViewModel
+        try {
+            compose.activityRule.scenario.onActivity {
+                restored = ViewModelProvider(owner, ViewModelProvider.AndroidViewModelFactory.getInstance(application))[GradeyViewModel::class.java]
+                restored.applyInitialDestination(requireNotNull(gradeyDestination(saved.getString("gradey.pendingLaunchLink"))))
+            }
+            compose.waitUntil(15_000) { restored.state.value.phase == AppPhase.SIGNED_IN && !restored.state.value.loading }
+            assertEquals(title, restored.state.value.plannerDraft?.title)
+            assertEquals(com.bukovinafilip.gradey.model.PlannerItemType.TEST, restored.state.value.plannerDraft?.type)
+            assertEquals("2026-10-06", restored.state.value.plannerDraft?.dueDate)
+            assertTrue(restored.hasPendingDestination())
+        } finally {
+            compose.activityRule.scenario.onActivity { store.clear(); application.activeGraph = originalGraph }
+        }
+    }
+
+    @Test fun guestEntryUsesRealLocalProvidersAndCanReturnFromGradeySignInWithoutLosingItsMode() {
+        signOutThroughUi()
+        try {
+            compose.onNodeWithText("Continue without Gradey ID").performScrollTo().performClick()
+            compose.waitUntil(10_000) { state().isGuest && state().phase == AppPhase.NEEDS_SCHOOL && !state().loading }
+            assertNull(state().account)
+            assertFalse(state().isDemo)
+            assertFalse((compose.activity.application as GradeyApplication).activeGraph.isDemo)
+            compose.onNodeWithText("Connect school").assertExists()
+            compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].requestGradeySignIn() }
+            compose.waitUntil(5_000) { state().phase == AppPhase.SIGNED_OUT }
+            compose.onNodeWithText("Continue without Gradey ID").performScrollTo().performClick()
+            compose.waitUntil(5_000) { state().phase == AppPhase.NEEDS_SCHOOL && !state().loading }
+            assertTrue(state().isGuest)
+            assertNull(state().account)
+            assertFalse(state().preferences.newMarksEnabled)
+        } finally {
+            compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].signOut() }
+            compose.waitUntil(10_000) { state().phase == AppPhase.SIGNED_OUT && !state().loading }
+        }
     }
 
     private fun signOutThroughUi() {

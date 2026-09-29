@@ -1,5 +1,7 @@
 package com.bukovinafilip.gradey.network
 
+import com.bukovinafilip.gradey.domain.AccountFailureReason
+import com.bukovinafilip.gradey.domain.UserFacingFailure
 import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.model.LoginResponse
@@ -17,9 +19,19 @@ import okhttp3.Request
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+/** Contains only client-authored text safe for the sign-in UI. */
+class BakalariApiException(
+    statusCode: Int,
+    message: String,
+    override val failureReason: AccountFailureReason = AccountFailureReason.SCHOOL_UNAVAILABLE,
+) : GradeyApiException(statusCode, message), UserFacingFailure
+
 class BakalariNetworkClient(
-    private val okHttpClient: OkHttpClient = OkHttpClient(),
+    okHttpClient: OkHttpClient = OkHttpClient(),
 ) : BakalariClient {
+    // School passwords and refresh tokens must never follow redirects to another server.
+    private val client = okHttpClient.newBuilder().followRedirects(false).followSslRedirects(false).build()
+
     override suspend fun login(baseURL: String, username: String, password: String): LoginResponse =
         postForm(
             baseURL = baseURL,
@@ -55,6 +67,9 @@ class BakalariNetworkClient(
     override suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String): TimetableResponse =
         get(baseURL, "api/3/timetable/actual", query = mapOf("date" to date), accessToken = accessToken)
 
+    override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): TimetableResponse =
+        get(baseURL, "api/3/timetable/permanent", accessToken = accessToken)
+
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         postJson(
             baseURL = baseURL,
@@ -73,7 +88,7 @@ class BakalariNetworkClient(
             .post(formBody(fields))
             .header("Accept", "application/json")
             .build()
-        return GradeyJson.decodeFromString(okHttpClient.executeString(request))
+        return decodeResponse(request)
     }
 
     private suspend inline fun <reified T> get(
@@ -99,7 +114,7 @@ class BakalariNetworkClient(
             .header("Accept", "application/json")
             .header("Authorization", "Bearer $accessToken")
             .build()
-        return GradeyJson.decodeFromString(okHttpClient.executeString(request))
+        return decodeResponse(request)
     }
 
     private suspend inline fun <reified T> postJson(
@@ -114,7 +129,28 @@ class BakalariNetworkClient(
             .header("Accept", "application/json")
             .header("Authorization", "Bearer $accessToken")
             .build()
-        return GradeyJson.decodeFromString(okHttpClient.executeString(request))
+        return decodeResponse(request)
+    }
+
+    private suspend inline fun <reified T> decodeResponse(request: Request): T {
+        val body = try {
+            client.executeString(request)
+        } catch (error: GradeyApiException) {
+            val reason = when (error.statusCode) {
+                400, 401 -> if (request.url.encodedPath.endsWith("api/login")) AccountFailureReason.SCHOOL_BAD_CREDENTIALS
+                    else AccountFailureReason.SCHOOL_SESSION_EXPIRED
+                403 -> AccountFailureReason.SCHOOL_ACCESS_DENIED
+                404 -> AccountFailureReason.SCHOOL_ADDRESS_NOT_FOUND
+                in 300..399 -> AccountFailureReason.SCHOOL_ADDRESS_REDIRECTED
+                429 -> AccountFailureReason.RATE_LIMITED
+                else -> AccountFailureReason.SCHOOL_UNAVAILABLE
+            }
+            throw BakalariApiException(error.statusCode, reason.defaultMessage, reason)
+        }
+        return try { GradeyJson.decodeFromString(body) }
+        catch (_: kotlinx.serialization.SerializationException) {
+            throw BakalariApiException(502, AccountFailureReason.SCHOOL_MALFORMED_RESPONSE.defaultMessage, AccountFailureReason.SCHOOL_MALFORMED_RESPONSE)
+        }
     }
 
     private fun String.urlEncoded(): String = URLEncoder.encode(this, StandardCharsets.UTF_8.name())
@@ -219,6 +255,9 @@ class DemoBakalariClient : BakalariClient {
 
     override suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String): TimetableResponse =
         com.bukovinafilip.gradey.domain.DemoData.timetableResponse(date)
+
+    override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): TimetableResponse =
+        com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse()
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject {
         val value = GradeMath.parseMarkValue(markText) ?: return subject

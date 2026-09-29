@@ -12,6 +12,7 @@ local.properties
 google-services.json
 supabase/functions/.env
 supabase/functions/.env.*
+supabase/.temp/
 
 # Local build previews and design verification captures
 artifacts/

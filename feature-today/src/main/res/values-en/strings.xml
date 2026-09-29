@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_your_latest_marks_will_appear_here_when">Your latest marks will appear here when your school publishes them.</string>
+    <string name="today_open_timetable_to_see_your_next_school">Open Timetable to see your next school day.</string>
+    <string name="today_averages_subjects_trends_and_calculator">Averages, subjects, trends, and calculator</string>
+    <string name="today_plan_lessons_to_preview_your_absence_risk">Plan lessons to preview your absence risk.</string>
+    <string name="today_open_timetable_to_view_today_s_lessons">Open Timetable to view today\'s lessons.</string>
+    <string name="today_open_timetable_to_view_available_days">Open Timetable to view available days.</string>
+    <string name="today_see_your_lunch_and_manage_meal_orders">See your lunch and manage meal orders.</string>
+    <string name="today_1_more_missed_lesson_reaches_the_limit">1 more missed lesson reaches the limit</string>
+    <string name="today_open_meals_to_refresh_your_canteen">Open Meals to refresh your canteen.</string>
+    <string name="today_open_timetable_for_lesson_details">Open Timetable for lesson details.</string>
+    <string name="today_your_schedule_is_clear_for_today">Your schedule is clear for today.</string>
+    <string name="today_open_meals_to_see_upcoming_days">Open Meals to see upcoming days.</string>
+    <string name="today_open_meals_to_see_today_s_menu">Open Meals to see today’s menu.</string>
+    <string name="today_at_or_above_the_absence_limit">At or above the absence limit</string>
+    <string name="today_refresh_or_open_timetable">Refresh or open Timetable.</string>
+    <string name="today_absence_limit_unavailable">Absence limit unavailable</string>
+    <string name="today_lesson_times_unavailable">Lesson times unavailable</string>
+    <string name="today_absence_data_unavailable">Absence data unavailable</string>
+    <string name="today_no_timetable_for_today">No timetable for today</string>
+    <string name="today_timetable_unavailable">Timetable unavailable</string>
+    <string name="today_no_more_lessons_today">No more lessons today</string>
+    <string name="today_connect_your_canteen">Connect your canteen</string>
+    <string name="today_no_planned_absences">No planned absences</string>
+    <string name="today_ordered_strava_cz">Ordered · Strava.cz</string>
+    <string name="today_no_meals_for_today">No meals for today</string>
+    <string name="today_open_gradey_tools">Open Gradey tools</string>
+    <string name="today_absence_predictor">ABSENCE PREDICTOR</string>
+    <string name="today_no_lessons_today">No lessons today</string>
+    <string name="today_menu_unavailable">Menu unavailable</string>
+    <string name="today_no_lunch_ordered">No lunch ordered</string>
+    <string name="today_overall_average">Overall average</string>
+    <string name="today_refresh_today">Refresh Today</string>
+    <string name="today_today_s_lunch">TODAY’S LUNCH</string>
+    <string name="today_open_account">Open account</string>
+    <string name="today_now_and_next">NOW AND NEXT</string>
+    <string name="today_absence_risk">ABSENCE RISK</string>
+    <string name="today_plan_absence">Plan absence</string>
+    <string name="today_recent_marks">RECENT MARKS</string>
+    <string name="today_view_all">View all</string>
+    <string name="today_new_mark">New mark</string>
+    <string name="today_student">Student</string>
+    <string name="today_connect">Connect</string>
+    <string name="today_today">Today</string>
+    <string name="today_marks">Marks</string>
+    <string name="today_meals">Meals</string>
+    <string name="today_open">Open</string>
+    <string name="today_now_1_s">Now · %1$s</string>
+    <string name="today_next_1_s">Next · %1$s</string>
+    <plurals name="today_subject_count">
+        <item quantity="one">%1$d subject</item>
+        <item quantity="other">%1$d subjects</item>
+    </plurals>
+    <plurals name="today_mark_count">
+        <item quantity="one">%1$d mark</item>
+        <item quantity="other">%1$d marks</item>
+    </plurals>
+    <plurals name="today_planned_lessons">
+        <item quantity="one">%1$d planned lesson</item>
+        <item quantity="other">%1$d planned lessons</item>
+    </plurals>
+    <plurals name="today_planned_days">
+        <item quantity="one">Across %1$d day · review your absence risk.</item>
+        <item quantity="other">Across %1$d days · review your absence risk.</item>
+    </plurals>
+    <plurals name="today_lessons_until_limit">
+        <item quantity="one">%1$d more missed lesson reaches the limit</item>
+        <item quantity="other">%1$d more missed lessons reaches the limit</item>
+    </plurals>
+</resources>

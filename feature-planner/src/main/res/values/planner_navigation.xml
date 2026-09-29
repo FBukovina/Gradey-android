@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="planner_entry_unavailable">This planner item is no longer available.</string>
+    <string name="planner_entry_replace_title">Open another planner item?</string>
+    <string name="planner_entry_replace_body">You are editing a planner item. Discard its unsaved changes and open “%1$s”?</string>
+    <string name="planner_entry_discard_open">Discard changes and open</string>
+    <string name="planner_entry_keep_editing">Keep editing</string>
+</resources>

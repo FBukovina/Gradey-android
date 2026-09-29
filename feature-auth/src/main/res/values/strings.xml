@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_app_updates_16213">App updates</string>
+    <string name="auth_continue_with_google_ccc5b">Continue with Google</string>
+    <string name="auth_gradey_id_f6019">Gradey ID</string>
+    <string name="auth_gradey_uses_encrypted_local_storage_and_only_registers_push_to_0d945">Gradey uses encrypted local storage and only registers push tokens after notification permission is granted.</string>
+    <string name="auth_keep_your_linked_school_accounts_and_school_information_togeth_d8e41">Keep your linked school accounts and school information together.</string>
+    <string name="auth_private_by_default_282ef">Private by default</string>
+    <string name="auth_sign_in_ada2e">Sign in</string>
+    <string name="auth_signing_in_3819f">Signing in</string>
+    <string name="auth_this_build_only_supports_demo_data_to_connect_your_own_school__4f094">This build only supports demo data. To connect your own school account, install a version with live sign-in enabled.</string>
+    <string name="auth_use_demo_data_7c3ca">Use demo data</string>
+    <string name="auth_use_your_google_account_to_create_or_open_a_gradey_id_school_p_84ea1">Use your Google account to create or open a Gradey ID. School passwords stay encrypted on this device. Linked school sessions are encrypted in your Gradey account.</string>
+    <string name="auth_continue_with_apple">Sign in with Apple</string>
+    <string name="auth_choose_identity_provider">Choose how to sign in to your Gradey ID. Use the same sign-in method you used on your other devices.</string>
+    <string name="auth_existing_apple_account">Already use Gradey on iPhone? Sign in with Apple to open the same account, including when you used Hide My Email.</string>
+</resources>

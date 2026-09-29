@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_gradey_id_f6019">Gradey ID</string>
+    <string name="auth_sign_in_ada2e">přihlásit se</string>
+    <string name="auth_continue_with_apple">přihlásit se přes Apple</string>
+</resources>

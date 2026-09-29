@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_ai_question">Položit otázku</string>
+    <string name="wear_ai_review">Zkontrolovat</string>
+    <string name="wear_ai_edit">Upravit otázku</string>
+    <string name="wear_ai_send">Odeslat otázku</string>
+    <string name="wear_ai_stop">Zastavit</string>
+    <string name="wear_ai_new_chat">Nový chat</string>
+    <string name="wear_ai_back">Zpět</string>
+    <string name="wear_ai_setup">Na telefonu se přihlas ke Gradey ID a připoj školu. Potom obnov data na hodinkách.</string>
+    <string name="wear_ai_privacy">Otázky se posílají přes připojený telefon. Školní záznamy se nepřikládají.</string>
+    <string name="wear_ai_disclaimer">AI může chybovat. Důležité informace si ověř.</string>
+    <string name="wear_ai_thinking">Gradey přemýšlí…</string>
+    <string name="wear_ai_remaining">Zbývá %1$d Compute</string>
+    <string name="wear_ai_consent">Nejdřív zapni Gradey AI na telefonu.</string>
+    <string name="wear_ai_supporter">AI na hodinkách vyžaduje aktivní předplatné podporovatele. Podporu spravuj na telefonu.</string>
+    <string name="wear_ai_unavailable">Gradey AI není dostupné. Otevři Gradey na telefonu.</string>
+    <string name="wear_ai_quota">Nedostatek Compute. Zkontroluj zůstatek na telefonu.</string>
+    <string name="wear_ai_cancelled">Požadavek zastaven.</string>
+    <string name="wear_ai_invalid">Použij otázku do 2 000 znaků. Pokud se odpověď přerušila, otevři ji na telefonu.</string>
+    <string name="wear_ai_busy">Právě se vytváří jiná odpověď. Chvíli počkej.</string>
+    <string name="wear_ai_timeout">Telefon neodpověděl včas. Otevři na něm Gradey AI a zkontroluj odpověď.</string>
+    <string name="wear_ai_failed">Odpověď se nepodařilo dokončit. Zkontroluj Gradey AI na telefonu.</string>
+    <string name="wear_ai_retry">Zkusit stejný dotaz znovu</string>
+    <string name="wear_ai_retry_detail">Pokud telefon tento dotaz už spustil, zkontroluje existující odpověď.</string>
+</resources>

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -84,6 +85,11 @@ class UpdaterFlowTest {
                 ViewModelProvider(activity)[GradeyViewModel::class.java].signOut()
             }
             compose.waitUntil(15_000) { schoolState().phase == AppPhase.SIGNED_OUT && !schoolState().loading }
+        }
+        if (compose.onAllNodesWithText("I’m 16 or older").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithText("I’m 16 or older").performScrollTo().performClick()
+            compose.onNodeWithText("I have read and agree to the Privacy Policy and Terms of Use.").performScrollTo().performClick()
+            compose.onNodeWithText("Continue to Gradey").performScrollTo().performClick()
         }
         compose.onNodeWithText("Gradey ID").assertExists()
         compose.onNodeWithText("App updates").performScrollTo().performClick()

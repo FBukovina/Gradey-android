@@ -1,0 +1,29 @@
+<resources>
+    <string name="watch_access_title">Watch access</string>
+    <string name="watch_access_subtitle">Independent school access is off until you allow it for a watch.</string>
+    <string name="watch_access_device">Watch</string>
+    <string name="watch_access_demo">Independent watch access is unavailable in demo mode. Connect your own school account on this phone to review access for a nearby watch.</string>
+    <string name="watch_access_error">Watch access could not be updated. Check the phone and watch connection, then refresh and try again.</string>
+    <string name="watch_access_enabled_notice">Access is allowed for seven days. Keep Gradey open on the nearby watch while it receives your school sign-in.</string>
+    <string name="watch_access_revoked_notice">Access was turned off on this phone. The watch clears its school sign-in and data when it receives the update. Until then, it can work until the original expiry.</string>
+    <string name="watch_access_unavailable">Independent access is unavailable for the current school session. Reconnect your school account on this phone, then refresh.</string>
+    <string name="watch_access_no_watch">No nearby watch found</string>
+    <string name="watch_access_find_watch">Pair your watch with this phone, open Gradey on the watch and keep it nearby. Then refresh this list.</string>
+    <string name="watch_access_expiry_note">Access lasts seven days. Turning it off or switching accounts clears the watch when it reconnects; a disconnected watch may keep working until access expires.</string>
+    <string name="watch_access_refresh">Refresh</string>
+    <string name="watch_access_done">Done</string>
+    <string name="watch_access_review_title">Allow independent watch access?</string>
+    <string name="watch_access_review_credentials">An encrypted copy of your current school username and password will be stored on this watch. It can connect directly to your school and refresh school data without your phone.</string>
+    <string name="watch_access_review_expiry">Allow access for seven days. You can renew it here while the watch is nearby. This does not enable independent AI chat.</string>
+    <string name="watch_access_review_revoke">Turning access off, signing out or switching accounts clears the school sign-in and data when the watch reconnects. A disconnected watch can keep working until the original expiry.</string>
+    <string name="watch_access_confirm">Allow for 7 days</string>
+    <string name="watch_access_not_now">Not now</string>
+    <string name="watch_access_nearby">Nearby</string>
+    <string name="watch_access_not_nearby">Not nearby</string>
+    <string name="watch_access_off">Access is off</string>
+    <string name="watch_access_until">Allowed until %1$s</string>
+    <string name="watch_access_review">Review access</string>
+    <string name="watch_access_renew">Review renewal</string>
+    <string name="watch_access_turn_off">Turn off access</string>
+    <string name="watch_access_offline_note">Turn-off takes effect when this watch receives an update. Bring it nearby to renew access.</string>
+</resources>

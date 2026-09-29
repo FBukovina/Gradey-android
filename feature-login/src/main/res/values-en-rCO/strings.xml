@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_back_b52b3">back</string>
+    <string name="login_check_approval_81ddf">check approval</string>
+    <string name="login_choose_a_student_6d1fa">choose a student</string>
+    <string name="login_connect_school_85e9d">connect school</string>
+    <string name="login_connecting_fd3e7">connecting…</string>
+    <string name="login_hide_password_e4012">hide password</string>
+    <string name="login_password_8be3c">password</string>
+    <string name="login_show_password_044b8">show password</string>
+    <string name="login_username_84c29">username</string>
+    <string name="login_verification_code_80f2f">verification code</string>
+    <string name="login_verify_code_91a22">verify code</string>
+</resources>

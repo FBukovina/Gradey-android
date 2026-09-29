@@ -12,6 +12,7 @@ import com.bukovinafilip.gradey.model.ScheduledLesson
 import com.bukovinafilip.gradey.model.TimetableEntity
 import com.bukovinafilip.gradey.model.TimetableHour
 import com.bukovinafilip.gradey.model.TimetableResponse
+import com.bukovinafilip.gradey.model.TimetableKind
 import com.bukovinafilip.gradey.model.TimetableWeek
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -34,16 +35,18 @@ object TimetableMapper {
         response: TimetableResponse,
         weekStart: String,
         today: String = TimetableDates.apiDateString(LocalDate.now(ZoneId.of("Europe/Prague"))),
+        kind: TimetableKind = TimetableKind.WEEKLY,
     ): TimetableWeek {
         val subjects = index(response.subjects)
         val teachers = index(response.teachers)
         val rooms = index(response.rooms)
+        val cycles = index(response.cycles)
         val groups = response.groups.associateBy { it.id }
         val hoursByID = response.hours.associateBy { it.id }
         val hourOrder = response.hours.mapIndexed { index, hour -> hour.id to index }.toMap()
 
         val days = response.days.map { day ->
-            val dayID = day.date.ifBlank { "dow-${day.dayOfWeek}" }
+            val dayID = if (kind == TimetableKind.PERMANENT) "dow-${day.dayOfWeek}" else day.date.ifBlank { "dow-${day.dayOfWeek}" }
             val lessons = day.atoms.mapIndexed { offset, atom ->
                 val hour = hoursByID[atom.hourID] ?: TimetableHour(atom.hourID, atom.hourID, "", "")
                 val subject = atom.subjectID?.let(subjects::get)
@@ -61,6 +64,9 @@ object TimetableMapper {
                     roomAbbrev = room?.abbrev?.trimmed(),
                     roomName = room?.name?.trimmed(),
                     groups = groupAbbrevs,
+                    subjectID = atom.subjectID,
+                    groupIDs = atom.groupIDs,
+                    cycles = if (kind == TimetableKind.PERMANENT && !atom.cycleIDs.containsAll(cycles.keys)) atom.cycleIDs.mapNotNull { cycles[it]?.let { cycle -> cycle.name?.trimmed() ?: cycle.abbrev?.trimmed() } } else emptyList(),
                     theme = atom.theme?.trimmed(),
                     hasHomework = atom.homeworkIDs.isNotEmpty(),
                     changeDescription = atom.change?.description?.trimmed(),
@@ -70,16 +76,16 @@ object TimetableMapper {
 
             ScheduledDay(
                 id = dayID,
-                date = day.date.trimmed(),
+                date = if (kind == TimetableKind.PERMANENT) null else day.date.trimmed(),
                 dayOfWeek = day.dayOfWeek,
-                dayDescription = day.dayDescription.trim(),
-                dayType = day.dayType,
+                dayDescription = if (kind == TimetableKind.PERMANENT) "" else day.dayDescription.trim(),
+                dayType = if (kind == TimetableKind.PERMANENT) "Workday" else day.dayType,
                 lessons = lessons,
-                isToday = day.date == today,
+                isToday = kind == TimetableKind.WEEKLY && day.date == today,
             )
         }
 
-        return TimetableWeek(weekStart = weekStart, days = days, hours = response.hours)
+        return TimetableWeek(weekStart = weekStart, days = days, hours = response.hours, kind = kind)
     }
 
     private fun index(entities: List<TimetableEntity>): Map<String, TimetableEntity> =

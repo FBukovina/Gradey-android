@@ -16,6 +16,7 @@ import com.bukovinafilip.gradey.model.EduPageSessionData
 import com.bukovinafilip.gradey.model.SchoolProvider
 import com.bukovinafilip.gradey.model.StoredSession
 import com.bukovinafilip.gradey.model.Subject
+import com.bukovinafilip.gradey.model.TimetableKind
 import com.bukovinafilip.gradey.model.TimetableWeek
 import com.bukovinafilip.gradey.model.UserResponse
 import kotlinx.coroutines.async
@@ -163,6 +164,22 @@ class AndroidSchoolRepository(
         cache.saveRawTimetable(session.cacheScope, monday, response)
         val week = TimetableMapper.makeWeek(response, monday, TimetableDates.apiDateString(dateProvider()))
         cache.saveTimetable(session.cacheScope, monday, week)
+        return week
+    }
+
+    override suspend fun loadCachedPermanentTimetable(): TimetableWeek? {
+        val session = sessionStore.load() ?: return null
+        if (session.provider != SchoolProvider.BAKALARI) return null
+        return cache.loadTimetable(session.cacheScope, "permanent")
+    }
+
+    override suspend fun loadPermanentTimetable(): TimetableWeek {
+        val session = validSession()
+        check(session.provider == SchoolProvider.BAKALARI) { "The permanent timetable is not available for this school account." }
+        val response = withBakalariRetry(session) { bakalariClient.fetchPermanentTimetable(it.baseURL, it.accessToken) }
+        val week = TimetableMapper.makeWeek(response, TimetableDates.apiDateString(TimetableDates.monday(dateProvider())), kind = TimetableKind.PERMANENT)
+        cache.saveRawTimetable(session.cacheScope, "permanent", response)
+        cache.saveTimetable(session.cacheScope, "permanent", week)
         return week
     }
 

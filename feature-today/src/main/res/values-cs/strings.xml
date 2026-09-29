@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_your_latest_marks_will_appear_here_when">Nové známky se zde objeví, jakmile je škola zveřejní.</string>
+    <string name="today_open_timetable_to_see_your_next_school">Další školní den najdete v rozvrhu.</string>
+    <string name="today_averages_subjects_trends_and_calculator">Průměry, předměty, vývoj a kalkulačka</string>
+    <string name="today_plan_lessons_to_preview_your_absence_risk">Naplánujte si chybějící hodiny a zjistěte riziko absence.</string>
+    <string name="today_open_timetable_to_view_today_s_lessons">Dnešní hodiny najdete v rozvrhu.</string>
+    <string name="today_open_timetable_to_view_available_days">Dostupné dny najdete v rozvrhu.</string>
+    <string name="today_see_your_lunch_and_manage_meal_orders">Prohlížejte si obědy a spravujte objednávky.</string>
+    <string name="today_1_more_missed_lesson_reaches_the_limit">Ještě 1 zameškaná hodina dosáhne limitu</string>
+    <string name="today_open_meals_to_refresh_your_canteen">Otevřete stravování a obnovte data jídelny.</string>
+    <string name="today_open_timetable_for_lesson_details">Podrobnosti o hodině najdete v rozvrhu.</string>
+    <string name="today_your_schedule_is_clear_for_today">Dnes nemáte žádné hodiny.</string>
+    <string name="today_open_meals_to_see_upcoming_days">Další dny najdete ve stravování.</string>
+    <string name="today_open_meals_to_see_today_s_menu">Dnešní nabídku najdete ve stravování.</string>
+    <string name="today_at_or_above_the_absence_limit">Na limitu absence nebo nad ním</string>
+    <string name="today_refresh_or_open_timetable">Obnovte data nebo otevřete rozvrh.</string>
+    <string name="today_absence_limit_unavailable">Limit absence není dostupný</string>
+    <string name="today_lesson_times_unavailable">Časy hodin nejsou dostupné</string>
+    <string name="today_absence_data_unavailable">Údaje o absenci nejsou dostupné</string>
+    <string name="today_no_timetable_for_today">Dnešní rozvrh není dostupný</string>
+    <string name="today_timetable_unavailable">Rozvrh není k dispozici</string>
+    <string name="today_no_more_lessons_today">Dnes už nemáte vyučování</string>
+    <string name="today_connect_your_canteen">Připojte svou jídelnu</string>
+    <string name="today_no_planned_absences">Žádné plánované absence</string>
+    <string name="today_ordered_strava_cz">Objednáno · Strava.cz</string>
+    <string name="today_no_meals_for_today">Na dnešek nejsou žádná jídla</string>
+    <string name="today_open_gradey_tools">Otevřít nástroje Gradey</string>
+    <string name="today_absence_predictor">PLÁNOVÁNÍ ABSENCE</string>
+    <string name="today_no_lessons_today">Dnes není vyučování</string>
+    <string name="today_menu_unavailable">Jídelníček není dostupný</string>
+    <string name="today_no_lunch_ordered">Nemáte objednaný oběd</string>
+    <string name="today_overall_average">Celkový průměr</string>
+    <string name="today_refresh_today">Obnovit dnešní přehled</string>
+    <string name="today_today_s_lunch">DNEŠNÍ OBĚD</string>
+    <string name="today_open_account">Otevřít účet</string>
+    <string name="today_now_and_next">TEĎ A POTOM</string>
+    <string name="today_absence_risk">RIZIKO ABSENCE</string>
+    <string name="today_plan_absence">Naplánovat absenci</string>
+    <string name="today_recent_marks">POSLEDNÍ ZNÁMKY</string>
+    <string name="today_view_all">Zobrazit vše</string>
+    <string name="today_new_mark">Nová známka</string>
+    <string name="today_student">Student</string>
+    <string name="today_connect">Připojit</string>
+    <string name="today_today">Dnes</string>
+    <string name="today_marks">Známky</string>
+    <string name="today_meals">Jídelna</string>
+    <string name="today_open">Otevřít</string>
+    <string name="today_now_1_s">Teď · %1$s</string>
+    <string name="today_next_1_s">Potom · %1$s</string>
+    <plurals name="today_subject_count">
+        <item quantity="one">%1$d předmět</item>
+        <item quantity="few">%1$d předměty</item>
+        <item quantity="other">%1$d předmětů</item>
+        <item quantity="many">%1$d předmětů</item>
+    </plurals>
+    <plurals name="today_mark_count">
+        <item quantity="one">%1$d známka</item>
+        <item quantity="few">%1$d známky</item>
+        <item quantity="other">%1$d známek</item>
+        <item quantity="many">%1$d známek</item>
+    </plurals>
+    <plurals name="today_planned_lessons">
+        <item quantity="one">%1$d plánovaná hodina</item>
+        <item quantity="few">%1$d plánované hodiny</item>
+        <item quantity="other">%1$d plánovaných hodin</item>
+        <item quantity="many">%1$d plánovaných hodin</item>
+    </plurals>
+    <plurals name="today_planned_days">
+        <item quantity="one">Během %1$d dne · zkontrolujte riziko absence.</item>
+        <item quantity="few">Během %1$d dnů · zkontrolujte riziko absence.</item>
+        <item quantity="other">Během %1$d dnů · zkontrolujte riziko absence.</item>
+        <item quantity="many">Během %1$d dnů · zkontrolujte riziko absence.</item>
+    </plurals>
+    <plurals name="today_lessons_until_limit">
+        <item quantity="one">Ještě %1$d zameškaná hodina dosáhne limitu</item>
+        <item quantity="few">Ještě %1$d zameškané hodiny dosáhnou limitu</item>
+        <item quantity="other">Ještě %1$d zameškaných hodin dosáhne limitu</item>
+        <item quantity="many">Ještě %1$d zameškaných hodin dosáhne limitu</item>
+    </plurals>
+</resources>

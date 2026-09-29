@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_guest_ai_title">Gradey AI needs your Gradey ID</string>
+    <string name="app_guest_ai_body">Sign in to use AI while keeping the school connected on this device.</string>
+    <string name="app_guest_ai_privacy">AI has its own consent and sharing controls. Your school data is not sent to AI by opening this screen.</string>
+    <string name="app_guest_signin">Sign in to Gradey ID</string>
+    <string name="app_guest_upgrade_pending">Your Gradey ID is signed in, but the school upgrade could not finish. Your local school data is kept. Tap Refresh when online to retry, or sign out to cancel.</string>
+</resources>

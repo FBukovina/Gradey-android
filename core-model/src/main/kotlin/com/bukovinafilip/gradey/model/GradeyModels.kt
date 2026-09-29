@@ -326,7 +326,7 @@ data class TimetableDayDTO(
     @SerialName("DayOfWeek")
     val dayOfWeek: Int,
     @SerialName("Date")
-    val date: String,
+    val date: String = "",
     @SerialName("DayDescription")
     val dayDescription: String = "",
     @SerialName("DayType")
@@ -351,6 +351,8 @@ data class TimetableAtom(
     val homeworkIDs: List<String> = emptyList(),
     @SerialName("Change")
     val change: TimetableChange? = null,
+    @SerialName("CycleIds")
+    val cycleIDs: List<String> = emptyList(),
 )
 
 @Serializable
@@ -404,10 +406,14 @@ enum class LessonChangeKind {
 }
 
 @Serializable
+enum class TimetableKind { WEEKLY, PERMANENT }
+
+@Serializable
 data class TimetableWeek(
     val weekStart: String,
     val days: List<ScheduledDay>,
     val hours: List<TimetableHour>,
+    val kind: TimetableKind = TimetableKind.WEEKLY,
 )
 
 @Serializable
@@ -436,6 +442,9 @@ data class ScheduledLesson(
     val hasHomework: Boolean,
     val changeDescription: String? = null,
     val changeKind: LessonChangeKind = LessonChangeKind.NONE,
+    val subjectID: String? = null,
+    val groupIDs: List<String> = emptyList(),
+    val cycles: List<String> = emptyList(),
 ) {
     val title: String get() = subjectAbbrev ?: subjectName ?: "Lesson"
     val roomTitle: String? get() = roomAbbrev ?: roomName
@@ -478,7 +487,17 @@ data class LinkedSchoolAccount(
     val schoolName: String? = null,
     val status: String = "active",
     val notificationsEnabled: Boolean = true,
+    val providerUserID: String? = null,
+    val baseURL: String? = null,
+    val actionRequiredReason: String? = null,
 )
+
+@Serializable
+enum class NotificationLockScreenDetail {
+    @SerialName("private_summary") PRIVATE_SUMMARY,
+    @SerialName("mark_and_subject") MARK_AND_SUBJECT,
+    @SerialName("full_details") FULL_DETAILS,
+}
 
 @Serializable
 data class NotificationPreferences(
@@ -486,6 +505,8 @@ data class NotificationPreferences(
     val quietHoursEnabled: Boolean = false,
     val quietHoursStart: String = "22:00",
     val quietHoursEnd: String = "06:00",
+    val lockScreenDetail: NotificationLockScreenDetail = NotificationLockScreenDetail.MARK_AND_SUBJECT,
+    val quietHoursTimeZoneIdentifier: String = "Europe/Prague",
 ) {
     companion object {
         val Default = NotificationPreferences()
@@ -596,6 +617,8 @@ data class GradeyWearSyncPayload(
     val auth: GradeyWearAuth? = null,
     val user: GradeyWearUser? = null,
     val timetable: GradeyWearTimetable? = null,
+    val aiIdentity: WearAIIdentity? = null,
+    val schoolAccess: WearSchoolAccess? = null,
 ) {
     companion object {
         const val CURRENT_SCHEMA_VERSION = 2

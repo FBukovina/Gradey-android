@@ -1,15 +1,22 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.bukovinafilip.gradey.feature.absence
+
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -27,12 +34,19 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.MaterialTheme
+import com.bukovinafilip.gradey.ui.adaptiveColor
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.bukovinafilip.gradey.domain.AbsenceOverrideProjection
+import com.bukovinafilip.gradey.model.AbsenceDayOverride
+import com.bukovinafilip.gradey.model.Subject
+import com.bukovinafilip.gradey.model.TimetableWeek
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bukovinafilip.gradey.domain.AbsenceDaySummary
 import com.bukovinafilip.gradey.domain.AbsenceMonthSummary
+import com.bukovinafilip.gradey.domain.AbsenceRiskLevel
 import com.bukovinafilip.gradey.domain.AbsenceRiskSummary
 import com.bukovinafilip.gradey.domain.AbsenceSubjectSummary
 import com.bukovinafilip.gradey.domain.AbsenceTimeline
@@ -66,35 +81,43 @@ import com.bukovinafilip.gradey.domain.normalizedAbsenceThreshold
 import com.bukovinafilip.gradey.model.AbsenceCounts
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.max
 
-private val BackgroundTop = Color(0xFFCBDDDD)
-private val BackgroundBottom = Color(0xFFF2F2F7)
-private val AccentTeal = Color(0xFF17A185)
+private val BackgroundTop: Color
+    @Composable get() = adaptiveColor(Color(0xFFCBDDDD), Color(0xFF17382D))
+private val BackgroundBottom: Color
+    @Composable get() = adaptiveColor(Color(0xFFF2F2F7), Color(0xFF0C1713))
+private val AccentTeal: Color
+    @Composable get() = MaterialTheme.colorScheme.primary
 private val NavigationTeal = Color(0xFF0C967C)
 private val ExcusedGreen = Color(0xFF1DA565)
 private val RiskOrange = Color(0xFFFF8D28)
 private val LateOrange = Color(0xFFD98F10)
 private val MissedRed = Color(0xFFD95461)
-private val MutedText = Color(0xFF8A8A8E)
-private val CardWhite = Color.White
-private val DividerColor = Color(0xFFC6C6C8)
+private val MutedText: Color
+    @Composable get() = adaptiveColor(Color(0xFF8A8A8E), Color(0xFFB0C5B9))
+private val CardWhite: Color
+    @Composable get() = MaterialTheme.colorScheme.surface
+private val DividerColor: Color
+    @Composable get() = adaptiveColor(Color(0xFFC6C6C8), Color(0xFF344F40))
 private val SoftTeal = Color(0xFFDDF0EC)
 private val SoftGreen = Color(0xFFDFF2E9)
 private val SoftOrange = Color(0xFFF9EEDD)
 private val SoftRed = Color(0xFFF7E4E6)
-private val SoftGray = Color(0xFFF2F2F7)
-private val ProgressRail = Color(0xFFEFEFF0)
-private val EnglishLocale = Locale.ENGLISH
-private val DayFormatter = DateTimeFormatter.ofPattern("EEE d. M.", EnglishLocale)
-private val MonthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", EnglishLocale)
+private val SoftGray: Color
+    @Composable get() = adaptiveColor(Color(0xFFF2F2F7), Color(0xFF293D33))
+private val ProgressRail: Color
+    @Composable get() = adaptiveColor(Color(0xFFEFEFF0), Color(0xFF344F40))
+private val DayFormatter: DateTimeFormatter
+    @Composable get() = DateTimeFormatter.ofPattern("EEE d. M.", LocalConfiguration.current.locales[0])
+private val MonthFormatter: DateTimeFormatter
+    @Composable get() = DateTimeFormatter.ofPattern("MMMM yyyy", LocalConfiguration.current.locales[0])
 
-private enum class AbsenceMode(val label: String, val description: String) {
-    Subjects("Subjects", "Show subjects"),
-    Days("By days", "Show by days"),
-    Months("By months", "Show by months"),
+private enum class AbsenceMode(val label: Int, val description: Int) {
+    Subjects(R.string.absence_subjects_27894, R.string.absence_show_subjects_cf41c),
+    Days(R.string.absence_by_days_bacd2, R.string.absence_show_by_days_ff84f),
+    Months(R.string.absence_by_months_fd49d, R.string.absence_show_by_months_a465a),
 }
 
 @Composable
@@ -107,8 +130,35 @@ fun AbsenceScreen(
     onOpenGradeyTools: () -> Unit,
     modifier: Modifier = Modifier,
     onPlanAbsence: (() -> Unit)? = null,
+    rawResponse: AbsenceResponse = response,
+    overrideScope: String? = null,
+    overrides: List<AbsenceDayOverride> = emptyList(),
+    availableSubjects: List<Subject> = emptyList(),
+    correctionTimetable: TimetableWeek? = null,
+    correctionError: String? = null,
+    onSaveOverride: ((AbsenceDayOverride) -> Unit)? = null,
+    onRestoreOverride: ((String) -> Unit)? = null,
+    onResetOverrides: (() -> Unit)? = null,
+    onLoadCorrectionWeek: ((String) -> Unit)? = null,
 ) {
     var mode by rememberSaveable { mutableStateOf(AbsenceMode.Subjects) }
+    var editingDate by remember(overrideScope) { mutableStateOf<String?>(null) }
+    var pendingSave by remember(overrideScope) { mutableStateOf<AbsenceDayOverride?>(null) }
+    LaunchedEffect(overrides, pendingSave) {
+        val pending = pendingSave
+        if (pending != null && overrides.any { it.id == pending.id && it.savedAtEpochMillis == pending.savedAtEpochMillis }) {
+            pendingSave = null
+            editingDate = null
+        }
+    }
+    val correctionDay = rawResponse.absences.singleOrNull { AbsenceOverrideProjection.dateKey(it.date) == editingDate }
+    if (correctionDay != null && overrideScope != null && onSaveOverride != null) {
+        AbsenceOverrideEditor(rawResponse = rawResponse, day = correctionDay, scope = overrideScope,
+            existing = overrides.firstOrNull { it.dateKey == editingDate }, availableSubjects = availableSubjects,
+            lessons = correctionTimetable?.days?.firstOrNull { AbsenceOverrideProjection.dateKey(it.date.orEmpty()) == editingDate }?.lessons.orEmpty(),
+            isSaving = isRefreshing, errorMessage = correctionError,
+            onSave = { pendingSave = it; onSaveOverride(it) }, onDismiss = { editingDate = null; pendingSave = null })
+    }
     val timeline = remember(response) { AbsenceTimeline.make(response) }
     val riskSummary = remember(response) {
         AbsenceRiskSummary.make(response, response.absencesPerSubject)
@@ -124,7 +174,7 @@ fun AbsenceScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 16.dp, top = 28.dp, end = 16.dp, bottom = 126.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 28.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
         ) {
             item {
                 AbsenceHeader(
@@ -149,7 +199,7 @@ fun AbsenceScreen(
                         onClick = onPlanAbsence,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        color = SoftTeal,
+                        color = adaptiveColor(SoftTeal, Color(0xFF20483A)),
                     ) {
                         Row(
                             modifier = Modifier.padding(16.dp),
@@ -158,11 +208,20 @@ fun AbsenceScreen(
                         ) {
                             Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = NavigationTeal)
                             Column {
-                                Text("Plan absence", color = NavigationTeal, fontWeight = FontWeight.SemiBold)
-                                Text("Preview the impact of missed lessons", color = MutedText, fontSize = 13.sp)
+                                Text(stringResource(R.string.absence_plan_absence_c429a), color = NavigationTeal, fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.absence_preview_the_impact_of_missed_lessons_de5c9), color = MutedText, fontSize = 13.sp)
                             }
                         }
                     }
+                }
+            }
+            if (overrideScope != null && onSaveOverride != null) {
+                item { Spacer(Modifier.height(12.dp)) }
+                item {
+                    AttendanceCorrectionsCard(rawResponse = rawResponse, overrides = overrides, scope = overrideScope,
+                        isLoading = isRefreshing,
+                        onEdit = { date -> editingDate = date; pendingSave = null; onLoadCorrectionWeek?.invoke(date) },
+                        onRestore = onRestoreOverride, onReset = onResetOverrides)
                 }
             }
             item { Spacer(Modifier.height(11.dp)) }
@@ -180,7 +239,7 @@ fun AbsenceScreen(
 
                 AbsenceMode.Months -> {
                     item { Spacer(Modifier.height(8.dp)) }
-                    item { SectionHeading("HOURS BY MONTH") }
+                    item { SectionHeading(stringResource(R.string.absence_hours_by_month_3ff19)) }
                     item { Spacer(Modifier.height(8.dp)) }
                     item { MonthsChartCard(timeline.months) }
                     item { Spacer(Modifier.height(9.dp)) }
@@ -198,27 +257,24 @@ private fun AbsenceHeader(
     onOpenAccount: () -> Unit,
     onOpenGradeyTools: () -> Unit,
 ) {
-    Box(
+    com.bukovinafilip.gradey.ui.AdaptivePageHeader(
         modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp),
-        contentAlignment = Alignment.Center,
+            .fillMaxWidth(),
     ) {
         Surface(
             modifier = Modifier
-                .align(Alignment.CenterStart)
                 .size(44.dp),
             onClick = onOpenGradeyTools,
             shape = CircleShape,
-            color = Color(0xFFE8FAFB),
+            color = adaptiveColor(Color(0xFFE8FAFB), Color(0xFF203E33)),
             shadowElevation = 2.dp,
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = Color(0xFFC7ECE9)) {
+                Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = adaptiveColor(Color(0xFFC7ECE9), Color(0xFF2A5142))) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "Open Gradey tools",
+                            contentDescription = stringResource(R.string.absence_open_gradey_tools_fba07),
                             tint = AccentTeal,
                             modifier = Modifier.size(22.dp),
                         )
@@ -228,20 +284,20 @@ private fun AbsenceHeader(
         }
 
         Text(
-            text = "Absence",
-            color = Color.Black,
+            text = stringResource(R.string.absence_absence_f7eb4),
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 17.sp,
             lineHeight = 21.sp,
             fontWeight = FontWeight.SemiBold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
 
         Surface(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
                 .width(105.dp)
                 .height(44.dp),
             shape = RoundedCornerShape(22.dp),
-            color = Color(0xFFDCFAF6),
+            color = adaptiveColor(Color(0xFFDCFAF6), Color(0xFF203E33)),
             shadowElevation = 2.dp,
         ) {
             Row(
@@ -266,7 +322,7 @@ private fun AbsenceHeader(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh Absence",
+                                contentDescription = stringResource(R.string.absence_refresh_absence_64777),
                                 tint = AccentTeal,
                                 modifier = Modifier.size(27.dp),
                             )
@@ -277,12 +333,12 @@ private fun AbsenceHeader(
                     modifier = Modifier.size(32.dp),
                     onClick = onOpenAccount,
                     shape = CircleShape,
-                    color = Color(0xFFBDECE4),
+                    color = adaptiveColor(Color(0xFFBDECE4), Color(0xFF2A5142)),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.Default.Person,
-                            contentDescription = "Open account",
+                            contentDescription = stringResource(R.string.absence_open_account_db17a),
                             tint = AccentTeal,
                             modifier = Modifier.size(22.dp),
                         )
@@ -302,7 +358,7 @@ private fun AbsenceSummaryCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp),
+            .heightIn(min = 140.dp),
         shape = RoundedCornerShape(20.dp),
         color = CardWhite,
         shadowElevation = 2.dp,
@@ -311,21 +367,21 @@ private fun AbsenceSummaryCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp),
+                    .heightIn(min = 46.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 AbsenceIconTile()
                 Spacer(Modifier.width(12.dp))
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(
-                        text = "Absence",
-                        color = Color.Black,
+                        text = stringResource(R.string.absence_absence_f7eb4),
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 17.sp,
                         lineHeight = 21.sp,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = studentName.ifBlank { "Student" },
+                        text = studentName.ifBlank { stringResource(R.string.absence_student_42b32) },
                         color = MutedText,
                         fontSize = 17.sp,
                         lineHeight = 20.sp,
@@ -341,7 +397,7 @@ private fun AbsenceSummaryCard(
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        text = "hours",
+                        text = stringResource(R.string.absence_hours_5aede),
                         color = MutedText,
                         fontSize = 14.sp,
                         lineHeight = 18.sp,
@@ -353,7 +409,7 @@ private fun AbsenceSummaryCard(
             SummaryPills(counts)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = threshold?.let { "School limit: ${formatWhole(it)} %" } ?: "School limit unavailable",
+                text = threshold?.let { stringResource(R.string.absence_school_limit_value, formatWhole(it)) } ?: stringResource(R.string.absence_school_limit_unavailable_0c832),
                 color = MutedText,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
@@ -367,7 +423,7 @@ private fun AbsenceIconTile() {
     Surface(
         modifier = Modifier.size(46.dp),
         shape = RoundedCornerShape(13.dp),
-        color = SoftTeal,
+        color = adaptiveColor(SoftTeal, Color(0xFF20483A)),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -391,10 +447,11 @@ private fun AbsenceIconTile() {
 
 @Composable
 private fun SummaryPills(counts: AbsenceCounts) {
-    Row {
-        Box(modifier = Modifier.width(68.dp)) { CountPill(AttendanceKind.Unresolved, counts.unsolved) }
-        Box(modifier = Modifier.width(68.dp)) { CountPill(AttendanceKind.Excused, counts.ok) }
-        CountPill(AttendanceKind.Late, counts.late)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        absenceCategories(counts).filter { it.second > 0 }.forEach { (kind, count) ->
+            LegendPill(kind, "$count ${stringResource(kind.label).lowercase()}")
+        }
+        if (counts.total == 0) Text(stringResource(R.string.absence_no_absences_recorded_e483d), color = AccentTeal, fontSize = 14.sp)
     }
 }
 
@@ -412,6 +469,7 @@ private fun AbsenceModePicker(
     ) {
         Row(modifier = Modifier.padding(2.dp)) {
             AbsenceMode.entries.forEach { mode ->
+                val description = stringResource(mode.description)
                 Surface(
                     modifier = Modifier
                         .weight(1f)
@@ -421,15 +479,15 @@ private fun AbsenceModePicker(
                             role = Role.Tab,
                             onClick = { onSelect(mode) },
                         )
-                        .semantics { contentDescription = mode.description },
+                        .semantics { contentDescription = description },
                     shape = RoundedCornerShape(15.dp),
-                    color = if (selected == mode) Color.White else Color.Transparent,
+                    color = if (selected == mode) MaterialTheme.colorScheme.surface else Color.Transparent,
                     shadowElevation = if (selected == mode) 1.dp else 0.dp,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
-                            text = mode.label,
-                            color = Color.Black,
+                            text = stringResource(mode.label),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 15.sp,
                             lineHeight = 18.sp,
                             fontWeight = if (selected == mode) FontWeight.SemiBold else FontWeight.Medium,
@@ -450,13 +508,13 @@ private fun SubjectsCard(subjects: List<AbsenceSubjectSummary>) {
         shadowElevation = 1.dp,
     ) {
         if (subjects.isEmpty()) {
-            EmptyState("No subject absence data")
+            EmptyState(stringResource(R.string.absence_no_subject_absence_data_8033c))
         } else {
             Column {
                 subjects.forEachIndexed { index, subject ->
                     SubjectRow(subject)
                     if (index != subjects.lastIndex) {
-                        HorizontalDivider(color = Color(0xFFC6C6C8), thickness = 0.33.dp)
+                        HorizontalDivider(color = DividerColor, thickness = 0.33.dp)
                     }
                 }
             }
@@ -466,14 +524,24 @@ private fun SubjectsCard(subjects: List<AbsenceSubjectSummary>) {
 
 @Composable
 private fun SubjectRow(subject: AbsenceSubjectSummary) {
-    val warning = subject.absencePercentage >= 15.0
-    val color = if (warning) RiskOrange else AccentTeal
+    val color = when (subject.level) {
+        AbsenceRiskLevel.SAFE -> AccentTeal
+        AbsenceRiskLevel.WATCH, AbsenceRiskLevel.HIGH -> RiskOrange
+        AbsenceRiskLevel.OVER_LIMIT -> MissedRed
+        AbsenceRiskLevel.UNAVAILABLE -> MutedText
+    }
+    val missedSummary = stringResource(R.string.absence_subject_missed_summary, subject.base, subject.lessonsCount)
+    val limitSummary = when (subject.missesUntilLimit) {
+        null -> stringResource(R.string.absence_limit_unavailable)
+        0 -> stringResource(R.string.absence_at_limit)
+        else -> stringResource(R.string.absence_misses_until_limit, subject.missesUntilLimit ?: 0)
+    }
     val threshold = subject.threshold ?: 100.0
     val progress = (subject.absencePercentage / threshold).toFloat().coerceIn(0f, 1f)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(81.dp)
+            .heightIn(min = 81.dp)
             .padding(horizontal = 12.dp, vertical = 9.dp),
     ) {
         Row(
@@ -483,7 +551,7 @@ private fun SubjectRow(subject: AbsenceSubjectSummary) {
             Text(
                 text = subject.subjectName,
                 modifier = Modifier.weight(1f),
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 17.sp,
                 lineHeight = 21.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -513,15 +581,14 @@ private fun SubjectRow(subject: AbsenceSubjectSummary) {
         Spacer(Modifier.height(6.dp))
         Text(
             text = buildAnnotatedString {
-                append("${subject.base} of ${subject.lessonsCount} lessons missed · ")
+                append(missedSummary)
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                    append(subject.missesUntilLimit?.let { "$it more until the limit" } ?: "limit unavailable")
+                    append(limitSummary)
                 }
             },
             color = MutedText,
             fontSize = 13.sp,
             lineHeight = 16.sp,
-            maxLines = 1,
         )
     }
 }
@@ -540,7 +607,7 @@ private fun DaysCard(timeline: AbsenceTimelineSummary) {
                 HorizontalDivider(color = DividerColor, thickness = 0.33.dp)
                 DayRow(day)
             }
-            if (timeline.days.isEmpty()) EmptyState("No absence days")
+            if (timeline.days.isEmpty()) EmptyState(stringResource(R.string.absence_no_absence_days_e0758))
         }
     }
 }
@@ -556,18 +623,17 @@ private fun TotalsRow(counts: AbsenceCounts) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Total",
+            text = stringResource(R.string.absence_total_b2592),
             modifier = Modifier.weight(1f),
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 17.sp,
             lineHeight = 21.sp,
             fontWeight = FontWeight.Bold,
         )
-        CompactCountPills(counts)
         Text(
             text = counts.total.toString(),
             modifier = Modifier.width(34.dp),
-            color = Color.Black,
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 17.sp,
             lineHeight = 21.sp,
             fontWeight = FontWeight.Bold,
@@ -578,44 +644,24 @@ private fun TotalsRow(counts: AbsenceCounts) {
 
 @Composable
 private fun DayRow(day: AbsenceDaySummary) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = day.date.format(DayFormatter),
-            modifier = Modifier.weight(1f),
-            color = Color.Black,
-            fontSize = 16.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        CompactCountPills(day.counts)
-        Text(
-            text = day.counts.total.toString(),
-            modifier = Modifier.width(34.dp),
-            color = Color.Black,
-            fontSize = 16.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.End,
-        )
+    AbsenceCountRow(day.date.format(DayFormatter), day.counts)
+}
+
+@Composable
+private fun AbsenceCountRow(label: String, counts: AbsenceCounts) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text("${counts.total} h", color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        CompactCountPills(counts)
     }
 }
 
 @Composable
 private fun CompactCountPills(counts: AbsenceCounts) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (counts.unsolved > 0) CountPill(AttendanceKind.Unresolved, counts.unsolved)
-        if (counts.ok > 0) CountPill(AttendanceKind.Excused, counts.ok)
-        if (counts.missed > 0) CountPill(AttendanceKind.Missed, counts.missed)
-        if (counts.late > 0) CountPill(AttendanceKind.Late, counts.late)
-        if (counts.soon > 0) CountPill(AttendanceKind.Other, counts.soon)
-        if (counts.school > 0) CountPill(AttendanceKind.Other, counts.school)
-        if (counts.distanceTeaching > 0) CountPill(AttendanceKind.Other, counts.distanceTeaching)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        absenceCategories(counts).filter { it.second > 0 }.forEach { (kind, count) -> CountPill(kind, count) }
     }
 }
 
@@ -633,34 +679,12 @@ private fun SectionHeading(text: String) {
 
 @Composable
 private fun MonthsChartCard(months: List<AbsenceMonthSummary>) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(260.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        Column {
-            MonthBars(
-                months = months,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(189.dp),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(25.dp)
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                LegendPill(AttendanceKind.Unresolved, "Unresolved absence")
-                LegendPill(AttendanceKind.Excused, "Excused absence")
-            }
-            Spacer(Modifier.height(5.dp))
-            Row(modifier = Modifier.padding(start = 16.dp)) {
-                LegendPill(AttendanceKind.Late, "Late arrivals")
+    Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = CardWhite, shadowElevation = 1.dp) {
+        Column(Modifier.padding(bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MonthBars(months, Modifier.fillMaxWidth().height(189.dp))
+            FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                AttendanceKind.entries.filter { kind -> months.takeLast(5).any { month -> absenceCategories(month.counts).any { it.first == kind && it.second > 0 } } }
+                    .forEach { LegendPill(it, stringResource(it.label)) }
             }
         }
     }
@@ -671,13 +695,15 @@ private fun MonthBars(
     months: List<AbsenceMonthSummary>,
     modifier: Modifier = Modifier,
 ) {
+    val chartGrid = MaterialTheme.colorScheme.outlineVariant
     val visibleMonths = months.takeLast(5)
+    val chartLabel = stringResource(R.string.absence_hours_by_month_accessibility)
     val maxMonth = visibleMonths.maxOfOrNull { it.counts.total } ?: 0
     val axisMax = max(10, ceil(maxMonth / 5.0).toInt() * 5)
     Box(
         modifier = modifier.semantics {
             contentDescription = visibleMonths.joinToString(
-                prefix = "Hours by month: ",
+                prefix = chartLabel + ": ",
                 separator = ", ",
             ) { "${it.month.month.name.lowercase().replaceFirstChar(Char::uppercase)} ${it.counts.total}" }
         },
@@ -688,7 +714,7 @@ private fun MonthBars(
             val plotTop = 16.dp.toPx()
             val plotBottom = 159.dp.toPx()
             val plotHeight = plotBottom - plotTop
-            val gridColor = Color(0xFFE6E6E8)
+            val gridColor = chartGrid
             listOf(plotTop, plotTop + plotHeight / 2f, plotBottom).forEach { y ->
                 drawLine(gridColor, Offset(gridLeft, y), Offset(gridRight, y), strokeWidth = 0.7.dp.toPx())
             }
@@ -748,7 +774,7 @@ private fun MonthBars(
         ) {
             visibleMonths.forEach { month ->
                 Text(
-                    text = month.month.month.name.take(1),
+                    text = month.month.format(DateTimeFormatter.ofPattern("MMM", LocalConfiguration.current.locales[0])),
                     modifier = Modifier.weight(1f),
                     color = MutedText,
                     fontSize = 13.sp,
@@ -770,10 +796,12 @@ private fun DrawScope.drawMonthBar(
 ) {
     val segments = listOf(
         counts.ok to ExcusedGreen,
-        counts.unsolved to AccentTeal,
+        counts.unsolved to AttendanceKind.Unresolved.foreground,
         counts.missed to MissedRed,
         counts.late to LateOrange,
-        (counts.soon + counts.school + counts.distanceTeaching) to NavigationTeal,
+        counts.soon to AttendanceKind.Early.foreground,
+        counts.school to AttendanceKind.School.foreground,
+        counts.distanceTeaching to AttendanceKind.Distance.foreground,
     ).filter { it.first > 0 }
     var currentBottom = bottom
     segments.forEachIndexed { index, (value, color) ->
@@ -807,58 +835,47 @@ private fun MonthsCard(timeline: AbsenceTimelineSummary) {
                 HorizontalDivider(color = DividerColor, thickness = 0.33.dp)
                 MonthRow(month)
             }
-            if (timeline.months.isEmpty()) EmptyState("No monthly absence data")
+            if (timeline.months.isEmpty()) EmptyState(stringResource(R.string.absence_no_monthly_absence_data_ab52f))
         }
     }
 }
 
 @Composable
 private fun MonthRow(month: AbsenceMonthSummary) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(49.dp)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = month.month.format(MonthFormatter),
-            modifier = Modifier.weight(1f),
-            color = Color.Black,
-            fontSize = 16.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        CompactCountPills(month.counts)
-        Text(
-            text = month.counts.total.toString(),
-            modifier = Modifier.width(34.dp),
-            color = Color.Black,
-            fontSize = 16.sp,
-            lineHeight = 20.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.End,
-        )
-    }
+    AbsenceCountRow(month.month.format(MonthFormatter), month.counts)
 }
 
 private enum class AttendanceKind(
+    val label: Int,
     val foreground: Color,
     val background: Color,
 ) {
-    Unresolved(AccentTeal, SoftTeal),
-    Excused(ExcusedGreen, SoftGreen),
-    Late(LateOrange, SoftOrange),
-    Missed(MissedRed, SoftRed),
-    Other(NavigationTeal, SoftTeal),
+    Unresolved(R.string.absence_unresolved_eeccd, Color(0xFF007E68), SoftTeal),
+    Excused(R.string.absence_excused_6c2a9, ExcusedGreen, SoftGreen),
+    Late(R.string.absence_late_arrivals_9e2a1, LateOrange, SoftOrange),
+    Missed(R.string.absence_unexcused_9076d, MissedRed, SoftRed),
+    Early(R.string.absence_early_departures_b3f13, Color(0xFF7562B5), Color(0xFFECE7F8)),
+    School(R.string.absence_school_events_4b8bc, Color(0xFF2474A8), Color(0xFFE0EDF6)),
+    Distance(R.string.absence_distance_learning_e96ec, Color(0xFF657D89), Color(0xFFE8EEF1)),
 }
+
+private fun absenceCategories(counts: AbsenceCounts): List<Pair<AttendanceKind, Int>> = listOf(
+    AttendanceKind.Unresolved to counts.unsolved,
+    AttendanceKind.Excused to counts.ok,
+    AttendanceKind.Missed to counts.missed,
+    AttendanceKind.Late to counts.late,
+    AttendanceKind.Early to counts.soon,
+    AttendanceKind.School to counts.school,
+    AttendanceKind.Distance to counts.distanceTeaching,
+)
 
 @Composable
 private fun CountPill(kind: AttendanceKind, count: Int) {
+    val accessibleLabel = "${stringResource(kind.label)}: $count"
     Surface(
-        modifier = Modifier.height(25.dp),
+        modifier = Modifier.heightIn(min = 25.dp).semantics { contentDescription = accessibleLabel },
         shape = RoundedCornerShape(13.dp),
-        color = kind.background,
+        color = adaptiveColor(kind.background, kind.foreground.copy(alpha = 0.18f)),
         contentColor = kind.foreground,
     ) {
         Row(
@@ -883,7 +900,7 @@ private fun LegendPill(kind: AttendanceKind, label: String) {
     Surface(
         modifier = Modifier.height(25.dp),
         shape = RoundedCornerShape(13.dp),
-        color = kind.background,
+        color = adaptiveColor(kind.background, kind.foreground.copy(alpha = 0.18f)),
         contentColor = kind.foreground,
     ) {
         Row(
@@ -910,7 +927,9 @@ private fun AttendanceIcon(kind: AttendanceKind) {
         AttendanceKind.Excused -> Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
         AttendanceKind.Late -> Text("P", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         AttendanceKind.Missed -> Text("!", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-        AttendanceKind.Other -> Text("•", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        AttendanceKind.Early -> Text("↗", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        AttendanceKind.School -> Text("S", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+        AttendanceKind.Distance -> Text("D", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -929,20 +948,24 @@ private fun EmptyState(text: String) {
 private fun normalizedThreshold(value: Double?): Double? =
     normalizedAbsenceThreshold(value)
 
+@Composable
 private fun formatWhole(value: Double): String =
-    if (value % 1.0 == 0.0) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
+    if (value % 1.0 == 0.0) value.toInt().toString() else String.format(LocalConfiguration.current.locales[0], "%.1f", value)
 
-private fun formatOneDecimal(value: Double): String = String.format(Locale.US, "%.1f", value)
+@Composable
+private fun formatOneDecimal(value: Double): String = String.format(LocalConfiguration.current.locales[0], "%.1f", value)
 
 @Composable
 private fun AbsenceBackgroundGlow() {
+    val glowTop = BackgroundTop
+    val glowBottom = BackgroundBottom
     Canvas(modifier = Modifier.fillMaxSize()) {
         drawRect(
             brush = Brush.verticalGradient(
                 colorStops = arrayOf(
-                    0f to BackgroundTop,
-                    0.32f to BackgroundBottom,
-                    1f to BackgroundBottom,
+                    0f to glowTop,
+                    0.32f to glowBottom,
+                    1f to glowBottom,
                 ),
             ),
         )

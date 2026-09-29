@@ -1,5 +1,7 @@
 package com.bukovinafilip.gradey.updates
 
+import androidx.compose.ui.res.stringResource
+import com.bukovinafilip.gradey.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,9 +59,10 @@ fun UpdateScreen(
 ) {
     val directUpdates = state.phase != UpdatePhase.STORE_MANAGED && state.phase != UpdatePhase.DISABLED
     val release = state.release
-    val lastChecked = remember(state.lastCheckedAt) {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val lastChecked = remember(state.lastCheckedAt, locale) {
         state.lastCheckedAt.takeIf { it > 0 }?.let {
-            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(it))
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).format(Date(it))
         }
     }
     LazyColumn(
@@ -70,17 +73,17 @@ fun UpdateScreen(
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.app_back))
                 }
-                Text("App updates", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.app_updates), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             }
         }
         item {
             GradeySectionCard {
-                Text("Installed version", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.app_installed), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Gradey ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 if (directUpdates) Text(
-                    lastChecked?.let { "Last checked $it" } ?: "No update check yet",
+                    lastChecked?.let { stringResource(R.string.app_last_checked, it) } ?: stringResource(R.string.app_never_checked),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -102,15 +105,15 @@ fun UpdateScreen(
                     )
                     Text(
                         text = when (state.phase) {
-                            UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) "You're up to date" else "Keep Gradey up to date"
-                            UpdatePhase.CHECKING -> "Checking for updates"
-                            UpdatePhase.AVAILABLE -> "A new version is available"
-                            UpdatePhase.QUEUED -> if (state.wifiOnly && !state.manualDownload) "Waiting for Wi-Fi" else "Download queued"
-                            UpdatePhase.DOWNLOADING -> "Downloading update"
-                            UpdatePhase.READY -> "Your update is ready"
-                            UpdatePhase.ERROR -> "Update needs another try"
-                            UpdatePhase.STORE_MANAGED -> "Updates from Google Play"
-                            UpdatePhase.DISABLED -> "Updates are unavailable"
+                            UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) stringResource(R.string.app_up_to_date) else stringResource(R.string.app_keep_updated)
+                            UpdatePhase.CHECKING -> stringResource(R.string.app_checking_updates)
+                            UpdatePhase.AVAILABLE -> stringResource(R.string.app_update_available)
+                            UpdatePhase.QUEUED -> if (state.wifiOnly && !state.manualDownload) stringResource(R.string.app_waiting_wifi) else stringResource(R.string.app_download_queued)
+                            UpdatePhase.DOWNLOADING -> stringResource(R.string.app_downloading)
+                            UpdatePhase.READY -> stringResource(R.string.app_update_ready)
+                            UpdatePhase.ERROR -> stringResource(R.string.app_update_retry)
+                            UpdatePhase.STORE_MANAGED -> stringResource(R.string.app_store_updates)
+                            UpdatePhase.DISABLED -> stringResource(R.string.app_updates_unavailable)
                         },
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
@@ -121,21 +124,21 @@ fun UpdateScreen(
                 }
                 Text(
                     text = state.message ?: when (state.phase) {
-                        UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) "You're using the latest available version of Gradey." else "Get the latest improvements and new features."
-                        UpdatePhase.CHECKING -> "Looking for a newer version of Gradey."
-                        UpdatePhase.AVAILABLE -> "Download the update now, then install it when you're ready."
-                        UpdatePhase.QUEUED -> if (state.wifiOnly && !state.manualDownload) "The download will start on Wi-Fi or another unmetered connection. You can also download now using your current connection." else "The download will start when a connection is available."
-                        UpdatePhase.DOWNLOADING -> "You can keep using Gradey while the update downloads."
-                        UpdatePhase.READY -> "The download is complete. Install the new version when you're ready."
-                        UpdatePhase.ERROR -> "The update couldn't be completed. Check your connection and try again."
-                        UpdatePhase.STORE_MANAGED -> "Google Play handles updates for this installation. Open the store to check for a new version."
-                        UpdatePhase.DISABLED -> "Automatic updates haven't been set up for this build."
+                        UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) stringResource(R.string.app_latest_description) else stringResource(R.string.app_update_description)
+                        UpdatePhase.CHECKING -> stringResource(R.string.app_checking_description)
+                        UpdatePhase.AVAILABLE -> stringResource(R.string.app_available_description)
+                        UpdatePhase.QUEUED -> if (state.wifiOnly && !state.manualDownload) stringResource(R.string.app_wifi_description) else stringResource(R.string.app_queued_description)
+                        UpdatePhase.DOWNLOADING -> stringResource(R.string.app_downloading_description)
+                        UpdatePhase.READY -> stringResource(R.string.app_ready_description)
+                        UpdatePhase.ERROR -> stringResource(R.string.app_error_description)
+                        UpdatePhase.STORE_MANAGED -> stringResource(R.string.app_store_description)
+                        UpdatePhase.DISABLED -> stringResource(R.string.app_disabled_description)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (state.phase == UpdatePhase.READY) Text(
-                    "Android will ask you to confirm the installation. Your Gradey data will stay in place.",
+                    stringResource(R.string.app_install_description),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -145,50 +148,50 @@ fun UpdateScreen(
                     else -> Unit
                 }
                 when (state.phase) {
-                    UpdatePhase.IDLE -> Button(onClick = onCheck, modifier = Modifier.fillMaxWidth()) { Text("Check for updates") }
-                    UpdatePhase.AVAILABLE -> Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text("Download update") }
+                    UpdatePhase.IDLE -> Button(onClick = onCheck, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_check_updates)) }
+                    UpdatePhase.AVAILABLE -> Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_download_update)) }
                     UpdatePhase.QUEUED -> {
-                        if (!state.manualDownload) Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text("Download now") }
-                        TextButton(onClick = onCancelDownload, modifier = Modifier.fillMaxWidth()) { Text("Cancel download") }
+                        if (!state.manualDownload) Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_download_now)) }
+                        TextButton(onClick = onCancelDownload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_cancel_download)) }
                     }
-                    UpdatePhase.DOWNLOADING -> TextButton(onClick = onCancelDownload, modifier = Modifier.fillMaxWidth()) { Text("Cancel download") }
-                    UpdatePhase.READY -> Button(onClick = onInstall, modifier = Modifier.fillMaxWidth()) { Text("Install update") }
+                    UpdatePhase.DOWNLOADING -> TextButton(onClick = onCancelDownload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_cancel_download)) }
+                    UpdatePhase.READY -> Button(onClick = onInstall, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_install_update)) }
                     UpdatePhase.ERROR -> {
-                        Button(onClick = onCheck, modifier = Modifier.fillMaxWidth()) { Text("Check again") }
-                        if (release != null) OutlinedButton(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text("Download again") }
+                        Button(onClick = onCheck, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_check_again)) }
+                        if (release != null) OutlinedButton(onClick = onDownload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_download_again)) }
                     }
-                    UpdatePhase.STORE_MANAGED -> Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) { Text("Open Google Play") }
+                    UpdatePhase.STORE_MANAGED -> Button(onClick = onOpenStore, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_open_play)) }
                     UpdatePhase.CHECKING, UpdatePhase.DISABLED -> Unit
                 }
             }
         }
         if (directUpdates && !release?.releaseNotes.isNullOrBlank()) item {
-            GradeySectionCard(title = "What's new") {
+            GradeySectionCard(title = stringResource(R.string.app_whats_new)) {
                 Text(checkNotNull(release?.releaseNotes), style = MaterialTheme.typography.bodyMedium)
             }
         }
         if (directUpdates) item {
-            GradeySectionCard(title = "Automatic updates") {
+            GradeySectionCard(title = stringResource(R.string.app_auto_updates)) {
                 UpdatePreference(
                     testTag = "update-auto-checks",
-                    title = "Check automatically",
-                    detail = "Look for updates about every 12 hours.",
+                    title = stringResource(R.string.app_check_automatically),
+                    detail = stringResource(R.string.app_check_detail),
                     checked = state.automaticChecks,
                     onCheckedChange = onAutoCheckChange,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 UpdatePreference(
                     testTag = "update-auto-downloads",
-                    title = "Download automatically",
-                    detail = "Get new versions in the background. You choose when to install.",
+                    title = stringResource(R.string.app_download_automatically),
+                    detail = stringResource(R.string.app_download_detail),
                     checked = state.automaticDownloads,
                     onCheckedChange = onAutoDownloadChange,
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 UpdatePreference(
                     testTag = "update-wifi-only",
-                    title = "Wi-Fi only",
-                    detail = "Use Wi-Fi or another unmetered connection for automatic downloads.",
+                    title = stringResource(R.string.app_wifi_only),
+                    detail = stringResource(R.string.app_wifi_detail),
                     checked = state.wifiOnly,
                     onCheckedChange = onWifiOnlyChange,
                 )
@@ -205,13 +208,13 @@ private fun DownloadProgress(state: UpdateUiState) {
         val fraction = (downloaded.toDouble() / total).coerceIn(0.0, 1.0).toFloat()
         LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth())
         Text(
-            "${(fraction * 100).toInt()}% · ${formatMegabytes(downloaded.coerceAtMost(total))} of ${formatMegabytes(total)} MB",
+            stringResource(R.string.app_download_progress, (fraction * 100).toInt(), formatMegabytes(downloaded.coerceAtMost(total)), formatMegabytes(total)),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     } else {
         LinearProgressIndicator(Modifier.fillMaxWidth())
-        Text("${formatMegabytes(downloaded)} MB downloaded", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.app_downloaded, formatMegabytes(downloaded)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -230,4 +233,5 @@ private fun UpdatePreference(testTag: String, title: String, detail: String, che
     }
 }
 
-private fun formatMegabytes(bytes: Long): String = String.format(Locale.getDefault(), "%.1f", bytes.coerceAtLeast(0) / (1024.0 * 1024.0))
+@Composable
+private fun formatMegabytes(bytes: Long): String = String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%.1f", bytes.coerceAtLeast(0) / (1024.0 * 1024.0))

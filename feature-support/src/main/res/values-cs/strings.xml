@@ -1,0 +1,13 @@
+<resources>
+    <string name="support_help_title">Nápověda a podpora</string>
+    <string name="support_help_anonymous">Zahajte novou anonymní konverzaci s podporou Gradey. Chat není propojený s vaším Gradey ID. Předchozí anonymní konverzace se neobnovují.</string>
+    <string name="support_help_privacy">Intercom obdrží technické údaje o aplikaci a zařízení a zprávy a přílohy, které sami odešlete. Gradey do chatu automaticky neposílá vaše jméno, e-mail, známky ani školní účet.</string>
+    <string name="support_help_demo">V ukázkovém režimu není chat dostupný. Můžete navštívit centrum nápovědy.</string>
+    <string name="support_help_age">Před zahájením chatu potvrďte, že splňujete věkovou podmínku aplikace. Centrum nápovědy můžete navštívit i bez potvrzení.</string>
+    <string name="support_help_unavailable">V této verzi není chat nastavený. Návody a možnosti kontaktu najdete v centru nápovědy.</string>
+    <string name="support_help_failed">Chat se nepodařilo otevřít. Zkuste to později nebo navštivte centrum nápovědy.</string>
+    <string name="support_help_start">Zahájit anonymní chat</string>
+    <string name="support_help_opening">Otevírání chatu…</string>
+    <string name="support_help_center">Otevřít centrum nápovědy</string>
+    <string name="support_help_close">Zavřít</string>
+</resources>

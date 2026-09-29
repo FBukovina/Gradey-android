@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.absence
 
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,7 +47,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -63,11 +65,13 @@ import com.bukovinafilip.gradey.model.TimetableWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
-private val PlannerDateFormat = DateTimeFormatter.ofPattern("EEE d MMM", Locale.ENGLISH)
-private val PlannerMuted = Color(0xFF72777A)
-private val PlannerTeal = Color(0xFF0C967C)
+private val PlannerDateFormat: DateTimeFormatter
+    @Composable get() = DateTimeFormatter.ofPattern("EEE d MMM", LocalConfiguration.current.locales[0])
+private val PlannerMuted: androidx.compose.ui.graphics.Color
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+private val PlannerTeal: androidx.compose.ui.graphics.Color
+    @Composable get() = MaterialTheme.colorScheme.primary
 
 @Composable
 fun AbsencePlannerScreen(
@@ -109,25 +113,25 @@ fun AbsencePlannerScreen(
     val unchanged = selectedLessons.map { it.id }.toSet() == savedPlan?.lessons?.map { it.id }?.toSet()
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(Color(0xFFF2F7F6)).statusBarsPadding(),
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.absence_back_b52b3))
                 }
-                Text("Plan absence", fontSize = 21.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.absence_plan_absence_c429a), fontSize = 21.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                    else Icon(Icons.Default.Refresh, contentDescription = "Refresh planner timetable")
+                    else Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.absence_refresh_planner_timetable_a9529))
                 }
             }
         }
         item {
             Text(
-                "Select the lessons you may miss to preview your absence risk. Plans stay on this device and are never sent to your school.",
+                stringResource(R.string.absence_select_the_lessons_you_may_miss_to_preview_your_absence_risk_p_e4316),
                 color = PlannerMuted,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -139,7 +143,7 @@ fun AbsencePlannerScreen(
                         onClick = { onWeekChange(weekStart.minusWeeks(1)) },
                         enabled = !isRefreshing && weekStart.isAfter(TimetableDates.monday(today)),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Previous week")
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.absence_previous_week_c4970))
                     }
                     Text(
                         "${weekStart.format(PlannerDateFormat)} – ${weekStart.plusDays(6).format(PlannerDateFormat)}",
@@ -148,7 +152,7 @@ fun AbsencePlannerScreen(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                     IconButton(onClick = { onWeekChange(weekStart.plusWeeks(1)) }, enabled = !isRefreshing) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Next week")
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.absence_next_week_5a207))
                     }
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -165,20 +169,20 @@ fun AbsencePlannerScreen(
                 if (lessons.isEmpty()) {
                     Text(
                         when {
-                            isRefreshing -> "Loading lessons…"
-                            timetable == null -> "Refresh to load the timetable before planning an absence."
-                            timetable.days.none { it.date?.take(10) == selectedDate } -> "No timetable is available for this date. Try another day or refresh."
-                            else -> "No upcoming lessons on this date. Canceled lessons are excluded."
+                            isRefreshing -> stringResource(R.string.absence_loading_lessons_1db40)
+                            timetable == null -> stringResource(R.string.absence_refresh_to_load_the_timetable_before_planning_an_absence_d3daa)
+                            timetable.days.none { it.date?.take(10) == selectedDate } -> stringResource(R.string.absence_no_timetable_is_available_for_this_date_try_another_day_or_ref_4c4e8)
+                            else -> stringResource(R.string.absence_no_upcoming_lessons_on_this_date_canceled_lessons_are_excluded_11245)
                         },
                         color = PlannerMuted,
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
                 } else {
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("${selectedLessons.size} of ${lessons.size} selected", modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.absence_lessons_selected, selectedLessons.size, lessons.size), modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
                         TextButton(onClick = {
                             selectedIDs = if (selectedLessons.size == lessons.size) emptyList() else lessons.map { it.id }
-                        }) { Text(if (selectedLessons.size == lessons.size) "Clear" else "Select all") }
+                        }) { Text(if (selectedLessons.size == lessons.size) stringResource(R.string.absence_clear_719ea) else stringResource(R.string.absence_select_all_913af)) }
                     }
                     lessons.forEach { lesson ->
                         PlannerLessonRow(lesson, lesson.id in selectedIDs) { checked ->
@@ -191,20 +195,20 @@ fun AbsencePlannerScreen(
                         enabled = selectedLessons.isNotEmpty() && !unchanged && !isRefreshing,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(if (unchanged) "Plan saved" else if (savedPlan == null) "Save plan" else "Update plan")
+                        Text(if (unchanged) stringResource(R.string.absence_plan_saved_e502f) else if (savedPlan == null) stringResource(R.string.absence_save_plan_842dc) else stringResource(R.string.absence_update_plan_8e5d6))
                     }
                     if (savedPlan != null && selectedLessons.isEmpty()) {
-                        Text("Use the delete button below to remove this saved plan.", color = PlannerMuted, fontSize = 12.sp)
+                        Text(stringResource(R.string.absence_use_the_delete_button_below_to_remove_this_saved_plan_24ce7), color = PlannerMuted, fontSize = 12.sp)
                     }
                 }
             }
         }
         item { PredictionCard(prediction, normalizedAbsenceThreshold(response.percentageThreshold)) }
         item {
-            Text("SAVED PLANS", color = PlannerMuted, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, fontSize = 13.sp)
+            Text(stringResource(R.string.absence_saved_plans_e2882), color = PlannerMuted, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp, fontSize = 13.sp)
         }
         if (plans.isEmpty()) {
-            item { PlannerCard { Text("No planned absences yet.", color = PlannerMuted) } }
+            item { PlannerCard { Text(stringResource(R.string.absence_no_planned_absences_yet_d9b1c), color = PlannerMuted) } }
         } else {
             items(plans.sortedBy { it.date }, key = { it.date }) { plan ->
                 PlannerCard {
@@ -214,14 +218,14 @@ fun AbsencePlannerScreen(
                             Text(date?.format(PlannerDateFormat) ?: plan.date, fontWeight = FontWeight.SemiBold)
                             val upcomingCount = AbsencePlanning.upcomingLessons(listOf(plan)).size
                             Text(
-                                if (upcomingCount == 0) "Past plan · excluded from prediction"
-                                else "$upcomingCount planned ${if (upcomingCount == 1) "lesson" else "lessons"}",
+                                if (upcomingCount == 0) stringResource(R.string.absence_past_plan_excluded_from_prediction_896c0)
+                                else stringResource(R.string.absence_planned_lesson_count, upcomingCount),
                                 color = PlannerMuted,
                                 fontSize = 13.sp,
                             )
                         }
                         IconButton(onClick = { onRemovePlan(plan.date) }) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = "Delete plan for ${plan.date}", tint = PlannerMuted)
+                            Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.absence_delete_plan_for, plan.date), tint = PlannerMuted)
                         }
                     }
                     Text(plan.lessons.map { it.subjectName }.distinct().joinToString(" · "), fontSize = 13.sp, color = PlannerMuted)
@@ -241,7 +245,7 @@ private fun PlannerLessonRow(lesson: PlannedAbsenceLesson, selected: Boolean, on
         Checkbox(checked = selected, onCheckedChange = null)
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
             Text(lesson.subjectName, fontWeight = FontWeight.Medium)
-            Text(lesson.timeRange.ifBlank { "Time unavailable" }, color = PlannerMuted, fontSize = 13.sp)
+            Text(lesson.timeRange.ifBlank { stringResource(R.string.absence_time_unavailable_ec422) }, color = PlannerMuted, fontSize = 13.sp)
         }
     }
 }
@@ -249,33 +253,33 @@ private fun PlannerLessonRow(lesson: PlannedAbsenceLesson, selected: Boolean, on
 @Composable
 private fun PredictionCard(prediction: AbsencePredictionResult, threshold: Double?) {
     PlannerCard {
-        Text("PREDICTED ABSENCE", color = PlannerTeal, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 0.7.sp)
+        Text(stringResource(R.string.absence_predicted_absence_f4765), color = PlannerTeal, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 0.7.sp)
         Spacer(Modifier.height(8.dp))
         Text(
-            if (prediction.hasSelection) "${prediction.addedHours} planned ${if (prediction.addedHours == 1) "lesson" else "lessons"} across all plans"
-            else "Select lessons to see their impact.",
+            if (prediction.hasSelection) stringResource(R.string.absence_all_plans_lesson_count, prediction.addedHours)
+            else stringResource(R.string.absence_select_lessons_to_see_their_impact_5594f),
             fontWeight = FontWeight.SemiBold,
         )
         if (prediction.hasSelection) {
-            Text("Estimate assumes each selected lesson adds one missed and one taught lesson. It excludes other future lessons.", color = PlannerMuted, fontSize = 12.sp)
+            Text(stringResource(R.string.absence_estimate_assumes_each_selected_lesson_adds_one_missed_and_one__6c504), color = PlannerMuted, fontSize = 12.sp)
             if (threshold == null) {
-                Text("Your school has not supplied an absence limit; risk warnings are unavailable.", color = PlannerMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+                Text(stringResource(R.string.absence_your_school_has_not_supplied_an_absence_limit_risk_warnings_ar_ebc04), color = PlannerMuted, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
             }
             prediction.subjectRows.forEach { row ->
-                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFECEEEE))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.outlineVariant)
                 Text(row.subjectName, fontWeight = FontWeight.SemiBold)
                 val projected = row.projectedPercentage
                 Text(
-                    if (projected == null) "+${row.addedHours} lessons · attendance baseline unavailable"
-                    else "${percentage(row.currentPercentage ?: 0.0)} → ${percentage(projected)} · +${row.addedHours} ${if (row.addedHours == 1) "lesson" else "lessons"}",
-                    color = if (row.exceedsThreshold) Color(0xFFBA3044) else PlannerTeal,
+                    if (projected == null) stringResource(R.string.absence_unknown_baseline_count, row.addedHours)
+                    else stringResource(R.string.absence_projected_percentage, percentage(row.currentPercentage ?: 0.0), percentage(projected), row.addedHours),
+                    color = if (row.exceedsThreshold) MaterialTheme.colorScheme.error else PlannerTeal,
                     modifier = Modifier.padding(top = 4.dp),
                 )
                 if (row.exceedsThreshold && threshold != null) {
                     Text(
-                        if (row.crossesThreshold) "This plan reaches the ${percentage(threshold)} limit."
-                        else "Projected absence remains at or above the ${percentage(threshold)} limit.",
-                        color = Color(0xFFBA3044),
+                        if (row.crossesThreshold) stringResource(R.string.absence_reaches_limit, percentage(threshold))
+                        else stringResource(R.string.absence_remains_above_limit, percentage(threshold)),
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp,
                     )
                 }
@@ -286,9 +290,10 @@ private fun PredictionCard(prediction: AbsencePredictionResult, threshold: Doubl
 
 @Composable
 private fun PlannerCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier = Modifier.fillMaxWidth(), color = Color.White, shape = RoundedCornerShape(20.dp), shadowElevation = 1.dp) {
+    Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(20.dp), shadowElevation = 1.dp) {
         Column(modifier = Modifier.padding(16.dp), content = content)
     }
 }
 
-private fun percentage(value: Double): String = String.format(Locale.ENGLISH, "%.1f%%", value)
+@Composable
+private fun percentage(value: Double): String = String.format(LocalConfiguration.current.locales[0], "%.1f%%", value)

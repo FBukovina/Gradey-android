@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_approve_the_request_in_edupage_then_check_approval_here_41b93">Approve the request in EduPage, then check approval here.</string>
+    <string name="login_back_b52b3">Back</string>
+    <string name="login_back_to_school_login_9573e">Back to school login</string>
+    <string name="login_check_approval_81ddf">Check approval</string>
+    <string name="login_choose_a_student_6d1fa">Choose a student</string>
+    <string name="login_complete_verification_using_your_edupage_account_98a6c">Complete verification using your EduPage account.</string>
+    <string name="login_connect_edupage_17a62">Connect EduPage</string>
+    <string name="login_connect_school_85e9d">Connect school</string>
+    <string name="login_connecting_fd3e7">Connecting…</string>
+    <string name="login_credentials_dd097">Credentials</string>
+    <string name="login_edupage_school_6060b">EduPage school</string>
+    <string name="login_find_your_school_77687">Find your school</string>
+    <string name="login_for_example_gymn_zium_brno_1c7e4">For example, gymnázium Brno</string>
+    <string name="login_hide_password_e4012">Hide password</string>
+    <string name="login_link_your_school_100dd">Link your school</string>
+    <string name="login_no_matching_school_found_you_can_enter_its_bakal_i_address_bel_2a6b5">No matching school found. You can enter its Bakaláři address below.</string>
+    <string name="login_password_8be3c">Password</string>
+    <string name="login_provider_7ceee">Provider</string>
+    <string name="login_reconnect_school_14a5a">Reconnect school</string>
+    <string name="login_resend_approval_request_03ff9">Resend approval request</string>
+    <string name="login_school_address_a2e60">School address</string>
+    <string name="login_school_name_or_city_6fdc3">School name or city</string>
+    <string name="login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df">School search is unavailable. You can still enter the address below.</string>
+    <string name="login_show_password_044b8">Show password</string>
+    <string name="login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d">Sign in to the same school account to restore its connection and keep your history.</string>
+    <string name="login_try_school_search_again_fc765">Try school search again</string>
+    <string name="login_use_the_address_where_you_normally_sign_in_to_your_school_b79ba">Use the address where you normally sign in to your school.</string>
+    <string name="login_username_84c29">Username</string>
+    <string name="login_verification_code_80f2f">Verification code</string>
+    <string name="login_verify_code_91a22">Verify code</string>
+    <string name="login_verify_your_sign_in_29777">Verify your sign-in</string>
+    <string name="login_your_marks_timetable_and_absences_together_in_one_place_saved__2edfe">Your marks, timetable, and absences, together in one place. Saved school data stays available offline.</string>
+    <string name="login_your_school_password_stays_encrypted_on_this_device_61039">Your school password stays encrypted on this device.</string>
+</resources>

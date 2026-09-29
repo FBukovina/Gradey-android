@@ -1,10 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
     <application
         android:name=".GradeyApplication"
         android:allowBackup="false"
+        android:localeConfig="@xml/locales_config"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@drawable/ic_gradey_logo"
@@ -12,6 +15,7 @@
         android:theme="@style/AppTheme">
         <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="gradey-marks" />
         <meta-data android:name="gradey.distributionTarget" android:value="phone" />
+        <meta-data android:name="io.intercom.android.sdk.server.region" android:value="${intercomRegionResource}" />
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.updates"
@@ -23,6 +27,7 @@
             android:name=".MainActivity"
             android:launchMode="singleTop"
             android:exported="true">
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -40,6 +45,8 @@
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data android:scheme="wear" android:host="*" android:pathPrefix="/gradey/refresh" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/gradey/ai/" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/gradey/school/" />
             </intent-filter>
         </service>
         <service

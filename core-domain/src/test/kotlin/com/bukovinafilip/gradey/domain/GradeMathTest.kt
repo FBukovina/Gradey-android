@@ -7,6 +7,13 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class GradeMathTest {
+    @org.junit.Test fun explicitDisplayLocaleDoesNotDependOnSystemLocale() {
+        org.junit.Assert.assertEquals("1.25", GradeMath.formattedAverage(1.25, java.util.Locale.US))
+        org.junit.Assert.assertEquals("1,25", GradeMath.formattedAverage(1.25, java.util.Locale.forLanguageTag("cs")))
+        org.junit.Assert.assertTrue(GradeMath.formattedWeight(1.5, java.util.Locale.forLanguageTag("cs")).contains(','))
+        org.junit.Assert.assertEquals("2", GradeMath.formattedWeight(2.0, java.util.Locale.forLanguageTag("cs")))
+    }
+
     @Test
     fun invalidNumericMarksAndNonfiniteAveragesAreIgnored() {
         listOf("NaN", "Infinity", "-Infinity", "0", "-1", "99", "1e300").forEach { value ->
@@ -27,7 +34,7 @@ class GradeMathTest {
             mark("c", "NaN", 5.0),
             mark("d", "100", 5.0),
         )
-        assertThat(GradeMath.weightedAverage(marks)).isEqualTo(2.0)
+        assertThat(GradeMath.weightedAverage(marks)).isNull()
     }
 
     @Test

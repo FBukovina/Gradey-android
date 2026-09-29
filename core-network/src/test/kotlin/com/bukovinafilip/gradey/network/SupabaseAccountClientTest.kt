@@ -6,6 +6,7 @@ import com.bukovinafilip.gradey.model.NotificationPreferences
 import com.bukovinafilip.gradey.model.StoredSession
 import com.bukovinafilip.gradey.model.SchoolProvider
 import com.bukovinafilip.gradey.model.EduPageSessionData
+import com.bukovinafilip.gradey.model.BakalariCredentials
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -100,6 +101,44 @@ class SupabaseAccountClientTest {
         assertEquals("", session.refreshToken)
     }
 
+    @Test fun activationAcceptsSanitizedBakalariPayloadWithISOExpiry() = runTest {
+        server.enqueue(MockResponse().setBody("""{
+            "account":{"id":"school-1","provider":"bakalari","displayName":"Student"},
+            "token_payload":{"accessToken":"school-token","refreshToken":"school-refresh","tokenType":"Bearer","expiresAt":"2030-01-01T00:00:00Z","baseURL":"https://school.example/","provider":"bakalari"}
+        }"""))
+        val session = SupabaseAccountClient(config).activateSchoolAccount(auth, "school-1")
+        assertEquals(java.time.Instant.parse("2030-01-01T00:00:00Z").toEpochMilli(), session.expiresAtEpochMillis)
+        assertEquals("school-refresh", session.refreshToken)
+        assertNull(session.bakalari)
+    }
+
+    @Test fun linkDoesNotUploadBakalariPasswordOrLocalMetadata() = runTest {
+        server.enqueue(MockResponse().setBody("""{"id":"school-1","provider":"bakalari","displayName":"Student"}"""))
+        val pollingClient = object : com.bukovinafilip.gradey.domain.BakalariClient by DemoBakalariClient() {
+            override suspend fun login(baseURL: String, username: String, password: String) =
+                com.bukovinafilip.gradey.model.LoginResponse("polling-token", "polling-refresh", "Bearer", 3600)
+        }
+        val now = java.time.Instant.parse("2029-12-31T23:00:00Z").toEpochMilli()
+        SupabaseAccountClient(config, bakalariClient = pollingClient, nowProvider = { now }).linkSchoolAccount(auth, StoredSession(
+            accessToken = "school-token", refreshToken = "school-refresh", tokenType = "Bearer",
+            expiresAtEpochMillis = java.time.Instant.parse("2030-01-01T00:00:00Z").toEpochMilli(),
+            baseURL = "https://school.example/", bakalari = BakalariCredentials("student", "local-password"),
+            linkedAccountID = "local-metadata",
+        ), "Student")
+        val body = server.takeRequest().body.readUtf8()
+        val request = GradeyJson.parseToJsonElement(body).jsonObject
+        val payload = request.getValue("token_payload").jsonObject
+        assertFalse(body.contains("local-password"))
+        assertFalse(body.contains("local-metadata"))
+        assertFalse(payload.containsKey("bakalari"))
+        assertFalse(payload.containsKey("expiresAtEpochMillis"))
+        assertEquals("student", request["provider_user_id"]?.jsonPrimitive?.content)
+        assertEquals("polling-token", payload["accessToken"]?.jsonPrimitive?.content)
+        assertEquals("polling-refresh", payload["refreshToken"]?.jsonPrimitive?.content)
+        assertEquals("2029-12-31T23:00:00Z", payload["pollingSessionEstablishedAt"]?.jsonPrimitive?.content)
+        assertEquals("2030-01-01T00:00:00Z", payload["expiresAt"]?.jsonPrimitive?.content)
+    }
+
     @Test fun linkDoesNotUploadEduPagePasswordOrLocalMetadata() = runTest {
         server.enqueue(MockResponse().setBody("""{"id":"school-1","provider":"eduPage","displayName":"Student"}"""))
         SupabaseAccountClient(config).linkSchoolAccount(auth, StoredSession(
@@ -169,4 +208,49 @@ class SupabaseAccountClientTest {
         assertEquals("sb_publishable_public", request.getHeader("apikey"))
         assertNull(request.getHeader("Authorization"))
     }
+    @Test fun reconnectKeepsIDAndUsesSelectedStudentIdentityWithoutUploadingPasswords() = runTest {
+        server.enqueue(MockResponse().setBody("""{"id":"school-1","provider":"eduPage","displayName":"Student"}"""))
+        val session = StoredSession("cookie", "", "Cookie", Long.MAX_VALUE, "https://school.edupage.org/", SchoolProvider.EDU_PAGE,
+            eduPage = EduPageSessionData("cookie", "parent", "local-password", "hash", "parent-id", activeStudent = com.bukovinafilip.gradey.model.SchoolStudentProfile("student-2", "Student")))
+        SupabaseAccountClient(config).reconnectSchoolAccount(auth, "school-1", session, "Student")
+        val request = server.takeRequest()
+        assertEquals("/functions/v1/relink-school-account", request.path)
+        val body = request.body.readUtf8()
+        assertFalse(body.contains("local-password"))
+        val payload = GradeyJson.parseToJsonElement(body).jsonObject
+        assertEquals("school-1", payload["id"]?.jsonPrimitive?.content)
+        assertEquals("student-2", payload["provider_user_id"]?.jsonPrimitive?.content)
+    }
+
+    @Test fun linkedNotificationPreferenceUsesFunctionContract() = runTest {
+        server.enqueue(MockResponse().setBody("""{"id":"school-1","provider":"bakalari","displayName":"Student","notificationsEnabled":false}"""))
+        assertFalse(SupabaseAccountClient(config).updateNotificationsEnabled(auth, "school-1", false).notificationsEnabled)
+        val request = server.takeRequest()
+        assertEquals("/functions/v1/update-linked-account-preferences", request.path)
+        assertEquals("""{"id":"school-1","notificationsEnabled":false}""", request.body.readUtf8())
+    }
+
+    @Test fun cloudSyncRejectsSharedRefreshTokenBeforeUploadingIt() = runTest {
+        val schoolClient = object : com.bukovinafilip.gradey.domain.BakalariClient by DemoBakalariClient() {
+            override suspend fun login(baseURL: String, username: String, password: String) =
+                com.bukovinafilip.gradey.model.LoginResponse("token", "shared-refresh", "Bearer", 3600)
+        }
+        val school = StoredSession("token", "shared-refresh", "Bearer", 1_000, "https://school.example/", bakalari = BakalariCredentials("student", "password"))
+        val result = runCatching { SupabaseAccountClient(config, bakalariClient = schoolClient).linkSchoolAccount(auth, school, "Student") }
+        assertTrue(result.exceptionOrNull() is IllegalStateException)
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test fun historyProvidesActualEndpointsForAIWithoutInventingBaselineValues() = runTest {
+        server.enqueue(MockResponse().setBody("""{"events":[
+            {"subject_id":"math","event_type":"baseline","average_value":2.5,"mark_count":3},
+            {"subject_id":"math","event_type":"changed","average_value":2.0,"mark_count":4,"average_delta":-0.5,"mark_count_delta":1}
+        ]}"""))
+        val trend = SupabaseAccountClient(config).gradeHistory(auth, "school-1").single()
+        assertEquals(2.5, trend.firstAverage!!, 0.001)
+        assertEquals(2.0, trend.latestAverage!!, 0.001)
+        assertEquals(3, trend.firstMarkCount)
+        assertEquals(4, trend.latestMarkCount)
+    }
+
 }

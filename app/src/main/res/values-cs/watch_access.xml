@@ -1,0 +1,29 @@
+<resources>
+    <string name="watch_access_title">Přístup hodinek</string>
+    <string name="watch_access_subtitle">Samostatný přístup ke škole je vypnutý, dokud ho konkrétním hodinkám nepovolíte.</string>
+    <string name="watch_access_device">Hodinky</string>
+    <string name="watch_access_demo">V ukázkovém režimu není samostatný přístup hodinek dostupný. Připojte v telefonu vlastní školní účet a pak můžete povolit hodinky v okolí.</string>
+    <string name="watch_access_error">Přístup hodinek se nepodařilo aktualizovat. Zkontrolujte spojení telefonu s hodinkami, obnovte přehled a zkuste to znovu.</string>
+    <string name="watch_access_enabled_notice">Přístup je povolený na sedm dní. Nechte na hodinkách v okolí otevřený Gradey, než přijmou školní přihlášení.</string>
+    <string name="watch_access_revoked_notice">Přístup je v telefonu vypnutý. Hodinky smažou školní přihlášení a data po přijetí aktualizace. Do té doby mohou fungovat až do původního konce platnosti.</string>
+    <string name="watch_access_unavailable">Pro aktuální školní přihlášení není samostatný přístup dostupný. Připojte školní účet v telefonu znovu a obnovte přehled.</string>
+    <string name="watch_access_no_watch">Žádné hodinky v okolí</string>
+    <string name="watch_access_find_watch">Spárujte hodinky s tímto telefonem, otevřete na nich Gradey a nechte je poblíž. Potom obnovte tento přehled.</string>
+    <string name="watch_access_expiry_note">Přístup platí sedm dní. Po vypnutí nebo změně účtu se hodinky vyčistí při příštím spojení; bez spojení mohou dál fungovat do konce platnosti přístupu.</string>
+    <string name="watch_access_refresh">Obnovit</string>
+    <string name="watch_access_done">Hotovo</string>
+    <string name="watch_access_review_title">Povolit samostatný přístup hodinek?</string>
+    <string name="watch_access_review_credentials">Na těchto hodinkách se uloží zašifrovaná kopie uživatelského jména a hesla k aktuálnímu školnímu účtu. Hodinky se pak mohou připojovat přímo ke škole a obnovovat školní data bez telefonu.</string>
+    <string name="watch_access_review_expiry">Přístup povolíte na sedm dní. Obnovit ho můžete tady, když jsou hodinky poblíž. Tím se nepovoluje samostatný AI chat.</string>
+    <string name="watch_access_review_revoke">Po vypnutí přístupu, odhlášení nebo změně účtu se školní přihlášení a data smažou, až se hodinky znovu spojí s telefonem. Bez spojení mohou fungovat do původního konce platnosti.</string>
+    <string name="watch_access_confirm">Povolit na 7 dní</string>
+    <string name="watch_access_not_now">Teď ne</string>
+    <string name="watch_access_nearby">V okolí</string>
+    <string name="watch_access_not_nearby">Nejsou v okolí</string>
+    <string name="watch_access_off">Přístup je vypnutý</string>
+    <string name="watch_access_until">Povoleno do %1$s</string>
+    <string name="watch_access_review">Zkontrolovat přístup</string>
+    <string name="watch_access_renew">Zkontrolovat obnovení</string>
+    <string name="watch_access_turn_off">Vypnout přístup</string>
+    <string name="watch_access_offline_note">Vypnutí se projeví, až hodinky přijmou aktualizaci. Pro obnovení přístupu je přineste k telefonu.</string>
+</resources>

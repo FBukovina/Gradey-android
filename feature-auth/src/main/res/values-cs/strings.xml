@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_app_updates_16213">Aktualizace aplikace</string>
+    <string name="auth_continue_with_google_ccc5b">Pokračovat s Googlem</string>
+    <string name="auth_gradey_id_f6019">Gradey ID</string>
+    <string name="auth_gradey_uses_encrypted_local_storage_and_only_registers_push_to_0d945">Gradey používá šifrované úložiště v zařízení a registruje oznámení až po udělení oprávnění.</string>
+    <string name="auth_keep_your_linked_school_accounts_and_school_information_togeth_d8e41">Měj propojené školní účty a informace ze školy na jednom místě.</string>
+    <string name="auth_private_by_default_282ef">Soukromí na prvním místě</string>
+    <string name="auth_sign_in_ada2e">Přihlásit se</string>
+    <string name="auth_signing_in_3819f">Přihlašování</string>
+    <string name="auth_this_build_only_supports_demo_data_to_connect_your_own_school__4f094">Tato verze podporuje pouze ukázková data. Pro připojení vlastního školního účtu nainstaluj verzi s povoleným přihlášením.</string>
+    <string name="auth_use_demo_data_7c3ca">Vyzkoušet ukázková data</string>
+    <string name="auth_use_your_google_account_to_create_or_open_a_gradey_id_school_p_84ea1">Přes účet Google si vytvoř Gradey ID nebo se přihlas. Školní hesla zůstávají zašifrovaná v tomto zařízení. Připojené školní relace jsou šifrované v účtu Gradey.</string>
+    <string name="auth_continue_with_apple">Přihlásit se přes Apple</string>
+    <string name="auth_choose_identity_provider">Vyber způsob přihlášení ke svému Gradey ID. Použij stejný způsob jako na ostatních zařízeních.</string>
+    <string name="auth_existing_apple_account">Používáš Gradey na iPhonu? Přihlas se přes Apple a otevři stejný účet, i pokud používáš funkci Skrýt můj e-mail.</string>
+</resources>

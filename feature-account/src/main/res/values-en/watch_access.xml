@@ -1,0 +1,5 @@
+<resources>
+    <string name="account_watch_access_title">Watch access</string>
+    <string name="account_watch_access_description">Choose whether a nearby watch can connect directly to your school. Access is off until you allow it.</string>
+    <string name="account_watch_access_manage">Manage watch access</string>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timetable_timetable_unavailable_tap_refresh">Timetable unavailable · Tap refresh</string>
+    <string name="timetable_homework_assigned_for_this_lesson">Homework assigned for this lesson</string>
+    <string name="timetable_lesson_times_unavailable">Lesson times unavailable</string>
+    <string name="timetable_you_re_done_for_today">You’re done for today</string>
+    <string name="timetable_no_lessons_scheduled">No lessons scheduled.</string>
+    <string name="timetable_no_lessons_scheduled_2">No lessons scheduled</string>
+    <string name="timetable_open_gradey_tools">Open Gradey tools</string>
+    <string name="timetable_plan_week_with_ai">Plan week with AI</string>
+    <string name="timetable_back_to_this_week">Back to this week</string>
+    <string name="timetable_refresh_timetable">Refresh timetable</string>
+    <string name="timetable_a_day_to_recharge">A day to recharge</string>
+    <string name="timetable_add_to_planner">Add to Planner</string>
+    <string name="timetable_previous_week">Previous week</string>
+    <string name="timetable_plan_this_day">Plan this day</string>
+    <string name="timetable_open_account">Open account</string>
+    <string name="timetable_open_planner">Open Planner</string>
+    <string name="timetable_timetable">Timetable</string>
+    <string name="timetable_next_week">Next week</string>
+    <string name="timetable_homework">Homework</string>
+    <string name="timetable_teacher">Teacher</string>
+    <string name="timetable_groups">Groups</string>
+    <string name="timetable_change">Change</string>
+    <string name="timetable_lesson">Lesson</string>
+    <string name="timetable_topic">Topic</string>
+    <string name="timetable_room">Room</string>
+    <string name="timetable_show_1_s">Show %1$s</string>
+    <string name="timetable_now_1_s">NOW · %1$s</string>
+    <string name="timetable_next_1_s">NEXT · %1$s</string>
+    <string name="timetable_1_d_min_remaining">%1$d min remaining</string>
+    <string name="timetable_starts_in_1_d_min">Starts in %1$d min</string>
+    <string name="timetable_room_1_s">Room %1$s</string>
+    <string name="timetable_open_1_s_lesson_details_2_s">Open %1$s lesson details, %2$s</string>
+    <plurals name="timetable_lessons_scheduled">
+        <item quantity="one">%1$d lesson scheduled</item>
+        <item quantity="other">%1$d lessons scheduled</item>
+    </plurals>
+    <plurals name="timetable_timetable_changes">
+        <item quantity="one">%1$d timetable change · Check the highlighted lessons</item>
+        <item quantity="other">%1$d timetable changes · Check the highlighted lessons</item>
+    </plurals>
+    <string name="timetable_weekly">Weekly</string>
+    <string name="timetable_permanent">Permanent</string>
+    <string name="timetable_permanent_description">Regular weekly schedule without date-specific changes.</string>
+    <string name="timetable_cycles">Cycles</string>
+    <string name="timetable_retry">Retry</string>
+</resources>

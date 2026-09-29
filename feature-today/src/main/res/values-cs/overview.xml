@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_overview_timetable">Rozvrh</string>
+    <string name="today_overview_cancelled">Zrušeno</string>
+    <string name="today_overview_current">Právě teď</string>
+    <string name="today_overview_finished">Ukončeno</string>
+    <string name="today_overview_upcoming">Nadcházející</string>
+    <string name="today_overview_changed">Změna rozvrhu</string>
+    <string name="today_overview_substitution">Suplování</string>
+    <string name="today_overview_room_changed">Změna učebny</string>
+    <string name="today_overview_added">Přidaná hodina</string>
+    <string name="today_overview_lesson">Hodina %1$s</string>
+    <string name="today_overview_planner">PLÁNOVAČ</string>
+    <string name="today_overview_planner_empty">Připravte se na to, co přijde.</string>
+    <string name="today_overview_planner_empty_body">Přidej si do Plánovače příští test nebo úkol.</string>
+    <string name="today_overview_homework">Domácí úkol</string>
+    <string name="today_overview_test">Test</string>
+    <string name="today_overview_presentation">Prezentace</string>
+    <string name="today_overview_note">Poznámka</string>
+    <string name="today_overview_task">Úkol</string>
+    <string name="today_overview_undated">Bez data</string>
+    <string name="today_overview_ai_title">Zeptej se Gradeyho</string>
+    <string name="today_overview_study_priorities">Na co se zaměřit</string>
+    <string name="today_overview_study_priorities_body">Na co se tento týden zaměřit</string>
+    <string name="today_overview_week_summary">Přehled týdne</string>
+    <string name="today_overview_week_summary_body">Jak ti jde tento týden</string>
+    <plurals name="today_overview_minutes_remaining">
+        <item quantity="one">Zbývá %1$d minuta</item>
+        <item quantity="few">Zbývají %1$d minuty</item>
+        <item quantity="many">Zbývá %1$d minut</item>
+        <item quantity="other">Zbývá %1$d minut</item>
+    </plurals>
+    <plurals name="today_overview_starts_minutes">
+        <item quantity="one">Začíná za %1$d minutu</item>
+        <item quantity="few">Začíná za %1$d minuty</item>
+        <item quantity="many">Začíná za %1$d minut</item>
+        <item quantity="other">Začíná za %1$d minut</item>
+    </plurals>
+    <plurals name="today_overview_changes">
+        <item quantity="one">%1$d nadcházející změna rozvrhu</item>
+        <item quantity="few">%1$d nadcházející změny rozvrhu</item>
+        <item quantity="many">%1$d nadcházejících změn rozvrhu</item>
+        <item quantity="other">%1$d nadcházejících změn rozvrhu</item>
+    </plurals>
+</resources>

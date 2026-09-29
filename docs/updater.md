@@ -2,7 +2,7 @@
 
 The phone app supports updates distributed through the public stable releases in [FBukovina/Gradey-android](https://github.com/FBukovina/Gradey-android/releases). This is the distribution channel for APKs installed directly. No release is published by building the app or generating its update manifest.
 
-Install version 0.2.1 once manually to gain the updater; older versions do not contain it. Download the [debug preview APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.1/gradey-0.2.1-debug.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.1/gradey-update.json) from the [0.2.1 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.2.1). Live school/account services still need the configuration described in [android-configuration.md](android-configuration.md).
+The updater is included from version 0.2.1 onward. New installations can download the [0.2.2 debug preview APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-0.2.2-debug.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-update.json) from the [0.2.2 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.2.2). Version 0.2.2 uses code 5 and the existing debug certificate, allowing updates from public 0.2.1 (code 3) and local previews (code 4). The account-configured preview still has the live-service limitations described in [android-configuration.md](android-configuration.md).
 
 ## What users see
 
@@ -16,7 +16,7 @@ Phone and Wear OS currently share a package name for Wear Data Layer communicati
 
 ## Prepare a direct APK release
 
-1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. For example, pass `-Pgradey.versionCode=4 -Pgradey.versionName=0.2.2`. Version codes must increase for every published phone update.
+1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. Version 0.2.2 uses `-Pgradey.versionCode=5 -Pgradey.versionName=0.2.2`; choose a higher code for the next update. Version codes must increase for every published phone update.
 2. Build a signed standalone phone APK. Keep the signing key used for earlier direct installations. A debug APK can only update compatible debug installations signed with that same debug key; a production key cannot update an existing debug installation.
 3. Choose the GitHub release tag and the final APK asset filename. Generate the manifest from the exact signed APK that will be uploaded. For example, after building version `0.2.2`:
 
@@ -39,7 +39,7 @@ Do not modify an APK after generating its manifest. Regenerate the manifest if t
 ```json
 {
   "target": "phone",
-  "versionCode": 4,
+  "versionCode": 5,
   "versionName": "0.2.2",
   "packageName": "com.bukovinafilip.gradey",
   "minSdk": 26,

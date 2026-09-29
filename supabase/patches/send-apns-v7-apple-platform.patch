@@ -1,0 +1,18 @@
+--- hosted-v7/functions/send-apns/index.ts
++++ hosted-v8/functions/send-apns/index.ts
+@@ -244,6 +244,7 @@
+       .from("device_push_tokens")
+       .select("id,environment,token_secret_id,invalidated_at")
+       .eq("user_id", userID)
++      .in("platform", ["ios", "macos"])
+       .in("id", deviceIDs);
+     if (deviceError) throw deviceError;
+     for (const device of (devices ?? []) as DeviceRow[]) {
+@@ -357,6 +358,7 @@
+     .from("device_push_tokens")
+     .select("id")
+     .eq("user_id", userID)
++    .in("platform", ["ios", "macos"])
+     .is("invalidated_at", null);
+   if (deviceError) throw deviceError;
+   const activeDeviceIDs = (devices ?? []).map((device) => device.id as string);

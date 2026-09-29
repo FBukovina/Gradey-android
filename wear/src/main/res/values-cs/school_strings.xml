@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_school_title">Škola v hodinkách</string>
+    <string name="wear_school_detail">Obnovujte data i bez telefonu poblíž. Školní přihlášení je v hodinkách šifrované nejvýše sedm dní. Odebrání přístupu v telefonu se projeví po opětovném spojení nebo po vypršení přístupu.</string>
+    <string name="wear_school_enable_phone">Nejdřív tyto hodinky povolte v nastavení účtu Gradey v telefonu.</string>
+    <string name="wear_school_expiry">Přímý přístup do %1$s</string>
+    <string name="wear_school_connect">Připojit z telefonu</string>
+    <string name="wear_school_refresh">Obnovit přímo</string>
+    <string name="wear_school_remove">Odebrat z hodinek</string>
+    <string name="wear_school_expired">Přímý přístup vypršel. Znovu se připojte z telefonu.</string>
+    <string name="wear_school_lock">Než do hodinek uložíte školní přihlášení, nastavte zámek obrazovky.</string>
+    <string name="wear_school_unlock">Pro použití školního připojení odemkněte hodinky.</string>
+    <string name="wear_school_settings">Nastavení hodinek</string>
+    <string name="wear_school_nearby">Mějte spárovaný telefon poblíž a přihlášený do Gradey. Pak zkuste připojení znovu.</string>
+    <string name="wear_school_identity">Toto školní přihlášení patří jinému žákovi. V telefonu znovu připojte správný účet.</string>
+    <string name="wear_school_reconnect">Školní přihlášení vyžaduje pozornost. Zkontrolujte ho v telefonu a hodinky znovu připojte.</string>
+    <string name="wear_school_verify">EduPage potřebuje ověřit tyto hodinky. Zadejte kód nebo potvrďte přihlášení na důvěryhodném zařízení.</string>
+    <string name="wear_school_code">Zadat ověřovací kód</string>
+    <string name="wear_school_check">Zkontrolovat potvrzení</string>
+    <string name="wear_school_resend">Znovu odeslat žádost</string>
+    <string name="wear_school_captcha">EduPage vyžaduje CAPTCHA. Potvrďte školní přihlášení v telefonu a zkuste to znovu.</string>
+    <string name="wear_school_bad_code">Ověřovací kód nebyl přijat. Zkuste to znovu.</string>
+    <string name="wear_school_not_approved">Přihlášení zatím nebylo potvrzeno.</string>
+    <string name="wear_school_failed">Školní data se nepodařilo obnovit. Zkontrolujte připojení hodinek a zkuste to znovu.</string>
+</resources>

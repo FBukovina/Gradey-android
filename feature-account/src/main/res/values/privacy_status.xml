@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="account_privacy_changes">What changed in the policy</string>
+  <string name="account_age_status_title">Age</string>
+  <string name="account_age_status_adult">You confirmed you are 16 or older.</string>
+  <string name="account_age_status_parent">You confirmed you are under 16 and a parent or guardian agrees.</string>
+  <string name="account_age_status_unknown">Age is not confirmed yet.</string>
+  <string name="account_age_status_local">Saved on this device. Your date of birth is not stored.</string>
+</resources>

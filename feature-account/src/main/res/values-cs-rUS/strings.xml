@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_account_85dfa">účet</string>
+    <string name="account_cancel_77dfd">zrušit</string>
+    <string name="account_connect_school_85e9d">připojit školu</string>
+    <string name="account_current_4fc0e">aktuální</string>
+    <string name="account_delete_gradey_account_c70a9">smazat účet Gradey</string>
+    <string name="account_full_details_a005b">podrobnosti</string>
+    <string name="account_gradey_account_4bda8">účet Gradey</string>
+    <string name="account_language_89b86">jazyk</string>
+    <string name="account_new_marks_67db5">nové známky</string>
+    <string name="account_notifications_753a2">upozornění</string>
+    <string name="account_privacy_policy_9db10">zásady ochrany osobních údajů</string>
+    <string name="account_profile_ff4fc">profil</string>
+    <string name="account_quiet_hours_706b2">klidový režim</string>
+    <string name="account_reconnect_6988b">znovu připojit</string>
+    <string name="account_save_efc00">uložit</string>
+    <string name="account_save_name_8ce68">uložit jméno</string>
+    <string name="account_school_accounts_93efe">školní účty</string>
+    <string name="account_show_meals_tab_aa1ad">zobrazit záložku jídelna</string>
+    <string name="account_sign_out_dc164">odhlásit se</string>
+    <string name="account_time_zone_eea79">časové pásmo</string>
+    <string name="account_try_again_042c8">zkus to znovu</string>
+    <string name="account_your_gradey_c56a5">tvoje Gradey</string>
+    <string name="account_your_name_ab422">tvoje jméno</string>
+</resources>

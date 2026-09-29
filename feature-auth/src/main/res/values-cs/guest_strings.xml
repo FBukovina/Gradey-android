@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_continue_without_id">Pokračovat bez Gradey ID</string>
+    <string name="auth_local_school_description">Připoj svůj skutečný školní účet a uchovej jeho data v tomto zařízení. Cloudová historie známek, oznámení o známkách a Gradey AI vyžadují Gradey ID.</string>
+</resources>

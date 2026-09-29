@@ -35,6 +35,8 @@ interface BakalariClient {
     suspend fun fetchAbsences(baseURL: String, accessToken: String): AbsenceResponse
     suspend fun fetchUser(baseURL: String, accessToken: String): com.bukovinafilip.gradey.model.UserResponse
     suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String): com.bukovinafilip.gradey.model.TimetableResponse
+    suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): com.bukovinafilip.gradey.model.TimetableResponse =
+        throw UnsupportedOperationException("The permanent timetable is not available for this school account.")
     suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject
 }
 
@@ -70,13 +72,27 @@ interface SchoolRepository {
     suspend fun loadAbsence(forceRefresh: Boolean = false): AbsenceResponse
     suspend fun loadCachedTimetable(weekContaining: String): TimetableWeek?
     suspend fun loadTimetable(weekContaining: String): TimetableWeek
+    suspend fun loadCachedPermanentTimetable(): TimetableWeek? = null
+    suspend fun loadPermanentTimetable(): TimetableWeek =
+        throw UnsupportedOperationException("The permanent timetable is not available for this school account.")
     suspend fun predictSubjectAverage(subject: Subject, markText: String, weight: Int): Double?
+}
+
+class GradeySessionExpiredException(cause: Throwable? = null) : IllegalStateException(AccountFailureReason.SESSION_EXPIRED.defaultMessage, cause), UserFacingFailure {
+    override val failureReason = AccountFailureReason.SESSION_EXPIRED
 }
 
 interface GradeyAuthRepository {
     suspend fun bootstrapSession(): GradeyAuthSession?
     suspend fun cachedSession(): GradeyAuthSession? = bootstrapSession()
+    suspend fun validSession(): GradeyAuthSession = bootstrapSession() ?: throw GradeySessionExpiredException()
+    suspend fun refreshAccount(): GradeyAccount
+    suspend fun updateFullName(fullName: String): GradeyAccount
     suspend fun signInWithGoogle(idToken: String, accessToken: String? = null, fullName: String? = null): GradeyAuthSession
+    suspend fun appleSignInAvailable(): Boolean = false
+    suspend fun beginAppleSignIn(): String = throw AccountFailureException(AccountFailureReason.APPLE_SIGN_IN_UNAVAILABLE)
+    suspend fun completeAppleSignIn(callbackURL: String): GradeyAuthSession = throw AccountFailureException(AccountFailureReason.APPLE_SIGN_IN_UNAVAILABLE)
+    suspend fun cancelAppleSignIn() {}
     suspend fun signOut()
 }
 
@@ -85,7 +101,9 @@ interface LinkedAccountRepository {
     suspend fun activateAccount(accountID: String): StoredSession? = storedSession(accountID)
     suspend fun localAccounts(): List<LinkedSchoolAccount>
     suspend fun cachedAccounts(): List<LinkedSchoolAccount> = localAccounts()
-    suspend fun linkSchoolAccount(session: StoredSession, displayName: String): LinkedSchoolAccount
+    suspend fun linkSchoolAccount(session: StoredSession, displayName: String, user: com.bukovinafilip.gradey.model.UserResponse? = null): LinkedSchoolAccount
+    suspend fun reconnectSchoolAccount(accountID: String, session: StoredSession, displayName: String, user: com.bukovinafilip.gradey.model.UserResponse? = null): LinkedSchoolAccount
+    suspend fun updateNotificationsEnabled(accountID: String, enabled: Boolean): LinkedSchoolAccount
     suspend fun unlinkAccount(accountID: String)
     suspend fun clearLocalAccounts()
 }
@@ -99,6 +117,10 @@ data class GradeHistoryTrend(
     val subjectName: String,
     val averageDelta: Double,
     val markCountDelta: Int,
+    val firstAverage: Double? = null,
+    val latestAverage: Double? = null,
+    val firstMarkCount: Int? = null,
+    val latestMarkCount: Int? = null,
 )
 
 interface DevicePushTokenClient {

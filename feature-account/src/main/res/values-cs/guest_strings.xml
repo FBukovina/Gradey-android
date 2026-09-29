@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_local_profile">V tomto zařízení</string>
+    <string name="account_using_local_school">Gradey bez účtu</string>
+    <string name="account_local_profile_description">Skutečná data ze školy zůstávají v tomto zařízení. Přihlas se ke Gradey ID a propoj školu pro cloudovou historii, oznámení o známkách a Gradey AI.</string>
+    <string name="account_sign_in_gradey_id">Přihlásit se ke Gradey ID</string>
+    <string name="account_disconnect_local_school">Odpojit místní školu</string>
+    <string name="account_local_school">Místní škola</string>
+    <string name="account_school_on_device">Škola připojená v tomto zařízení</string>
+    <string name="account_local_school_detail">Známky, rozvrh a docházka jsou dostupné tady. Tato škola není propojená s Gradey ID.</string>
+    <string name="account_change_local_school">Změnit školu</string>
+    <string name="account_cloud_alerts_require_id">Pro cloudová oznámení o známkách se přihlas ke Gradey ID.</string>
+    <string name="account_local_disconnect_detail">Uložená školní relace a data školy z mezipaměti budou z tohoto zařízení odstraněny. Později se můžeš ke škole znovu přihlásit.</string>
+</resources>

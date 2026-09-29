@@ -1,0 +1,16 @@
+<resources>
+    <string name="timetable_planner_attached">Plánovač pro tuto hodinu</string>
+    <string name="timetable_planner_multiple">%1$s +%2$d</string>
+    <string name="timetable_planner_homework">Domácí úkol</string>
+    <string name="timetable_planner_test">Test</string>
+    <string name="timetable_planner_presentation">Prezentace</string>
+    <string name="timetable_planner_note">Poznámka</string>
+    <string name="timetable_planner_task">Úkol</string>
+    <string name="timetable_planner_calendar">Propojeno s kalendářem</string>
+    <plurals name="timetable_planner_incomplete_count">
+        <item quantity="one">%1$d nedokončená položka plánovače</item>
+        <item quantity="few">%1$d nedokončené položky plánovače</item>
+        <item quantity="many">%1$d nedokončených položek plánovače</item>
+        <item quantity="other">%1$d nedokončených položek plánovače</item>
+    </plurals>
+</resources>

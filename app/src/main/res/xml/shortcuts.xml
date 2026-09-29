@@ -1,0 +1,22 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="new-planner-item" android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add" android:shortcutShortLabel="@string/shortcut_add_planner">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.bukovinafilip.gradey"
+            android:targetClass="com.bukovinafilip.gradey.MainActivity" android:data="gradey://planner/new" />
+    </shortcut>
+    <shortcut android:shortcutId="timetable" android:enabled="true"
+        android:icon="@drawable/ic_shortcut_timetable" android:shortcutShortLabel="@string/shortcut_timetable">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.bukovinafilip.gradey"
+            android:targetClass="com.bukovinafilip.gradey.MainActivity" android:data="gradey://timetable" />
+    </shortcut>
+    <shortcut android:shortcutId="marks" android:enabled="true"
+        android:icon="@drawable/ic_shortcut_marks" android:shortcutShortLabel="@string/shortcut_marks">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.bukovinafilip.gradey"
+            android:targetClass="com.bukovinafilip.gradey.MainActivity" android:data="gradey://marks" />
+    </shortcut>
+    <shortcut android:shortcutId="ai" android:enabled="true"
+        android:icon="@drawable/ic_shortcut_ai" android:shortcutShortLabel="@string/shortcut_ai">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="com.bukovinafilip.gradey"
+            android:targetClass="com.bukovinafilip.gradey.MainActivity" android:data="gradey://ai" />
+    </shortcut>
+</shortcuts>

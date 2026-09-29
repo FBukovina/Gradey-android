@@ -55,6 +55,15 @@ class MockSchoolRepository : SchoolRepository {
         com.bukovinafilip.gradey.domain.DemoData.timetableFor(weekContaining)
     override suspend fun loadTimetable(weekContaining: String): TimetableWeek =
         com.bukovinafilip.gradey.domain.DemoData.timetableFor(weekContaining)
+    override suspend fun loadCachedPermanentTimetable(): TimetableWeek = loadPermanentTimetable()
+    override suspend fun loadPermanentTimetable(): TimetableWeek {
+        check(session?.provider != SchoolProvider.EDU_PAGE) { "The permanent timetable is not available for this school account." }
+        val weekStart = com.bukovinafilip.gradey.domain.TimetableDates.monday().toString()
+        return com.bukovinafilip.gradey.domain.TimetableMapper.makeWeek(
+            com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse(), weekStart,
+            kind = com.bukovinafilip.gradey.model.TimetableKind.PERMANENT,
+        )
+    }
     override suspend fun predictSubjectAverage(subject: Subject, markText: String, weight: Int): Double? =
         com.bukovinafilip.gradey.domain.GradeMath.parseMarkValue(markText)?.let {
             com.bukovinafilip.gradey.domain.GradeMath.theoreticalAverage(subject.marks, subject.averageText, it, weight)
@@ -67,6 +76,14 @@ class MockGradeyAuthRepository : GradeyAuthRepository {
     override suspend fun bootstrapSession(): GradeyAuthSession? = session
     override suspend fun signInWithGoogle(idToken: String, accessToken: String?, fullName: String?): GradeyAuthSession =
         GradeyAuthSession("demo-gradey-access", account = GradeyAccount("demo-account", fullName = fullName ?: "Demo Student")).also { session = it }
+
+    override suspend fun refreshAccount(): GradeyAccount = checkNotNull(session) { "Sign in to Gradey ID." }.account
+    override suspend fun updateFullName(fullName: String): GradeyAccount {
+        val normalized = fullName.trim()
+        require(normalized.length in 1..80) { "Your name must be between 1 and 80 characters." }
+        val current = checkNotNull(session) { "Sign in to Gradey ID." }
+        return current.account.copy(fullName = normalized).also { session = current.copy(account = it) }
+    }
 
     override suspend fun signOut() {
         session = null
@@ -82,14 +99,30 @@ class MockLinkedAccountRepository : LinkedAccountRepository {
     )
 
     override suspend fun localAccounts(): List<LinkedSchoolAccount> = accounts.value
-    override suspend fun linkSchoolAccount(session: StoredSession, displayName: String): LinkedSchoolAccount {
+    override suspend fun linkSchoolAccount(session: StoredSession, displayName: String, user: com.bukovinafilip.gradey.model.UserResponse?): LinkedSchoolAccount {
         val account = LinkedSchoolAccount("demo-linked-${session.cacheScope.takeLast(16)}", session.provider, displayName, session.linkedAccountSchoolName)
         sessions[account.id] = session.copy(linkedAccountID = account.id)
-        accounts.update { it + account }
+        accounts.update { it.filterNot { existing -> existing.id == account.id } + account }
+        return account
+    }
+
+    override suspend fun reconnectSchoolAccount(accountID: String, session: StoredSession, displayName: String, user: com.bukovinafilip.gradey.model.UserResponse?): LinkedSchoolAccount {
+        val previous = accounts.value.firstOrNull { it.id == accountID } ?: error("This school account is no longer available.")
+        require(previous.provider == session.provider) { "Choose the same school provider." }
+        val account = previous.copy(displayName = displayName, status = "active")
+        sessions[accountID] = session.copy(linkedAccountID = accountID)
+        accounts.update { it.map { existing -> if (existing.id == accountID) account else existing } }
+        return account
+    }
+
+    override suspend fun updateNotificationsEnabled(accountID: String, enabled: Boolean): LinkedSchoolAccount {
+        val account = (accounts.value.firstOrNull { it.id == accountID } ?: error("This school account is no longer available.")).copy(notificationsEnabled = enabled)
+        accounts.update { it.map { existing -> if (existing.id == accountID) account else existing } }
         return account
     }
 
     override suspend fun unlinkAccount(accountID: String) {
+        sessions.remove(accountID)
         accounts.update { it.filterNot { account -> account.id == accountID } }
     }
 

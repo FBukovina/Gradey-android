@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_canteen_accounts">Canteen accounts</string>
+    <string name="account_canteen_number">Canteen %1$s</string>
+    <string name="account_canteen_linked">Linked to your Gradey ID</string>
+    <string name="account_canteen_local">Connected on this device</string>
+    <string name="account_canteen_link_description">Save this canteen connection in your Gradey ID. Your canteen password is not sent.</string>
+    <string name="account_link_canteen">Link canteen to Gradey ID</string>
+    <string name="account_canteen_connect_description">Connect Strava.cz from Meals to see your menu and orders.</string>
+    <string name="account_open_meals">Open Meals</string>
+    <string name="account_canteen_attention">This canteen connection needs attention. Open Meals to sign in again.</string>
+    <string name="account_remove_canteen_link">Remove canteen link</string>
+    <string name="account_canteen_existing_link_note">If this canteen is already listed, remove its old link before linking it again. A saved link does not sign in to the canteen on a new device.</string>
+    <string name="account_remove_canteen_confirmation">Remove %1$s from your Gradey ID? This does not cancel any meal orders.</string>
+</resources>

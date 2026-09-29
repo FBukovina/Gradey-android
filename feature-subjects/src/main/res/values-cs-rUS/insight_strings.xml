@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="subject_insight_heading">stojí za pozornost</string>
+  <string name="subject_insight_worsening">průměr se zhoršil o %.2f</string>
+  <string name="subject_insight_improving">průměr se zlepšil o %.2f</string>
+  <string name="subject_insight_observed">podle nedávných srovnatelných záznamů.</string>
+  <string name="subject_insight_insufficient">pro zobrazení trendu zatím není dost srovnatelných nedávných záznamů.</string>
+  <string name="subject_insight_contribution">která nedávná známka měla vliv?</string>
+  <string name="subject_insight_contribution_detail">započtení známky %1$s mění vypočtený průměr o %2$+.2f oproti výpočtu bez ní. výpočet používá aktuální váhy. nejde o záznam tehdejšího rozhodnutí učitele.</string>
+  <string name="subject_insight_test_preparation">příprava na test</string>
+  <string name="subject_insight_refresh">pro aktuální trend obnov známky. Výpočty níže používají uložené známky.</string>
+</resources>

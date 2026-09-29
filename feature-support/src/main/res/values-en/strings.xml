@@ -1,0 +1,13 @@
+<resources>
+    <string name="support_help_title">Help and support</string>
+    <string name="support_help_anonymous">Start a new anonymous conversation with Gradey support. This chat is separate from your Gradey ID. Previous anonymous conversations are not restored.</string>
+    <string name="support_help_privacy">Intercom receives technical app and device information, plus messages and attachments you choose to send. Gradey does not automatically share your name, email, grades, or school account with chat.</string>
+    <string name="support_help_demo">Chat is unavailable in demo mode. You can browse the Help Center.</string>
+    <string name="support_help_age">Confirm that you meet the app’s age requirement before starting a support chat. You can still browse the Help Center.</string>
+    <string name="support_help_unavailable">In-app chat is not configured for this version. Visit the Help Center for guides and contact options.</string>
+    <string name="support_help_failed">Chat could not open. Try again later or use the Help Center.</string>
+    <string name="support_help_start">Start anonymous chat</string>
+    <string name="support_help_opening">Opening chat…</string>
+    <string name="support_help_center">Open Help Center</string>
+    <string name="support_help_close">Close</string>
+</resources>

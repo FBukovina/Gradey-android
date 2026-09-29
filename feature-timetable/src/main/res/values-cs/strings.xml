@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="timetable_timetable_unavailable_tap_refresh">Rozvrh není dostupný · Obnovte data</string>
+    <string name="timetable_homework_assigned_for_this_lesson">K této hodině je zadaný domácí úkol</string>
+    <string name="timetable_lesson_times_unavailable">Časy hodin nejsou dostupné</string>
+    <string name="timetable_you_re_done_for_today">Pro dnešek máte hotovo</string>
+    <string name="timetable_no_lessons_scheduled">Žádné naplánované hodiny.</string>
+    <string name="timetable_no_lessons_scheduled_2">Žádné naplánované hodiny</string>
+    <string name="timetable_open_gradey_tools">Otevřít nástroje Gradey</string>
+    <string name="timetable_plan_week_with_ai">Naplánovat týden s AI</string>
+    <string name="timetable_back_to_this_week">Zpět na tento týden</string>
+    <string name="timetable_refresh_timetable">Obnovit rozvrh</string>
+    <string name="timetable_a_day_to_recharge">Den na odpočinek</string>
+    <string name="timetable_add_to_planner">Přidat do plánovače</string>
+    <string name="timetable_previous_week">Předchozí týden</string>
+    <string name="timetable_plan_this_day">Naplánovat tento den</string>
+    <string name="timetable_open_account">Otevřít účet</string>
+    <string name="timetable_open_planner">Otevřít plánovač</string>
+    <string name="timetable_timetable">Rozvrh</string>
+    <string name="timetable_next_week">Další týden</string>
+    <string name="timetable_homework">Domácí úkol</string>
+    <string name="timetable_teacher">Učitel</string>
+    <string name="timetable_groups">Skupiny</string>
+    <string name="timetable_change">Změna</string>
+    <string name="timetable_lesson">Hodina</string>
+    <string name="timetable_topic">Téma</string>
+    <string name="timetable_room">Učebna</string>
+    <string name="timetable_show_1_s">Zobrazit %1$s</string>
+    <string name="timetable_now_1_s">TEĎ · %1$s</string>
+    <string name="timetable_next_1_s">POTOM · %1$s</string>
+    <string name="timetable_1_d_min_remaining">Zbývá %1$d min</string>
+    <string name="timetable_starts_in_1_d_min">Začíná za %1$d min</string>
+    <string name="timetable_room_1_s">Učebna %1$s</string>
+    <string name="timetable_open_1_s_lesson_details_2_s">Otevřít podrobnosti hodiny %1$s, %2$s</string>
+    <plurals name="timetable_lessons_scheduled">
+        <item quantity="one">%1$d naplánovaná hodina</item>
+        <item quantity="few">%1$d naplánované hodiny</item>
+        <item quantity="other">%1$d naplánovaných hodin</item>
+        <item quantity="many">%1$d naplánovaných hodin</item>
+    </plurals>
+    <plurals name="timetable_timetable_changes">
+        <item quantity="one">%1$d změna rozvrhu · Zkontrolujte zvýrazněné hodiny</item>
+        <item quantity="few">%1$d změny rozvrhu · Zkontrolujte zvýrazněné hodiny</item>
+        <item quantity="other">%1$d změn rozvrhu · Zkontrolujte zvýrazněné hodiny</item>
+        <item quantity="many">%1$d změn rozvrhu · Zkontrolujte zvýrazněné hodiny</item>
+    </plurals>
+    <string name="timetable_weekly">Týdenní</string>
+    <string name="timetable_permanent">Stálý</string>
+    <string name="timetable_permanent_description">Pravidelný týdenní rozvrh bez změn pro konkrétní datum.</string>
+    <string name="timetable_cycles">Cykly</string>
+    <string name="timetable_retry">Zkusit znovu</string>
+</resources>

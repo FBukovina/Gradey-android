@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_canteen_accounts">Účty jídelny</string>
+    <string name="account_canteen_number">Jídelna %1$s</string>
+    <string name="account_canteen_linked">Propojeno s tvým Gradey ID</string>
+    <string name="account_canteen_local">Připojeno v tomto zařízení</string>
+    <string name="account_canteen_link_description">Ulož toto připojení jídelny do svého Gradey ID. Heslo se neodesílá.</string>
+    <string name="account_link_canteen">Propojit jídelnu s Gradey ID</string>
+    <string name="account_canteen_connect_description">Připoj Strava.cz v sekci Jídlo a zobraz jídelníček a objednávky.</string>
+    <string name="account_open_meals">Otevřít Jídlo</string>
+    <string name="account_canteen_attention">Toto připojení jídelny vyžaduje kontrolu. Otevři Jídlo a přihlas se znovu.</string>
+    <string name="account_remove_canteen_link">Odebrat propojení jídelny</string>
+    <string name="account_canteen_existing_link_note">Pokud je tato jídelna už v seznamu, před dalším propojením odeber její staré propojení. Uložené propojení nepřihlásí jídelnu na novém zařízení.</string>
+    <string name="account_remove_canteen_confirmation">Odebrat %1$s z tvého Gradey ID? Objednávky jídel se tím nezruší.</string>
+</resources>

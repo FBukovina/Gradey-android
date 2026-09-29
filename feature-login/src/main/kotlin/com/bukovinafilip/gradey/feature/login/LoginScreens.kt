@@ -1,11 +1,28 @@
 package com.bukovinafilip.gradey.feature.login
 
+import androidx.compose.ui.res.stringResource
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -13,6 +30,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import com.bukovinafilip.gradey.domain.SchoolDirectorySearch
+import com.bukovinafilip.gradey.model.SchoolDirectorySchool
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,36 +56,99 @@ fun SchoolLoginScreen(
     availableProviders: List<SchoolProvider> = listOf(SchoolProvider.BAKALARI),
     errorMessage: String? = null,
     onBack: (() -> Unit)? = null,
+    initialProvider: SchoolProvider? = null,
+    initialSchoolURL: String? = null,
+    isReconnecting: Boolean = false,
+    accountPicker: (@Composable () -> Unit)? = null,
+    directorySchools: List<SchoolDirectorySchool> = emptyList(),
+    directoryLoading: Boolean = false,
+    directoryError: String? = null,
+    onLoadDirectory: (() -> Unit)? = null,
+    onOpenHelp: (() -> Unit)? = null,
 ) {
-    var provider by remember { mutableStateOf(SchoolProvider.BAKALARI) }
-    var school by rememberSaveable { mutableStateOf("") }
+    var provider by rememberSaveable(initialProvider) { mutableStateOf(initialProvider ?: availableProviders.firstOrNull() ?: SchoolProvider.BAKALARI) }
+    var school by rememberSaveable(initialSchoolURL) { mutableStateOf(initialSchoolURL.orEmpty()) }
     var username by rememberSaveable { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var password by remember(initialProvider, initialSchoolURL) { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var directoryQuery by rememberSaveable { mutableStateOf("") }
+    val directoryResults = remember(directoryQuery, directorySchools) {
+        if (directoryQuery.trim().length < 2) emptyList() else SchoolDirectorySearch.results(directoryQuery, directorySchools)
+    }
+    LaunchedEffect(provider, isReconnecting) {
+        if (provider == SchoolProvider.BAKALARI && !isReconnecting) onLoadDirectory?.invoke()
+    }
+    val focusManager = LocalFocusManager.current
+    val canSubmit = !isLoading && school.isNotBlank() && username.isNotBlank() && password.isNotEmpty()
+    val submit = {
+        if (canSubmit) {
+            focusManager.clearFocus()
+            onLogin(provider, school.trim(), username.trim(), password)
+        }
+    }
 
     GradeyScreen(modifier = modifier) {
         GradeyHero(
-            title = "Link school",
-            subtitle = "Connect your school to see marks, absences, and your timetable, even when you are offline.",
+            title = if (isReconnecting) stringResource(R.string.login_reconnect_school_14a5a) else stringResource(R.string.login_link_your_school_100dd),
+            subtitle = if (isReconnecting) stringResource(R.string.login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d) else stringResource(R.string.login_your_marks_timetable_and_absences_together_in_one_place_saved__2edfe),
         )
-        GradeySectionCard(title = "Provider") {
+        onOpenHelp?.let { SchoolSignInHelp(stringResource(R.string.login_help_signing_in), it) }
+        accountPicker?.invoke()
+        GradeySectionCard(title = stringResource(R.string.login_provider_7ceee)) {
             Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
                 availableProviders.forEach { candidate ->
                     FilterChip(
                         selected = provider == candidate,
                         onClick = { provider = candidate },
-                        enabled = !isLoading,
+                        enabled = !isLoading && !isReconnecting,
                         label = { Text(candidate.displayName) },
                     )
                 }
             }
         }
-        GradeySectionCard(title = "Credentials") {
+        if (provider == SchoolProvider.BAKALARI && !isReconnecting && onLoadDirectory != null) {
+            GradeySectionCard(title = stringResource(R.string.login_find_your_school_77687)) {
+                OutlinedTextField(
+                    value = directoryQuery,
+                    onValueChange = { directoryQuery = it },
+                    label = { Text(stringResource(R.string.login_school_name_or_city_6fdc3)) },
+                    placeholder = { Text(stringResource(R.string.login_for_example_gymn_zium_brno_1c7e4)) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true, enabled = !isLoading,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                )
+                if (directoryLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                directoryResults.forEach { result ->
+                    androidx.compose.material3.TextButton(
+                        onClick = { school = result.schoolURL; directoryQuery = result.name; focusManager.clearFocus() },
+                        modifier = Modifier.fillMaxWidth(), enabled = !isLoading,
+                    ) {
+                        Column(Modifier.fillMaxWidth()) {
+                            Text(result.name, style = MaterialTheme.typography.titleSmall)
+                            Text(result.town, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                if (directoryQuery.trim().length >= 2 && directoryResults.isEmpty() && !directoryLoading) {
+                    Text(stringResource(R.string.login_no_matching_school_found_you_can_enter_its_bakal_i_address_bel_2a6b5), style = MaterialTheme.typography.bodySmall)
+                }
+                directoryError?.let {
+                    Text(stringResource(R.string.login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df), style = MaterialTheme.typography.bodySmall)
+                    androidx.compose.material3.TextButton(onClick = onLoadDirectory, enabled = !directoryLoading) { Text(stringResource(R.string.login_try_school_search_again_fc765)) }
+                }
+            }
+        }
+        GradeySectionCard(title = stringResource(R.string.login_credentials_dd097)) {
             Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     value = school,
                     onValueChange = { school = it },
-                    label = { Text(if (provider == SchoolProvider.EDU_PAGE) "EduPage school" else "School URL") },
+                    label = { Text(if (provider == SchoolProvider.EDU_PAGE) stringResource(R.string.login_edupage_school_6060b) else stringResource(R.string.login_school_address_a2e60)) },
+                    placeholder = { Text(if (provider == SchoolProvider.EDU_PAGE) "school.edupage.org" else "bakalari.your-school.cz") },
+                    supportingText = { Text(stringResource(R.string.login_use_the_address_where_you_normally_sign_in_to_your_school_b79ba)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, autoCorrectEnabled = false),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     singleLine = true,
                     enabled = !isLoading,
                 )
@@ -73,7 +156,9 @@ fun SchoolLoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") },
+                    label = { Text(stringResource(R.string.login_username_84c29)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, autoCorrectEnabled = false),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                     singleLine = true,
                     enabled = !isLoading,
                 )
@@ -81,22 +166,31 @@ fun SchoolLoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    label = { Text(stringResource(R.string.login_password_8be3c)) },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password_e4012) else stringResource(R.string.login_show_password_044b8))
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submit() }),
                     singleLine = true,
                     enabled = !isLoading,
                 )
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading && school.isNotBlank() && username.isNotBlank() && password.isNotBlank(),
-                    onClick = { onLogin(provider, school, username, password) },
+                    enabled = canSubmit,
+                    onClick = { submit() },
                 ) {
                     Icon(Icons.Default.Link, contentDescription = null)
-                    Text(if (isLoading) "Connecting" else "Connect school")
+                    Text(if (isLoading) stringResource(R.string.login_connecting_fd3e7) else if (isReconnecting) stringResource(R.string.login_reconnect_school_14a5a) else stringResource(R.string.login_connect_school_85e9d))
                 }
-                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                if (onBack != null) androidx.compose.material3.TextButton(onClick = onBack, enabled = !isLoading) { Text("Back") }
+                if (isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+                Text(stringResource(R.string.login_your_school_password_stays_encrypted_on_this_device_61039), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (onBack != null) androidx.compose.material3.TextButton(onClick = onBack, enabled = !isLoading) { Text(stringResource(R.string.login_back_b52b3)) }
             }
         }
     }
@@ -114,22 +208,24 @@ fun SchoolVerificationScreen(
     onSelectStudent: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenHelp: (() -> Unit)? = null,
 ) {
     var code by remember { mutableStateOf("") }
     GradeyScreen(modifier = modifier) {
-        GradeyHero("Connect EduPage", if (step is com.bukovinafilip.gradey.domain.SchoolLoginStep.TwoFactor) "Verify your sign-in" else "Choose a student")
+        GradeyHero(stringResource(R.string.login_connect_edupage_17a62), if (step is com.bukovinafilip.gradey.domain.SchoolLoginStep.TwoFactor) stringResource(R.string.login_verify_your_sign_in_29777) else stringResource(R.string.login_choose_a_student_6d1fa))
+        onOpenHelp?.let { SchoolSignInHelp(stringResource(R.string.login_help_verification), it) }
         GradeySectionCard {
             when (step) {
                 is com.bukovinafilip.gradey.domain.SchoolLoginStep.TwoFactor -> {
-                    Text("Complete verification using your EduPage account.")
+                    Text(stringResource(R.string.login_complete_verification_using_your_edupage_account_98a6c))
                     if (step.prompt.supportsCode) {
-                        OutlinedTextField(value = code, onValueChange = { code = it.trim() }, label = { Text("Verification code") }, singleLine = true, enabled = !isLoading, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword))
-                        Button(onClick = { onSubmitCode(code) }, enabled = !isLoading && code.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Verify code") }
+                        OutlinedTextField(value = code, onValueChange = { code = it.trim() }, label = { Text(stringResource(R.string.login_verification_code_80f2f)) }, singleLine = true, enabled = !isLoading, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword))
+                        Button(onClick = { onSubmitCode(code) }, enabled = !isLoading && code.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.login_verify_code_91a22)) }
                     }
                     if (step.prompt.supportsDeviceApproval) {
-                        Text("Approve the request in EduPage, then check approval here.")
-                        Button(onClick = onCheckApproval, enabled = !isLoading, modifier = Modifier.fillMaxWidth()) { Text("Check approval") }
-                        androidx.compose.material3.TextButton(onClick = onResend, enabled = !isLoading) { Text("Resend approval request") }
+                        Text(stringResource(R.string.login_approve_the_request_in_edupage_then_check_approval_here_41b93))
+                        Button(onClick = onCheckApproval, enabled = !isLoading, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.login_check_approval_81ddf)) }
+                        androidx.compose.material3.TextButton(onClick = onResend, enabled = !isLoading) { Text(stringResource(R.string.login_resend_approval_request_03ff9)) }
                     }
                 }
                 is com.bukovinafilip.gradey.domain.SchoolLoginStep.StudentSelection -> {
@@ -141,7 +237,19 @@ fun SchoolVerificationScreen(
             }
             if (isLoading) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
             errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            androidx.compose.material3.TextButton(onClick = onBack, enabled = !isLoading) { Text("Back to school login") }
+            androidx.compose.material3.TextButton(onClick = onBack, enabled = !isLoading) { Text(stringResource(R.string.login_back_to_school_login_9573e)) }
         }
+    }
+}
+
+/** Help remains usable while a school request is pending, without submitting the form. */
+@Composable
+private fun SchoolSignInHelp(label: String, onOpenHelp: () -> Unit) {
+    val focusManager = LocalFocusManager.current
+    androidx.compose.material3.TextButton(
+        onClick = { focusManager.clearFocus(); onOpenHelp() }, modifier = Modifier.fillMaxWidth(),
+    ) {
+        Icon(Icons.Default.HelpOutline, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+        Text(label)
     }
 }

@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_guest_ai_title">Gradey AI potřebuje tvoje Gradey ID</string>
+    <string name="app_guest_ai_body">Přihlas se, abys mohl/a používat AI. Škola zůstane na tomto zařízení připojená.</string>
+    <string name="app_guest_ai_privacy">AI má vlastní souhlas a nastavení sdílení. Otevřením této obrazovky se školní data do AI neposílají.</string>
+    <string name="app_guest_signin">Přihlásit se ke Gradey ID</string>
+    <string name="app_guest_upgrade_pending">Gradey ID je přihlášené, ale propojení školy se nepodařilo dokončit. Místní školní data zůstala zachována. Až budete online, klepněte na Obnovit a zkuste to znovu, nebo propojení zrušte odhlášením.</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_now">Now</string>
+    <string name="widget_next">Next</string>
+    <string name="widget_room">Room %1$s</string>
+    <string name="widget_lesson">Lesson</string>
+    <string name="widget_canceled">Canceled</string>
+    <string name="widget_substitution">Substitution</string>
+    <string name="widget_room_changed">Room changed</string>
+    <string name="widget_added">Added lesson</string>
+    <string name="widget_open_gradey">Open Gradey</string>
+    <string name="widget_load_timetable">Load your timetable on the phone.</string>
+    <string name="widget_no_lessons">No upcoming lessons</string>
+    <string name="widget_saved_week">Your saved timetable has no more lessons.</string>
+    <string name="widget_refresh_timetable">Refresh timetable</string>
+    <string name="widget_stale_detail">Open Gradey on your phone to load the latest timetable.</string>
+</resources>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_overview_timetable">Timetable</string>
+    <string name="today_overview_cancelled">Cancelled</string>
+    <string name="today_overview_current">Now</string>
+    <string name="today_overview_finished">Finished</string>
+    <string name="today_overview_upcoming">Upcoming</string>
+    <string name="today_overview_changed">Timetable change</string>
+    <string name="today_overview_substitution">Substitution</string>
+    <string name="today_overview_room_changed">Room changed</string>
+    <string name="today_overview_added">Added lesson</string>
+    <string name="today_overview_lesson">Lesson %1$s</string>
+    <string name="today_overview_planner">PLANNER</string>
+    <string name="today_overview_planner_empty">Make room for what’s next.</string>
+    <string name="today_overview_planner_empty_body">Add your next test or assignment in Planner.</string>
+    <string name="today_overview_homework">Homework</string>
+    <string name="today_overview_test">Test</string>
+    <string name="today_overview_presentation">Presentation</string>
+    <string name="today_overview_note">Note</string>
+    <string name="today_overview_task">Task</string>
+    <string name="today_overview_undated">No date</string>
+    <string name="today_overview_ai_title">Ask Gradey</string>
+    <string name="today_overview_study_priorities">Study priorities</string>
+    <string name="today_overview_study_priorities_body">What to focus on this week</string>
+    <string name="today_overview_week_summary">Week summary</string>
+    <string name="today_overview_week_summary_body">How your week is going</string>
+    <plurals name="today_overview_minutes_remaining">
+        <item quantity="one">%1$d minute remaining</item>
+        <item quantity="other">%1$d minutes remaining</item>
+    </plurals>
+    <plurals name="today_overview_starts_minutes">
+        <item quantity="one">Starts in %1$d minute</item>
+        <item quantity="other">Starts in %1$d minutes</item>
+    </plurals>
+    <plurals name="today_overview_changes">
+        <item quantity="one">%1$d upcoming timetable change</item>
+        <item quantity="other">%1$d upcoming timetable changes</item>
+    </plurals>
+</resources>

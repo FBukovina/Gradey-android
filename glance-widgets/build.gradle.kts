@@ -1,10 +1,13 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "com.bukovinafilip.gradey.widgets"
     compileSdk = 36
+
+    buildFeatures { compose = true }
 
     defaultConfig {
         minSdk = 26

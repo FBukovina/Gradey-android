@@ -1,0 +1,13 @@
+{
+  "project_id": "ieonvnfzkbyybbkfxupq",
+  "retrieved_at": "2026-09-29",
+  "function": "send-apns",
+  "version": 8,
+  "ezbr_sha256": "5b615c89acbc7f0d1165b3f1f58f40c58e508857fb34b35c6f437da4f66fb945",
+  "files": {
+    "functions/send-apns/index.ts": "d82d07d74052558f8a8bd6fcc763f97e0612ba8fa765c059aa667a8cd32d50f1",
+    "functions/_shared/notification-delivery.ts": "b180a5e20c0a57c3f689b45323de3e407a7c463f6af592af2dd9f230549b8a41",
+    "functions/_shared/http.ts": "31268ee17e4a9d48001afbc2720f984f129a56e3262b2bf2e046ae0f07d3304c",
+    "functions/_shared/client.ts": "defc41c8ce9887003252a6e50995602579702b51c6a89a55f7a91f4870422513"
+  }
+}

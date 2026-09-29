@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_local_profile">On this device</string>
+    <string name="account_using_local_school">Using Gradey without an account</string>
+    <string name="account_local_profile_description">Your real school data stays on this device. Sign in to Gradey ID to link your school for cloud history, mark alerts and Gradey AI.</string>
+    <string name="account_sign_in_gradey_id">Sign in to Gradey ID</string>
+    <string name="account_disconnect_local_school">Disconnect local school</string>
+    <string name="account_local_school">Local school</string>
+    <string name="account_school_on_device">School connected on this device</string>
+    <string name="account_local_school_detail">Grades, timetable and attendance are available here. This school has not been linked to a Gradey ID.</string>
+    <string name="account_change_local_school">Change school</string>
+    <string name="account_cloud_alerts_require_id">Sign in to Gradey ID to receive cloud mark alerts.</string>
+    <string name="account_local_disconnect_detail">The saved school session and cached school data will be removed from this device. You can sign in to your school again later.</string>
+</resources>

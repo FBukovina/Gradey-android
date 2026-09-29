@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.GradeBand
@@ -76,10 +77,33 @@ private val LightScheme = lightColorScheme(
 )
 
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF1AFFBE),
-    secondary = Color(0xFF1FF98C),
-    tertiary = Color(0xFF5AD7E0),
+    primary = Color(0xFF6CDEBD),
+    onPrimary = Color(0xFF00382C),
+    primaryContainer = Color(0xFF194B3C),
+    onPrimaryContainer = Color(0xFFAAEFD7),
+    secondary = Color(0xFF92D7B7),
+    onSecondary = Color(0xFF123828),
+    secondaryContainer = Color(0xFF264C3A),
+    onSecondaryContainer = Color(0xFFB6EED0),
+    tertiary = Color(0xFF76CFD5),
+    background = Color(0xFF0C1713),
+    onBackground = Color(0xFFE1EEE7),
+    surface = Color(0xFF17261F),
+    onSurface = Color(0xFFE1EEE7),
+    surfaceVariant = Color(0xFF293D33),
+    onSurfaceVariant = Color(0xFFB0C5B9),
+    surfaceContainer = Color(0xFF17261F),
+    surfaceContainerLow = Color(0xFF122019),
+    surfaceContainerHigh = Color(0xFF20332A),
+    surfaceContainerHighest = Color(0xFF293D33),
+    outline = Color(0xFF7F9C8B),
+    outlineVariant = Color(0xFF344F40),
 )
+
+/** Keeps branded surfaces readable while preserving their light-mode appearance. */
+@Composable
+fun adaptiveColor(light: Color, dark: Color): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) dark else light
 
 @Composable
 fun GradeyTheme(

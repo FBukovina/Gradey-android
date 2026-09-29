@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "./functions/_shared/client.ts": "./tests/client-stub.ts"
+  }
+}

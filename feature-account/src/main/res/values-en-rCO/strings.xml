@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_account_85dfa">account</string>
+    <string name="account_cancel_77dfd">cancel</string>
+    <string name="account_connect_school_85e9d">connect school</string>
+    <string name="account_current_4fc0e">current</string>
+    <string name="account_delete_gradey_account_c70a9">delete Gradey account</string>
+    <string name="account_full_details_a005b">full details</string>
+    <string name="account_gradey_account_4bda8">Gradey account</string>
+    <string name="account_language_89b86">language</string>
+    <string name="account_new_marks_67db5">new marks</string>
+    <string name="account_notifications_753a2">notifications</string>
+    <string name="account_privacy_policy_9db10">privacy policy</string>
+    <string name="account_profile_ff4fc">profile</string>
+    <string name="account_quiet_hours_706b2">quiet hours</string>
+    <string name="account_reconnect_6988b">reconnect</string>
+    <string name="account_save_efc00">save</string>
+    <string name="account_save_name_8ce68">save name</string>
+    <string name="account_school_accounts_93efe">school accounts</string>
+    <string name="account_show_meals_tab_aa1ad">show meals tab</string>
+    <string name="account_sign_out_dc164">sign out</string>
+    <string name="account_time_zone_eea79">time zone</string>
+    <string name="account_try_again_042c8">try again</string>
+    <string name="account_your_gradey_c56a5">your Gradey</string>
+    <string name="account_your_name_ab422">your name</string>
+</resources>

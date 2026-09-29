@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="subject_insight_heading">worth your attention</string>
+  <string name="subject_insight_worsening">average worsened by %.2f</string>
+  <string name="subject_insight_improving">average improved by %.2f</string>
+  <string name="subject_insight_observed">from recent comparable observations.</string>
+  <string name="subject_insight_insufficient">not enough comparable recent records to show a trend.</string>
+  <string name="subject_insight_contribution">which recent mark mattered?</string>
+  <string name="subject_insight_contribution_detail">including mark %1$s changes the calculated average by %2$+.2f compared with leaving it out. this uses the current weights and does not reconstruct your teacher’s past decisions.</string>
+  <string name="subject_insight_test_preparation">prepare for a test</string>
+  <string name="subject_insight_refresh">refresh marks to check the current trend. Calculations below use the saved grades.</string>
+</resources>

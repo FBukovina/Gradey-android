@@ -1,0 +1,6 @@
+<resources>
+    <plurals name="app_price_periods">
+        <item quantity="one">%2$s per billing period</item>
+        <item quantity="other">%2$s per billing period</item>
+    </plurals>
+</resources>

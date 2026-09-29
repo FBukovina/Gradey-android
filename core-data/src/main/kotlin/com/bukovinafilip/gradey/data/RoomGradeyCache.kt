@@ -17,6 +17,7 @@ class RoomGradeyCache(
 ) {
     suspend fun loadDashboard(scope: String): DashboardData? = load(key("dashboard", scope), DashboardData.serializer())
     suspend fun saveDashboard(scope: String, data: DashboardData) = save(key("dashboard", scope), data, DashboardData.serializer())
+    suspend fun dashboardFetchedAt(scope: String): Long? = dao.load(key("dashboard", scope))?.cachedAtEpochMillis
 
     suspend fun loadMarks(scope: String): MarksResponse? = load(key("marks", scope), MarksResponse.serializer())
     suspend fun saveMarks(scope: String, data: MarksResponse) = save(key("marks", scope), data, MarksResponse.serializer())
@@ -29,6 +30,7 @@ class RoomGradeyCache(
 
     suspend fun saveTimetable(scope: String, weekStart: String, data: TimetableWeek) =
         save(key("timetable-week", "$scope-$weekStart"), data, TimetableWeek.serializer())
+    suspend fun timetableFetchedAt(scope: String, weekStart: String): Long? = dao.load(key("timetable-week", "$scope-$weekStart"))?.cachedAtEpochMillis
 
     suspend fun loadRawTimetable(scope: String, weekStart: String): TimetableResponse? =
         load(key("timetable-raw", "$scope-$weekStart"), TimetableResponse.serializer())

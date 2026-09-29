@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_ai_question">Ask a question</string>
+    <string name="wear_ai_review">Review</string>
+    <string name="wear_ai_edit">Edit question</string>
+    <string name="wear_ai_send">Send question</string>
+    <string name="wear_ai_stop">Stop</string>
+    <string name="wear_ai_new_chat">New chat</string>
+    <string name="wear_ai_back">Back</string>
+    <string name="wear_ai_setup">Sign in to Gradey ID and connect your school on the phone, then refresh your watch.</string>
+    <string name="wear_ai_privacy">Questions go through your connected phone. No school records are attached.</string>
+    <string name="wear_ai_disclaimer">AI can make mistakes. Check important information.</string>
+    <string name="wear_ai_thinking">Gradey is thinking…</string>
+    <string name="wear_ai_remaining">Compute remaining: %1$d</string>
+    <string name="wear_ai_consent">Enable Gradey AI on your phone first.</string>
+    <string name="wear_ai_supporter">Watch AI requires an active supporter subscription. Manage support on your phone.</string>
+    <string name="wear_ai_unavailable">Gradey AI is not available. Open Gradey on your phone.</string>
+    <string name="wear_ai_quota">Not enough Compute. Check your balance on the phone.</string>
+    <string name="wear_ai_cancelled">Request stopped.</string>
+    <string name="wear_ai_invalid">Use a question up to 2,000 characters. If the reply was interrupted, open it on your phone.</string>
+    <string name="wear_ai_busy">Another reply is in progress. Wait a moment.</string>
+    <string name="wear_ai_timeout">The phone did not finish in time. Open Gradey AI there to check the reply.</string>
+    <string name="wear_ai_failed">The reply could not finish. Check Gradey AI on your phone.</string>
+    <string name="wear_ai_retry">Retry same request</string>
+    <string name="wear_ai_retry_detail">If the phone already started this request, it checks the existing reply.</string>
+</resources>

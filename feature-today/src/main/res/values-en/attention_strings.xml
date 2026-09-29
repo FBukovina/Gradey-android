@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="insight_assessment_due">Prepare for %1$s</string>
+    <string name="insight_average_changed">%1$s: average changed from %2$s to %3$s</string>
+    <string name="insight_busy_tests">Tests in the next four days: %1$s</string>
+    <string name="insight_deadline_due">Due soon: %1$s</string>
+    <string name="insight_grade_edited">A recorded mark changed in %1$s</string>
+    <string name="insight_grade_new">New recorded mark in %1$s</string>
+    <string name="insight_trend_worsening">%1$s: your average is getting worse</string>
+    <string name="today_attention_empty">Your next priorities will appear here.</string>
+    <string name="today_attention_empty_title">You\'re all caught up</string>
+    <string name="today_attention_title">Worth your attention</string>
+    <string name="today_cached_warning">Showing saved school data. Refresh to check for current changes.</string>
+    <string name="today_insight_recorded_average">Based on your recorded marks</string>
+</resources>

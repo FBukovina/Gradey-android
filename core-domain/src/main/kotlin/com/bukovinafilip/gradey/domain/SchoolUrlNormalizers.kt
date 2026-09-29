@@ -5,6 +5,8 @@ import java.net.URI
 class InvalidSchoolUrl(message: String) : IllegalArgumentException(message)
 
 object SchoolURLNormalizer {
+    private val loginPageSuffix = Regex("(?:^|/)(?:next/)?login(?:\\.aspx)?$", RegexOption.IGNORE_CASE)
+
     fun normalizedBaseURL(rawValue: String): String {
         var value = rawValue.trim()
         if (value.isBlank()) throw InvalidSchoolUrl("School URL is required.")
@@ -15,9 +17,9 @@ object SchoolURLNormalizer {
         val host = uri.host?.lowercase() ?: throw InvalidSchoolUrl("Invalid school URL.")
         if (scheme != "https") throw InvalidSchoolUrl("School URL must use HTTPS.")
 
-        val cleanPath = uri.path
+        val cleanPath = uri.rawPath
             ?.trim('/')
-            ?.takeUnless { it.equals("login", ignoreCase = true) || it.equals("next/login", ignoreCase = true) }
+            ?.replace(loginPageSuffix, "")
             ?.takeIf { it.isNotBlank() }
 
         return buildString {
@@ -49,4 +51,3 @@ object EduPageURLNormalizer {
         return "https://$host"
     }
 }
-

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="absence_absence_f7eb4">absence</string>
+    <string name="absence_back_b52b3">back</string>
+    <string name="absence_cancel_77dfd">cancel</string>
+    <string name="absence_clear_719ea">clear</string>
+    <string name="absence_early_departures_b3f13">early departures</string>
+    <string name="absence_hide_entire_day_16a85">Hide entire day</string>
+    <string name="absence_hours_5aede">hours</string>
+    <string name="absence_late_arrivals_9e2a1">late arrivals</string>
+    <string name="absence_next_week_5a207">next week</string>
+    <string name="absence_plan_absence_c429a">plan absence</string>
+    <string name="absence_previous_week_c4970">previous week</string>
+    <string name="absence_school_limit_unavailable_0c832">school limit unavailable</string>
+    <string name="absence_subjects_27894">subjects</string>
+    <string name="absence_total_b2592">total</string>
+</resources>

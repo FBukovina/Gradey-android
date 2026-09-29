@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_back_b52b3">zpět</string>
+    <string name="login_check_approval_81ddf">zkontrolovat potvrzení</string>
+    <string name="login_choose_a_student_6d1fa">vyber dítě</string>
+    <string name="login_connect_school_85e9d">připojit školu</string>
+    <string name="login_connecting_fd3e7">připojuji…</string>
+    <string name="login_hide_password_e4012">skrýt heslo</string>
+    <string name="login_password_8be3c">heslo</string>
+    <string name="login_show_password_044b8">zobrazit heslo</string>
+    <string name="login_username_84c29">uživatelské jméno</string>
+    <string name="login_verification_code_80f2f">ověřovací kód</string>
+    <string name="login_verify_code_91a22">ověřit kód</string>
+</resources>

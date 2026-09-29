@@ -21,6 +21,7 @@ data class AndroidGradeyConfig(
     val googleWebClientId: String,
     val revenueCatAndroidKey: String,
     val useMockData: Boolean = true,
+    val appleOAuthClientId: String = "",
 )
 
 class AndroidGradeyGraph private constructor(
@@ -35,6 +36,9 @@ class AndroidGradeyGraph private constructor(
     val notificationSettings: NotificationSettingsRepository,
     val accountClient: SupabaseAccountClient? = null,
     val accountManagement: AccountManagementRepository? = null,
+    val schoolDirectoryProvider: com.bukovinafilip.gradey.domain.SchoolDirectoryProvider,
+    val schoolInsightStore: com.bukovinafilip.gradey.domain.SchoolInsightStore,
+    val canteenAccountRepository: com.bukovinafilip.gradey.domain.CanteenAccountRepository,
 ) {
     companion object {
         fun create(context: Context, config: AndroidGradeyConfig): AndroidGradeyGraph {
@@ -43,6 +47,8 @@ class AndroidGradeyGraph private constructor(
                 val push = MockDevicePushTokenClient()
                 return AndroidGradeyGraph(
                     schoolRepository = MockSchoolRepository(),
+                    canteenAccountRepository = MockCanteenAccountRepository(),
+                    schoolInsightStore = com.bukovinafilip.gradey.domain.SchoolInsightStore(),
                     gradeyAuthRepository = auth,
                     linkedAccountRepository = MockLinkedAccountRepository(),
                     historyRepository = MockGradeyHistoryRepository(),
@@ -50,6 +56,7 @@ class AndroidGradeyGraph private constructor(
                     stravaCZRepository = MockStravaCZRepository(),
                     cache = null,
                     isDemo = true,
+                    schoolDirectoryProvider = BakalariSchoolDirectoryProvider(SecureJsonStore(context, "gradey-school-directory", GradeyJson)),
                     notificationSettings = NotificationSettingsRepository(SecureJsonStore(context, "gradey-demo-settings", GradeyJson), auth, push),
                 )
             }
@@ -60,7 +67,8 @@ class AndroidGradeyGraph private constructor(
             val schoolSecureStore = SecureJsonStore(context, "gradey-school-secrets", GradeyJson)
             val authSecureStore = SecureJsonStore(context, "gradey-auth-secrets", GradeyJson)
             val sessionStore = SchoolSessionStore(schoolSecureStore)
-            val supabase = SupabaseConfiguration(config.supabaseUrl, config.supabaseAnonKey)
+            val supabase = SupabaseConfiguration(config.supabaseUrl, config.supabaseAnonKey, config.appleOAuthClientId)
+            val appleSignInStore = PendingAppleSignInStore(context.applicationContext)
 
             val authRepository = SupabaseGradeyAuthRepository(
                 configuration = supabase,
@@ -72,24 +80,30 @@ class AndroidGradeyGraph private constructor(
                     }
                 },
                 sessionLoader = { authSecureStore.load("gradey.auth.session", com.bukovinafilip.gradey.model.GradeyAuthSession.serializer()) },
+                pendingAppleStore = appleSignInStore::save,
+                pendingAppleLoader = appleSignInStore::load,
             )
 
             val pushClient = SupabaseDevicePushTokenClient(supabase)
             val accountClient = SupabaseAccountClient(supabase)
+            val schoolInsightStore = AndroidSchoolInsightStore.create(context)
             return AndroidGradeyGraph(
-                schoolRepository = AndroidSchoolRepository(
+                schoolRepository = ObservedSchoolRepository(AndroidSchoolRepository(
                     bakalariClient = BakalariNetworkClient(),
                     eduPageClient = com.bukovinafilip.gradey.network.OkHttpEduPageClient(),
                     sessionStore = sessionStore,
                     cache = cache,
-                ),
+                ), schoolInsightStore, cache),
+                schoolInsightStore = schoolInsightStore,
                 gradeyAuthRepository = authRepository,
+                canteenAccountRepository = SupabaseCanteenAccountRepository(com.bukovinafilip.gradey.network.SupabaseCanteenAccountClient(supabase), authRepository, authSecureStore),
                 linkedAccountRepository = SupabaseLinkedAccountRepository(accountClient, authRepository, authSecureStore, sessionStore, cache),
                 historyRepository = SupabaseHistoryRepository(accountClient, authRepository),
                 devicePushTokenClient = pushClient,
                 stravaCZRepository = AndroidStravaCZRepository(secureStore = SecureJsonStore(context, "gradey-strava-secrets", GradeyJson)),
                 cache = cache,
                 isDemo = false,
+                schoolDirectoryProvider = BakalariSchoolDirectoryProvider(SecureJsonStore(context, "gradey-school-directory", GradeyJson)),
                 notificationSettings = NotificationSettingsRepository(authSecureStore, authRepository, pushClient, accountClient),
                 accountClient = accountClient,
                 accountManagement = AccountManagementRepository(accountClient, authRepository),

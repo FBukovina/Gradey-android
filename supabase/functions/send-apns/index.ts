@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
         .from("device_push_tokens")
         .select("*")
         .eq("user_id", event.user_id)
+        // Android registration is allowed, but FCM tokens must never reach APNs.
         .in("platform", ["ios", "macos"])
         .is("invalidated_at", null);
       if (deviceError) throw deviceError;

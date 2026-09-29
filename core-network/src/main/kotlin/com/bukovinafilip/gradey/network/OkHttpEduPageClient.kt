@@ -146,6 +146,7 @@ class OkHttpEduPageClient(okHttpClient: OkHttpClient = OkHttpClient()) : EduPage
             return switchStudent(selected.id, refreshed, baseURL)
         } catch (error: EduPageAuthenticationException) {
             if (error.reason != EduPageAuthFailure.SESSION_EXPIRED) throw error
+            if (stored.password.isEmpty()) fail(EduPageAuthFailure.SESSION_EXPIRED, "Your EduPage session has expired. Sign in to the school on this device again.")
             return when (val step = beginLogin(baseURL, stored.username, stored.password)) {
                 is SchoolLoginStep.SignedIn -> step.session.eduPage
                     ?: fail(EduPageAuthFailure.MALFORMED_RESPONSE, "Missing restored EduPage session.")

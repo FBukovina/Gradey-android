@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_approve_the_request_in_edupage_then_check_approval_here_41b93">Potvrď žádost v EduPage a pak zde zkontroluj potvrzení.</string>
+    <string name="login_back_b52b3">Zpět</string>
+    <string name="login_back_to_school_login_9573e">Zpět k přihlášení do školy</string>
+    <string name="login_check_approval_81ddf">Zkontrolovat potvrzení</string>
+    <string name="login_choose_a_student_6d1fa">Vyber dítě</string>
+    <string name="login_complete_verification_using_your_edupage_account_98a6c">Dokonči ověření pomocí svého účtu EduPage.</string>
+    <string name="login_connect_edupage_17a62">Připojit EduPage</string>
+    <string name="login_connect_school_85e9d">Připojit školu</string>
+    <string name="login_connecting_fd3e7">Připojuji…</string>
+    <string name="login_credentials_dd097">Přihlašovací údaje</string>
+    <string name="login_edupage_school_6060b">Škola v EduPage</string>
+    <string name="login_find_your_school_77687">Najdi svou školu</string>
+    <string name="login_for_example_gymn_zium_brno_1c7e4">Například gymnázium Brno</string>
+    <string name="login_hide_password_e4012">Skrýt heslo</string>
+    <string name="login_link_your_school_100dd">Připoj svou školu</string>
+    <string name="login_no_matching_school_found_you_can_enter_its_bakal_i_address_bel_2a6b5">Škola nebyla nalezena. Níže můžeš zadat její adresu Bakalářů.</string>
+    <string name="login_password_8be3c">Heslo</string>
+    <string name="login_provider_7ceee">Školní systém</string>
+    <string name="login_reconnect_school_14a5a">Znovu připojit školu</string>
+    <string name="login_resend_approval_request_03ff9">Znovu poslat žádost o potvrzení</string>
+    <string name="login_school_address_a2e60">Adresa školy</string>
+    <string name="login_school_name_or_city_6fdc3">Název školy nebo město</string>
+    <string name="login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df">Vyhledávání škol není dostupné. Adresu můžeš zadat níže.</string>
+    <string name="login_show_password_044b8">Zobrazit heslo</string>
+    <string name="login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d">Přihlas se ke stejnému školnímu účtu, aby se obnovilo spojení a zachovala historie.</string>
+    <string name="login_try_school_search_again_fc765">Znovu zkusit vyhledávání škol</string>
+    <string name="login_use_the_address_where_you_normally_sign_in_to_your_school_b79ba">Použij adresu, na které se běžně přihlašuješ do školy.</string>
+    <string name="login_username_84c29">Uživatelské jméno</string>
+    <string name="login_verification_code_80f2f">Ověřovací kód</string>
+    <string name="login_verify_code_91a22">Ověřit kód</string>
+    <string name="login_verify_your_sign_in_29777">Ověř své přihlášení</string>
+    <string name="login_your_marks_timetable_and_absences_together_in_one_place_saved__2edfe">Známky, rozvrh a absence na jednom místě. Uložené údaje ze školy jsou dostupné i bez internetu.</string>
+    <string name="login_your_school_password_stays_encrypted_on_this_device_61039">Školní heslo zůstává zašifrované v tomto zařízení.</string>
+</resources>

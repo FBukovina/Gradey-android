@@ -7,6 +7,8 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 val directUpdatesEnabled = providers.gradleProperty("gradey.directUpdatesEnabled").orElse("true").get().toBoolean()
+val intercomRegion = providers.gradleProperty("gradey.intercomRegion").orElse("us").get().ifBlank { "us" }.lowercase()
+require(intercomRegion in setOf("us", "eu", "aus")) { "gradey.intercomRegion must be us, eu or aus." }
 
 android {
     namespace = "com.bukovinafilip.gradey"
@@ -16,14 +18,18 @@ android {
         applicationId = "com.bukovinafilip.gradey"
         minSdk = 26
         targetSdk = 36
-        versionCode = providers.gradleProperty("gradey.versionCode").orElse("3").get().toInt()
-        versionName = providers.gradleProperty("gradey.versionName").orElse("0.2.1").get()
+        versionCode = providers.gradleProperty("gradey.versionCode").orElse("5").get().toInt()
+        versionName = providers.gradleProperty("gradey.versionName").orElse("0.2.2").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["intercomRegionResource"] = "@integer/intercom_server_region_$intercomRegion"
 
         buildConfigField("String", "SUPABASE_URL", "\"${providers.gradleProperty("gradey.supabaseUrl").orElse("").get()}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${providers.gradleProperty("gradey.supabaseAnonKey").orElse("").get()}\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${providers.gradleProperty("gradey.googleWebClientId").orElse("").get()}\"")
+        buildConfigField("String", "APPLE_OAUTH_CLIENT_ID", "\"${providers.gradleProperty("gradey.appleOAuthClientId").orElse("").get()}\"")
         buildConfigField("String", "REVENUECAT_ANDROID_KEY", "\"${providers.gradleProperty("gradey.revenueCatAndroidKey").orElse("").get()}\"")
+        buildConfigField("String", "INTERCOM_ANDROID_API_KEY", "\"${providers.gradleProperty("gradey.intercomAndroidApiKey").orElse("").get()}\"")
+        buildConfigField("String", "INTERCOM_APP_ID", "\"${providers.gradleProperty("gradey.intercomAppId").orElse("").get()}\"")
         buildConfigField("boolean", "DIRECT_UPDATES_ENABLED", directUpdatesEnabled.toString())
     }
 
@@ -66,6 +72,8 @@ dependencies {
     implementation(project(":feature-stravacz"))
     implementation(project(":feature-account"))
     implementation(project(":feature-ai"))
+    implementation(project(":feature-planner"))
+    implementation(project(":feature-support"))
     implementation(project(":glance-widgets"))
 
     implementation(platform(libs.androidx.compose.bom))
@@ -103,14 +111,19 @@ dependencies {
 
 // A demo preview must be an explicit release choice, never an accidental store build.
 val allowDemoRelease = providers.gradleProperty("gradey.allowDemoRelease").orElse("false").map(String::toBoolean)
-val missingReleaseProperties = listOf("gradey.supabaseUrl", "gradey.supabaseAnonKey", "gradey.googleWebClientId")
+val missingReleaseProperties = listOf("gradey.supabaseUrl", "gradey.supabaseAnonKey", "gradey.googleWebClientId", "gradey.appleOAuthClientId", "gradey.revenueCatAndroidKey")
     .filter { providers.gradleProperty(it).orNull.isNullOrBlank() }
 val verifyReleaseConfiguration by tasks.registering {
     val intentionalDemo = allowDemoRelease.get()
     val missingProperties = missingReleaseProperties.toList()
+    val firebaseConfigured = layout.projectDirectory.file("google-services.json").asFile.isFile
+    inputs.property("firebaseConfigured", firebaseConfigured)
     doLast {
         check(intentionalDemo || missingProperties.isEmpty()) {
             "Live release configuration missing: ${missingProperties.joinToString()}. For an intentional demo release, set gradey.allowDemoRelease=true."
+        }
+        check(intentionalDemo || firebaseConfigured) {
+            "Live releases require app/google-services.json from the deployed Gradey AI Firebase project. AI and Android push cannot work without it."
         }
     }
 }

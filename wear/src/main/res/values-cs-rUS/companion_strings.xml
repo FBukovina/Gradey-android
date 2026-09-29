@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_next">další</string>
+    <string name="wear_lesson">hodina</string>
+    <string name="wear_canceled">zrušeno</string>
+    <string name="wear_substitution">suplování</string>
+    <string name="wear_open_gradey">otevřít Gradey</string>
+    <string name="wear_refresh">obnovit</string>
+    <string name="wear_today">dnes</string>
+    <string name="wear_tomorrow">Zítra</string>
+</resources>

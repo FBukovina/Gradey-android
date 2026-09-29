@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="privacy_update_title">Změny v ochraně soukromí</string>
+  <string name="privacy_update_subtitle">Přečti si, jak přihlášení ke škole, AI, Plánovač a spárované hodinky používají tvoje data. Uložené potvrzení věku zůstává beze změny.</string>
+  <string name="privacy_update_password_title">Šifrované školní přihlášení na tvých zařízeních</string>
+  <string name="privacy_update_password_summary">Při přihlášení do Bakalářů se heslo odesílá přímo tvé škole přes HTTPS.</string>
+  <string name="privacy_update_password_detail">Školní přihlašovací údaje uložené touto aplikací pro Android používají šifrované úložiště zařízení. Heslo do Bakalářů není součástí propojení školního účtu s Gradey ID. Pouze když výslovně povolíš samostatný přístup konkrétních hodinek, přenese se do nich i zašifrovaná kopie školního přihlášení.</string>
+  <string name="privacy_update_watch_title">Tvoje spárované hodinky</string>
+  <string name="privacy_update_watch_summary">Telefon běžně sdílí uložený rozvrh. Samostatný přístup ke škole musíš zvlášť povolit pro každé hodinky.</string>
+  <string name="privacy_update_watch_detail">Běžný školní přehled nepřenáší hesla ani přístupové tokeny. Pokud konkrétním hodinkám výslovně povolíš samostatný přístup, uloží se na nich zašifrovaná kopie školního uživatelského jména a hesla a mohou se připojovat přímo ke škole bez telefonu. Přístup platí sedm dní. Po vypnutí, odhlášení nebo změně účtu se přihlášení a data smažou, až se hodinky znovu spojí s telefonem; bez spojení mohou fungovat do původního konce platnosti. Wear AI dál prochází telefonem, automaticky nepřikládá školní záznamy a vyžaduje souhlas v telefonu a aktivní předplatné Support.</string>
+  <string name="privacy_update_done">Hotovo</string>
+  <string name="privacy_update_expand">Zobrazit celé vysvětlení</string>
+  <string name="privacy_update_collapse">Skrýt celé vysvětlení</string>
+  <string name="privacy_update_tokens_title">Kontroly na pozadí používají šifrované tokeny relace</string>
+  <string name="privacy_update_tokens_summary">Kontrola nových známek obnovuje samostatnou školní relaci místo přihlašování heslem.</string>
+  <string name="privacy_update_tokens_detail">Když propojíš účet Bakalářů s Gradey ID, aplikace získá samostatnou školní relaci. Její přístupový a obnovovací token uchováváme v šifrované podobě na Supabase. Tyto tokeny jsou citlivé údaje: po dobu své platnosti mohou umožňovat přístup ke školním datům. Pokud relaci nelze obnovit, připoj školní účet v Gradey znovu.</string>
+  <string name="privacy_update_ai_title">Gradey AI je popsáno podrobně</string>
+  <string name="privacy_update_ai_summary">Gradey AI je volitelná a vyžaduje samostatný souhlas. Sám vybíráš, které školní údaje chceš sdílet.</string>
+  <string name="privacy_update_ai_detail">Google Firebase a Microsoft Azure OpenAI zpracovávají tvoje zprávy, související historii chatu a vybrané školní údaje pro vytváření odpovědí. Obecný chat školní údaje automaticky nepřikládá. Poznámky z Plánovače se zahrnou jen tehdy, když je zapneš pro vybraný test. Uložené chaty můžeš smazat nebo v nastavení odvolat souhlas s AI. Odpovědi můžou být chybné; důležité informace si ověř.</string>
+  <string name="privacy_update_planner_title">Novinka: Plánovač a export do Kalendáře</string>
+  <string name="privacy_update_planner_summary">Položky Plánovače se ukládají v tomto zařízení. Export do Kalendáře i sdílení vybraných údajů s AI jsou volitelné.</string>
+  <string name="privacy_update_planner_detail">Názvy, poznámky, data a nastavení Plánovače se ukládají v tomto zařízení. Se zapnutým exportem do Kalendáře Gradey spravuje vlastní události, které se můžou synchronizovat přes tvůj kalendářový účet. Při použití AI s vybranými školními údaji se po udělení souhlasu sdílí údaje o zvolených událostech. Poznámky k testu vyžadují samostatné zapnutí. Plánovač funguje i bez těchto voleb.</string>
+  <string name="privacy_update_footer">Tento přehled nenahrazuje samotné zásady. Úplné znění popisuje všechny účely, právní základy a příjemce a také to, jak si data vyexportovat nebo smazat.</string>
+  <string name="privacy_update_full_policy">Přečíst celé zásady ochrany osobních údajů</string>
+  <string name="privacy_update_scroll">Pro pokračování přejdi na konec</string>
+  <string name="privacy_update_accept">Přečetl(a) jsem si to – souhlasím</string>
+</resources>

@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="privacy_update_title">Privacy updates</string>
+  <string name="privacy_update_subtitle">Review how school sign-in, AI, Planner and a paired watch use your data. Your saved age confirmation stays unchanged.</string>
+  <string name="privacy_update_password_title">Encrypted school sign-in on your devices</string>
+  <string name="privacy_update_password_summary">Bakaláři sign-in sends your password directly to your school over HTTPS.</string>
+  <string name="privacy_update_password_detail">School credentials saved by this Android app use encrypted device storage. The Bakaláři password is not included when you link the school account to Gradey ID. Only if you explicitly allow independent access for a particular watch is an encrypted copy of the school sign-in transferred to it.</string>
+  <string name="privacy_update_watch_title">Your paired watch</string>
+  <string name="privacy_update_watch_summary">The phone normally shares a timetable snapshot. Independent school access requires separate approval for each watch.</string>
+  <string name="privacy_update_watch_detail">Normal school snapshots do not transfer passwords or access tokens. If you explicitly allow independent access for a particular watch, it stores an encrypted copy of the school username and password and can connect directly to the school without your phone. Access lasts seven days. Turning it off, signing out or switching accounts clears the sign-in and data when the watch reconnects; a disconnected watch can work until the original expiry. Wear AI remains phone-relayed, does not automatically attach school records, and requires consent on the phone and an active Support plan.</string>
+  <string name="privacy_update_done">Done</string>
+  <string name="privacy_update_expand">Show full explanation</string>
+  <string name="privacy_update_collapse">Hide full explanation</string>
+  <string name="privacy_update_tokens_title">background checks use encrypted session tokens</string>
+  <string name="privacy_update_tokens_summary">new-mark checks renew a separate school session instead of signing in with your password.</string>
+  <string name="privacy_update_tokens_detail">when you link a Bakaláři account to Gradey ID, the app obtains a separate school session. we store its access and refresh tokens in encrypted form on Supabase. these tokens are sensitive: while they are valid, they can allow access to your school data. if the session can no longer be renewed, reconnect the school account in Gradey.</string>
+  <string name="privacy_update_ai_title">Gradey AI is described in full</string>
+  <string name="privacy_update_ai_summary">Gradey AI is optional and requires separate consent. you choose which school information to share.</string>
+  <string name="privacy_update_ai_detail">Google Firebase and Microsoft Azure OpenAI process your messages, relevant chat history and selected school information to generate replies. general chat does not automatically attach school data. planner notes are included only when you enable them for a selected test. you can delete saved chats or withdraw AI consent in settings. replies can be wrong; verify important information.</string>
+  <string name="privacy_update_planner_title">new: planner and calendar export</string>
+  <string name="privacy_update_planner_summary">planner items are saved on this device. calendar export and selected AI sharing are optional.</string>
+  <string name="privacy_update_planner_detail">your planner titles, notes, dates and preferences are saved on this device. with calendar export enabled, Gradey manages its own events, which may sync through your calendar account. if you use a contextual AI action, the selected event details are shared with AI after consent. test notes require a separate choice. planner works without either option.</string>
+  <string name="privacy_update_footer">this summary is not the policy itself. the full text explains every purpose, legal basis and recipient, and how to export or delete your data.</string>
+  <string name="privacy_update_full_policy">read the full privacy policy</string>
+  <string name="privacy_update_scroll">scroll to the end to continue</string>
+  <string name="privacy_update_accept">i’ve read this — accept</string>
+</resources>

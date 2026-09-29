@@ -67,6 +67,7 @@ fun StravaCZRoute(
     modifier: Modifier = Modifier,
     isDemo: Boolean = false,
 ) {
+    val strings = androidx.compose.ui.platform.LocalResources.current
     var session by remember(repository) { mutableStateOf<StravaCZStoredSession?>(null) }
     var menu by remember(repository) { mutableStateOf<StravaCZMenu?>(null) }
     var busy by remember(repository) { mutableStateOf(true) }
@@ -88,10 +89,10 @@ fun StravaCZRoute(
         if (session == null) menu = null else menu = repository.loadCachedMenu()
         cached = menu != null
         error = when (failure) {
-            is UnknownHostException -> "You appear to be offline. Reconnect and refresh your meals."
-            is SocketTimeoutException -> "The canteen is taking too long to respond. Please try again."
+            is UnknownHostException -> strings.getString(R.string.stravacz_you_appear_to_be_offline_reconnect_and)
+            is SocketTimeoutException -> strings.getString(R.string.stravacz_the_canteen_is_taking_too_long_to)
             else -> failure.message?.takeIf { it.isNotBlank() && it.length <= 400 }
-                ?: "We couldn’t reach Strava.cz. Please try again."
+                ?: strings.getString(R.string.stravacz_we_couldn_t_reach_strava_cz_please)
         }
     }
 
@@ -149,7 +150,7 @@ fun StravaCZRoute(
                 session = result.first
                 menu = result.second
                 cached = false
-                success = if (ordered) "Meal ordered." else "Meal order cancelled."
+                success = if (ordered) strings.getString(R.string.stravacz_meal_ordered) else strings.getString(R.string.stravacz_meal_order_cancelled)
             }
         },
         onDisconnect = {
@@ -178,6 +179,7 @@ fun StravaCZScreen(
     onSetMeal: (StravaCZMeal, Boolean) -> Unit = { _, _ -> },
     onDisconnect: () -> Unit = {},
 ) {
+    val strings = androidx.compose.ui.platform.LocalResources.current
     var orderedOnly by rememberSaveable { mutableStateOf(false) }
     var pendingMeal by remember { mutableStateOf<StravaCZMeal?>(null) }
     var confirmDisconnect by remember { mutableStateOf(false) }
@@ -192,17 +194,17 @@ fun StravaCZScreen(
             verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
         ) {
             item {
-                GradeyHero("Meals", "Your canteen, one less thing to think about.")
+                GradeyHero(strings.getString(R.string.stravacz_meals), strings.getString(R.string.stravacz_your_canteen_one_less_thing_to_think))
             }
             if (isDemo) item {
-                Text("Demo canteen · Changes stay in this demo.", style = MaterialTheme.typography.labelLarge,
+                Text(strings.getString(R.string.stravacz_demo_canteen_changes_stay_in_this_demo), style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary)
             }
             if (busy) item { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
             error?.let { message -> item {
                 GradeySectionCard {
                     Text(message, color = MaterialTheme.colorScheme.error)
-                    if (session != null) TextButton(onClick = onRefresh, enabled = !busy) { Text("Retry refresh") }
+                    if (session != null) TextButton(onClick = onRefresh, enabled = !busy) { Text(strings.getString(R.string.stravacz_retry_refresh)) }
                 }
             } }
             success?.let { message -> item {
@@ -216,7 +218,7 @@ fun StravaCZScreen(
             } else {
                 item {
                     GradeySectionCard {
-                        Text(session?.canteenName?.takeIf { it.isNotBlank() } ?: "Strava.cz canteen ${session?.canteenNumber.orEmpty()}",
+                        Text(session?.canteenName?.takeIf { it.isNotBlank() } ?: strings.getString(R.string.stravacz_strava_cz_canteen_1_s, session?.canteenNumber.orEmpty()),
                             style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         session?.let { account ->
                             Text(account.fullName?.takeIf { it.isNotBlank() } ?: account.username,
@@ -224,35 +226,35 @@ fun StravaCZScreen(
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Column {
-                                    Text("Account balance", style = MaterialTheme.typography.labelMedium)
-                                    Text(account.balance?.let { "$it ${account.currency}" } ?: "Unavailable",
+                                    Text(strings.getString(R.string.stravacz_account_balance), style = MaterialTheme.typography.labelMedium)
+                                    Text(account.balance?.let { formatBalance(it, account.currency, strings) } ?: strings.getString(R.string.stravacz_unavailable),
                                         style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                                 }
                                 IconButton(onClick = onRefresh, enabled = !busy) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh meals and order status")
+                                    Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.stravacz_refresh_meals_and_order_status))
                                 }
                             }
                         }
-                        if (cached) Text("Saved menu · Refresh to check the latest orders and availability.",
+                        if (cached) Text(strings.getString(R.string.stravacz_saved_menu_refresh_to_check_the_latest),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = { confirmDisconnect = true }, enabled = !busy) { Text("Disconnect canteen") }
+                        TextButton(onClick = { confirmDisconnect = true }, enabled = !busy) { Text(strings.getString(R.string.stravacz_disconnect_canteen)) }
                     }
                 }
                 if (menu != null) item {
                     Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-                        FilterChip(selected = !orderedOnly, onClick = { orderedOnly = false }, label = { Text("All meals") })
+                        FilterChip(selected = !orderedOnly, onClick = { orderedOnly = false }, label = { Text(strings.getString(R.string.stravacz_all_meals)) })
                         FilterChip(selected = orderedOnly, onClick = { orderedOnly = true },
-                            label = { Text("Ordered (${menu.days.sumOf { day -> day.meals.count { it.ordered } }})") })
+                            label = { Text(strings.getString(R.string.stravacz_ordered_1_d, menu.days.sumOf { day -> day.meals.count { it.ordered } })) })
                     }
                 }
                 if (visibleDays.isEmpty() && !busy) item {
                     GradeySectionCard {
                         Icon(Icons.Default.Restaurant, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        Text(if (orderedOnly) "No meals ordered yet" else "No meals available", style = MaterialTheme.typography.titleMedium)
-                        Text(if (orderedOnly) "Choose All meals to see what’s on the menu." else "Your canteen hasn’t published any meals. Check back later.",
+                        Text(if (orderedOnly) strings.getString(R.string.stravacz_no_meals_ordered_yet) else strings.getString(R.string.stravacz_no_meals_available), style = MaterialTheme.typography.titleMedium)
+                        Text(if (orderedOnly) strings.getString(R.string.stravacz_choose_all_meals_to_see_what_s) else strings.getString(R.string.stravacz_your_canteen_hasn_t_published_any_meals),
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (orderedOnly) TextButton(onClick = { orderedOnly = false }) { Text("Browse all meals") }
-                        else TextButton(onClick = onRefresh, enabled = !busy) { Text("Refresh") }
+                        if (orderedOnly) TextButton(onClick = { orderedOnly = false }) { Text(strings.getString(R.string.stravacz_browse_all_meals)) }
+                        else TextButton(onClick = onRefresh, enabled = !busy) { Text(strings.getString(R.string.stravacz_refresh)) }
                     }
                 }
                 items(visibleDays, key = { it.id }) { day ->
@@ -273,92 +275,106 @@ fun StravaCZScreen(
         val replacement = !meal.ordered && existing != null
         AlertDialog(
             onDismissRequest = { pendingMeal = null },
-            title = { Text(if (meal.ordered) "Cancel this meal?" else if (replacement) "Replace your meal?" else "Order this meal?") },
+            title = { Text(if (meal.ordered) strings.getString(R.string.stravacz_cancel_this_meal) else if (replacement) strings.getString(R.string.stravacz_replace_your_meal) else strings.getString(R.string.stravacz_order_this_meal)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
                     Text(meal.description ?: meal.title)
-                    if (replacement) Text("This will replace ${existing?.description ?: existing?.title}.")
-                    meal.price?.let { Text("Price: ${formatPrice(it, session?.currency ?: "Kč")}") }
-                    Text(if (isDemo) "This change affects the demo menu only." else "Your change will be sent to your canteen immediately.")
+                    if (replacement) Text(strings.getString(R.string.stravacz_this_will_replace_1_s, existing?.description ?: existing?.title.orEmpty()))
+                    meal.price?.let { Text(strings.getString(R.string.stravacz_price_1_s, formatPrice(it, session?.currency ?: "Kč", strings))) }
+                    Text(if (isDemo) strings.getString(R.string.stravacz_this_change_affects_the_demo_menu_only) else strings.getString(R.string.stravacz_your_change_will_be_sent_to_your))
                 }
             },
             confirmButton = {
                 TextButton(onClick = { pendingMeal = null; onSetMeal(meal, !meal.ordered) }, enabled = !busy) {
-                    Text(if (meal.ordered) "Cancel meal" else if (replacement) "Replace meal" else "Order meal")
+                    Text(if (meal.ordered) strings.getString(R.string.stravacz_cancel_meal) else if (replacement) strings.getString(R.string.stravacz_replace_meal) else strings.getString(R.string.stravacz_order_meal))
                 }
             },
-            dismissButton = { TextButton(onClick = { pendingMeal = null }) { Text("Keep current order") } },
+            dismissButton = { TextButton(onClick = { pendingMeal = null }) { Text(strings.getString(R.string.stravacz_keep_current_order)) } },
         )
     }
     if (confirmDisconnect) AlertDialog(
         onDismissRequest = { confirmDisconnect = false },
-        title = { Text("Disconnect your canteen?") },
-        text = { Text("Your saved sign-in and menu will be removed from this device. Existing meal orders will stay with your canteen.") },
-        confirmButton = { TextButton(onClick = { confirmDisconnect = false; onDisconnect() }, enabled = !busy) { Text("Disconnect") } },
-        dismissButton = { TextButton(onClick = { confirmDisconnect = false }) { Text("Keep connected") } },
+        title = { Text(strings.getString(R.string.stravacz_disconnect_your_canteen)) },
+        text = { Text(strings.getString(R.string.stravacz_your_saved_sign_in_and_menu_will)) },
+        confirmButton = { TextButton(onClick = { confirmDisconnect = false; onDisconnect() }, enabled = !busy) { Text(strings.getString(R.string.stravacz_disconnect)) } },
+        dismissButton = { TextButton(onClick = { confirmDisconnect = false }) { Text(strings.getString(R.string.stravacz_keep_connected)) } },
     )
 }
 
 @Composable
 private fun ConnectCanteenCard(isDemo: Boolean, busy: Boolean, onLogin: (String, String, String) -> Unit) {
+    val strings = androidx.compose.ui.platform.LocalResources.current
     var canteen by rememberSaveable { mutableStateOf(if (isDemo) "0000" else "") }
     var username by rememberSaveable { mutableStateOf(if (isDemo) "demo" else "") }
     // Passwords are kept only in memory, never in saved UI state.
     var password by remember { mutableStateOf(if (isDemo) "demo" else "") }
     var showPassword by remember { mutableStateOf(false) }
-    GradeySectionCard(title = "Connect your canteen") {
-        Text("Use the same details you use to sign in to Strava.cz.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    GradeySectionCard(title = strings.getString(R.string.stravacz_connect_your_canteen)) {
+        Text(strings.getString(R.string.stravacz_use_the_same_details_you_use_to), color = MaterialTheme.colorScheme.onSurfaceVariant)
         OutlinedTextField(value = canteen, onValueChange = { canteen = it.filter(Char::isDigit).take(10) },
-            label = { Text("Canteen number") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth(),
+            label = { Text(strings.getString(R.string.stravacz_canteen_number)) }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next))
-        OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username") },
+        OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text(strings.getString(R.string.stravacz_username)) },
             singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") },
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text(strings.getString(R.string.stravacz_password)) },
             singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth(),
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             trailingIcon = {
                 IconButton(onClick = { showPassword = !showPassword }) {
                     Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = if (showPassword) "Hide password" else "Show password")
+                        contentDescription = if (showPassword) strings.getString(R.string.stravacz_hide_password) else strings.getString(R.string.stravacz_show_password))
                 }
             })
         Button(onClick = { onLogin(canteen.trim(), username.trim(), password); password = "" },
             enabled = !busy && canteen.isNotBlank() && username.isNotBlank() && password.isNotEmpty(), modifier = Modifier.fillMaxWidth()) {
-            Text(if (busy) "Connecting…" else "Connect canteen")
+            Text(if (busy) strings.getString(R.string.stravacz_connecting) else strings.getString(R.string.stravacz_connect_canteen))
         }
     }
 }
 
 @Composable
 private fun MealRow(meal: StravaCZMeal, currency: String, disabled: Boolean, onToggle: () -> Unit) {
+    val strings = androidx.compose.ui.platform.LocalResources.current
     Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
             Text(meal.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (meal.ordered) {
                 Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                Text("Ordered", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(strings.getString(R.string.stravacz_ordered), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
         }
         Text(meal.description ?: meal.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        meal.price?.let { Text(formatPrice(it, currency), style = MaterialTheme.typography.bodyMedium) }
-        if (meal.allergens.isNotEmpty()) Text("Allergens: ${meal.allergens.joinToString(", ")}", style = MaterialTheme.typography.bodySmall,
+        meal.price?.let { Text(formatPrice(it, currency, strings), style = MaterialTheme.typography.bodyMedium) }
+        if (meal.allergens.isNotEmpty()) Text(strings.getString(R.string.stravacz_allergens_1_s, meal.allergens.joinToString(", ")), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         meal.forbiddenAllergens?.takeIf { it.isNotBlank() }?.let {
-            Text("Allergen alert: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            Text(strings.getString(R.string.stravacz_allergen_alert_1_s, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
         }
         if (meal.canModify) {
             OutlinedButton(onClick = onToggle, enabled = !disabled, modifier = Modifier.fillMaxWidth()) {
-                Text(if (meal.ordered) "Cancel order" else "Order meal")
+                Text(if (meal.ordered) strings.getString(R.string.stravacz_cancel_order) else strings.getString(R.string.stravacz_order_meal))
             }
         } else {
-            Text("Changes unavailable", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(strings.getString(R.string.stravacz_changes_unavailable), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
-private fun formatPrice(value: Double, currency: String): String =
-    if (value == 0.0) "Included" else "${NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+private fun formatPrice(value: Double, currency: String, strings: android.content.res.Resources): String =
+    if (value == 0.0) strings.getString(R.string.stravacz_included) else "${NumberFormat.getNumberInstance(strings.configuration.locales[0]).apply {
         minimumFractionDigits = 2
         maximumFractionDigits = 2
     }.format(value)} $currency"
+
+
+private fun formatBalance(value: String, currency: String, strings: android.content.res.Resources): String {
+    val numeric = value.trim().replace(',', '.').toBigDecimalOrNull()
+    val display = numeric?.let {
+        NumberFormat.getNumberInstance(strings.configuration.locales[0]).apply {
+            minimumFractionDigits = 2
+            maximumFractionDigits = 2
+        }.format(it)
+    } ?: value
+    return "$display $currency"
+}

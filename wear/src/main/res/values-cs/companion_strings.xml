@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_now">Právě teď</string>
+    <string name="wear_next">Další</string>
+    <string name="wear_room">Učebna %1$s</string>
+    <string name="wear_lesson">Hodina</string>
+    <string name="wear_canceled">Zrušeno</string>
+    <string name="wear_substitution">Suplování</string>
+    <string name="wear_room_changed">Změna učebny</string>
+    <string name="wear_added">Přidaná hodina</string>
+    <string name="wear_open_gradey">Otevři Gradey</string>
+    <string name="wear_load_timetable">Na telefonu načti rozvrh.</string>
+    <string name="wear_no_lessons">Žádné další hodiny</string>
+    <string name="wear_saved_week">V uloženém rozvrhu už nejsou další hodiny.</string>
+    <string name="wear_refresh_timetable">Obnov rozvrh</string>
+    <string name="wear_stale_detail">Otevři Gradey na telefonu a načti aktuální rozvrh.</string>
+    <string name="wear_sign_in">Přihlas se na telefonu</string>
+    <string name="wear_sign_in_detail">Připoj svou školu a otevři rozvrh v Gradey.</string>
+    <string name="wear_refresh">Obnovit</string>
+    <string name="wear_syncing">Synchronizuji…</string>
+    <string name="wear_phone_offline">Otevři Gradey na připojeném telefonu.</string>
+    <string name="wear_refresh_requested">Čekám na telefon…</string>
+    <string name="wear_refresh_timeout">Telefon zatím neposlal nový rozvrh. Otevři na něm Gradey a zkus to znovu.</string>
+    <string name="wear_synced">Rozvrh aktualizován</string>
+    <string name="wear_saved_at">Uloženo %1$s</string>
+    <string name="wear_ends_in">Končí za %1$d min</string>
+    <string name="wear_starts_in">Začíná za %1$d min</string>
+    <string name="wear_progress">Průběh hodiny: %1$d procent</string>
+    <string name="wear_today">Dnes</string>
+    <string name="wear_tomorrow">Zítra</string>
+    <string name="wear_see_phone">Celý rozvrh najdeš na telefonu</string>
+</resources>

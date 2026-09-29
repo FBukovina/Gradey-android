@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+  <string name="account_privacy_changes">Co se v zásadách změnilo</string>
+  <string name="account_age_status_title">Věk</string>
+  <string name="account_age_status_adult">Potvrdil jsi, že ti je 16 nebo více.</string>
+  <string name="account_age_status_parent">Potvrdil jsi, že ti ještě není 16 a že rodič nebo zákonný zástupce souhlasí.</string>
+  <string name="account_age_status_unknown">Věk ještě není potvrzený.</string>
+  <string name="account_age_status_local">Uloženo na tomto zařízení. Datum narození neukládáme.</string>
+</resources>

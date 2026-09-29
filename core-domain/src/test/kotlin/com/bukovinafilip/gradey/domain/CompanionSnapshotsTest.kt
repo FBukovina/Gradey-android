@@ -45,4 +45,17 @@ class CompanionSnapshotsTest {
         val parent = session.copy(provider = SchoolProvider.EDU_PAGE, linkedAccountID = "parent", eduPage = EduPageSessionData("session", "parent", "secret", "hash", "id", activeStudent = SchoolStudentProfile("one", "Child One")))
         assertThat(parent.cacheScope).isNotEqualTo(parent.copy(eduPage = parent.eduPage!!.copy(activeStudent = SchoolStudentProfile("two", "Child Two"))).cacheScope)
     }
+    @Test fun overnightLessonEndsOnFollowingSchoolDayAndUsesInjectedClock() {
+        val week = DemoData.timetableFor("2026-09-21")
+        val original = week.days.first { it.lessons.isNotEmpty() }
+        val lesson = original.lessons.first().copy(hour = TimetableHour("night", "1", "23:30", "00:15"))
+        val day = original.copy(date = "2026-09-21", lessons = listOf(lesson))
+        val now = LocalDate.parse("2026-09-21").atTime(23, 45).atZone(ZoneId.of("Europe/Prague")).toInstant().toEpochMilli()
+        val widget = CompanionSnapshots.widget(week.copy(days = listOf(day)), now)
+        val payload = CompanionSnapshots.wear(week.copy(days = listOf(day)), null, now)
+        assertThat(widget.lessons.single().endEpochMillis!! - widget.lessons.single().startEpochMillis!!).isEqualTo(45 * 60_000L)
+        assertThat((NextLessonSelector.select(widget, now) as NextLessonWidgetSelection.Lesson).timing).isEqualTo(NextLessonWidgetTiming.CURRENT)
+        assertThat(payload.timetable!!.days.single().isToday).isTrue()
+    }
+
 }

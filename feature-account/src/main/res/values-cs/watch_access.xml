@@ -1,0 +1,5 @@
+<resources>
+    <string name="account_watch_access_title">Přístup hodinek</string>
+    <string name="account_watch_access_description">Vyberte, zda se hodinky v okolí mohou připojovat přímo ke škole. Přístup je vypnutý, dokud ho nepovolíte.</string>
+    <string name="account_watch_access_manage">Spravovat přístup hodinek</string>
+</resources>

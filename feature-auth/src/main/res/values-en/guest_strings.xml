@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_continue_without_id">Continue without Gradey ID</string>
+    <string name="auth_local_school_description">Connect your real school account and keep its data on this device. Cloud grade history, mark alerts and Gradey AI require Gradey ID.</string>
+</resources>

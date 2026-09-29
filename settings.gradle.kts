@@ -69,6 +69,8 @@ include(
     ":feature-subjects",
     ":feature-absence",
     ":feature-timetable",
+    ":feature-planner",
+    ":feature-support",
     ":feature-stravacz",
     ":feature-account",
     ":feature-ai",

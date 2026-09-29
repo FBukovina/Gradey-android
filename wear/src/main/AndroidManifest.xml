@@ -18,8 +18,25 @@
                 <data android:scheme="wear" android:host="*" android:pathPrefix="/gradey/snapshot" />
             </intent-filter>
         </service>
+        <service android:name=".GradeyLessonTileService" android:exported="true"
+            android:label="@string/wear_complication_label" android:description="@string/wear_tile_description"
+            android:icon="@drawable/ic_gradey_complication"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter><action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" /></intent-filter>
+            <meta-data android:name="androidx.wear.tiles.PREVIEW" android:resource="@drawable/lesson_tile_preview" />
+        </service>
+        <service android:name=".GradeyLessonComplicationService" android:exported="true"
+            android:label="@string/wear_complication_label" android:icon="@drawable/ic_gradey_complication"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter><action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" /></intent-filter>
+            <meta-data android:name="android.support.wearable.complications.SUPPORTED_TYPES" android:value="SHORT_TEXT,LONG_TEXT,RANGED_VALUE" />
+            <meta-data android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS" android:value="3600" />
+        </service>
+        <activity android:name=".WearSchoolActivity" android:exported="false" android:taskAffinity="com.bukovinafilip.gradey.wear" />
+        <activity android:name=".WearAIActivity" android:exported="false" android:taskAffinity="com.bukovinafilip.gradey.wear" />
         <activity
             android:name=".WearMainActivity"
+            android:taskAffinity="com.bukovinafilip.gradey.wear"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

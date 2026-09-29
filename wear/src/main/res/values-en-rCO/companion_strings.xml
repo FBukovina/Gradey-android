@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_next">next</string>
+    <string name="wear_lesson">lesson</string>
+    <string name="wear_canceled">canceled</string>
+    <string name="wear_substitution">substitution</string>
+    <string name="wear_open_gradey">open Gradey</string>
+    <string name="wear_refresh">refresh</string>
+    <string name="wear_today">today</string>
+    <string name="wear_tomorrow">Tomorrow</string>
+</resources>

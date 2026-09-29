@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_complication_label">Další hodina</string>
+    <string name="wear_tile_description">Aktuální nebo příští hodina, čas a učebna.</string>
+    <string name="wear_complication_preview">Matematika · 09:00–09:45 · 204</string>
+</resources>

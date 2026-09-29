@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="wear_now">Now</string>
+    <string name="wear_next">Next</string>
+    <string name="wear_room">Room %1$s</string>
+    <string name="wear_lesson">Lesson</string>
+    <string name="wear_canceled">Canceled</string>
+    <string name="wear_substitution">Substitution</string>
+    <string name="wear_room_changed">Room changed</string>
+    <string name="wear_added">Added lesson</string>
+    <string name="wear_open_gradey">Open Gradey</string>
+    <string name="wear_load_timetable">Load your timetable on the phone.</string>
+    <string name="wear_no_lessons">No upcoming lessons</string>
+    <string name="wear_saved_week">Your saved timetable has no more lessons.</string>
+    <string name="wear_refresh_timetable">Refresh timetable</string>
+    <string name="wear_stale_detail">Open Gradey on your phone to load the latest timetable.</string>
+    <string name="wear_sign_in">Sign in on your phone</string>
+    <string name="wear_sign_in_detail">Connect your school and open the timetable in Gradey.</string>
+    <string name="wear_refresh">Refresh</string>
+    <string name="wear_syncing">Syncing…</string>
+    <string name="wear_phone_offline">Open Gradey on your connected phone.</string>
+    <string name="wear_refresh_requested">Waiting for the phone…</string>
+    <string name="wear_refresh_timeout">The phone has not sent a new timetable yet. Open Gradey there and try again.</string>
+    <string name="wear_synced">Timetable updated</string>
+    <string name="wear_saved_at">Saved %1$s</string>
+    <string name="wear_ends_in">Ends in %1$d min</string>
+    <string name="wear_starts_in">Starts in %1$d min</string>
+    <string name="wear_progress">Lesson progress: %1$d%%</string>
+    <string name="wear_today">Today</string>
+    <string name="wear_tomorrow">Tomorrow</string>
+    <string name="wear_see_phone">Full timetable on your phone</string>
+</resources>

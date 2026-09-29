@@ -158,6 +158,15 @@ object DemoData {
         )
     }
 
+    fun permanentTimetableResponse(): TimetableResponse {
+        val response = timetableResponse(TimetableDates.monday().toString())
+        return response.copy(days = response.days.map { day -> day.copy(
+            date = "", dayType = "Workday", dayDescription = "",
+            atoms = day.atoms.filter { com.bukovinafilip.gradey.model.LessonChangeKind.fromApi(it.change?.changeType) != com.bukovinafilip.gradey.model.LessonChangeKind.ADDED }
+                .map { it.copy(change = null, theme = null, homeworkIDs = emptyList()) },
+        ) })
+    }
+
     fun timetableFor(weekContaining: String): TimetableWeek {
         val monday = demoMonday(weekContaining)
         return TimetableMapper.makeWeek(

@@ -1,0 +1,8 @@
+<resources>
+    <plurals name="app_price_periods">
+        <item quantity="one">%2$s za fakturační období</item>
+        <item quantity="few">%2$s za fakturační období</item>
+        <item quantity="many">%2$s za fakturační období</item>
+        <item quantity="other">%2$s za fakturační období</item>
+    </plurals>
+</resources>

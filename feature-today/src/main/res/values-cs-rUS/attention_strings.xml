@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="insight_assessment_due">příprava: %1$s</string>
+    <string name="insight_average_changed">%1$s: průměr se změnil z %2$s na %3$s</string>
+    <string name="insight_busy_tests">testy v příštích čtyřech dnech: %1$s</string>
+    <string name="insight_deadline_due">blíží se termín: %1$s</string>
+    <string name="insight_grade_edited">změna známky v předmětu %1$s</string>
+    <string name="insight_grade_new">nová známka v předmětu %1$s</string>
+    <string name="insight_trend_worsening">%1$s: průměr se zhoršuje</string>
+    <string name="today_attention_empty">tady se objeví tvoje nejbližší priority.</string>
+    <string name="today_attention_empty_title">máš vše hotovo</string>
+    <string name="today_attention_title">stojí za pozornost</string>
+    <string name="today_cached_warning">Zobrazuji uložená školní data. Pro aktuální změny je obnov tlačítkem nahoře.</string>
+    <string name="today_insight_recorded_average">na základě zapsaných známek</string>
+</resources>
