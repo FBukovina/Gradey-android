@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_greeting_morning">Dobré ráno</string>
+    <string name="today_greeting_afternoon">Dobré odpoledne</string>
+    <string name="today_greeting_evening">Dobrý večer</string>
+    <string name="today_hero_average">Průměr</string>
+    <string name="today_hero_lessons_today">Hodin dnes</string>
+    <string name="today_hero_new_marks">Nové známky</string>
+    <string name="today_summary_empty_title">Dnes není škola</string>
+    <string name="today_summary_empty_message">V dnešním rozvrhu nejsou žádné hodiny.</string>
+    <string name="today_summary_before_school_title">Škola brzy začíná</string>
+    <string name="today_summary_between_title">Mezi hodinami</string>
+    <string name="today_summary_now_title">Teď: %1$s</string>
+    <string name="today_summary_after_title">Pro dnešek hotovo</string>
+    <string name="today_summary_after_done">Všechny hodiny v rozvrhu už skončily.</string>
+    <string name="today_summary_after_changes">Než to pro dnešek zabalíš, zkontroluj změny v rozvrhu.</string>
+    <string name="today_summary_remaining">Zbývá %1$d min</string>
+    <string name="today_summary_next_in">%1$s začíná za %2$d min</string>
+    <string name="today_summary_next_is">Další je %1$s</string>
+    <string name="today_summary_lesson_fallback">Hodina</string>
+    <string name="today_lesson_next_at">%1$s začíná v %2$s</string>
+    <string name="today_lesson_starts_at">Začíná v %1$s</string>
+    <string name="today_lesson_starts_in">Začíná za %1$d min</string>
+    <string name="today_current_lesson">Právě probíhá</string>
+    <string name="today_next_lesson">Další hodina</string>
+    <string name="today_no_more_lessons">Žádné další hodiny</string>
+    <string name="today_no_more_lessons_subtitle">V dnešním rozvrhu už nejsou žádné další hodiny.</string>
+    <string name="today_timetable_unavailable_subtitle">Obnov data potažením dolů nebo otevři Rozvrh.</string>
+    <string name="today_recent_marks_empty">Tady se objeví tvoje zapsané známky.</string>
+    <string name="today_no_meal">Žádný objednaný oběd</string>
+    <string name="today_no_meal_subtitle">Oběd objednáš nebo zkontroluješ v Jídelně.</string>
+    <string name="today_lunch">Oběd</string>
+    <string name="today_school_account">Školní účet</string>
+    <string name="today_open_gradey_ai">Otevřít Gradey AI</string>
+    <string name="today_absence_adjusted">Upraveno místně</string>
+    <string name="today_absence_threshold_unavailable">Školní limit není k dispozici. Procenta jsou zobrazena bez odhadu hranice.</string>
+    <string name="today_absence_missed">Zameškáno %1$d z %2$d hodin</string>
+    <plurals name="today_summary_changes">
+        <item quantity="one">1 změna dnes: %2$s</item>
+        <item quantity="few">%1$d změny dnes</item>
+        <item quantity="many">%1$d změny dnes</item>
+        <item quantity="other">%1$d změn dnes</item>
+    </plurals>
+    <string name="today_planner_title">Plánovač</string>
+</resources>

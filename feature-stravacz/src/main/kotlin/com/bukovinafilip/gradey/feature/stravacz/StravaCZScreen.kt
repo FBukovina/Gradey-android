@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.stravacz
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,18 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -187,7 +183,7 @@ fun StravaCZScreen(
         day.copy(meals = if (orderedOnly) day.meals.filter { it.ordered } else day.meals)
     }.filter { it.meals.isNotEmpty() }
 
-    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().imePadding(),
             contentPadding = PaddingValues(GradeySpacing.lg),
@@ -209,7 +205,7 @@ fun StravaCZScreen(
             } }
             success?.let { message -> item {
                 Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    HugeIcon(HugeIcons.CheckmarkCircle02, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(message, color = MaterialTheme.colorScheme.primary)
                 }
             } }
@@ -231,7 +227,7 @@ fun StravaCZScreen(
                                         style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                                 }
                                 IconButton(onClick = onRefresh, enabled = !busy) {
-                                    Icon(Icons.Default.Refresh, contentDescription = strings.getString(R.string.stravacz_refresh_meals_and_order_status))
+                                    HugeIcon(HugeIcons.Refresh04, contentDescription = strings.getString(R.string.stravacz_refresh_meals_and_order_status))
                                 }
                             }
                         }
@@ -249,7 +245,7 @@ fun StravaCZScreen(
                 }
                 if (visibleDays.isEmpty() && !busy) item {
                     GradeySectionCard {
-                        Icon(Icons.Default.Restaurant, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        HugeIcon(HugeIcons.Restaurant02, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Text(if (orderedOnly) strings.getString(R.string.stravacz_no_meals_ordered_yet) else strings.getString(R.string.stravacz_no_meals_available), style = MaterialTheme.typography.titleMedium)
                         Text(if (orderedOnly) strings.getString(R.string.stravacz_choose_all_meals_to_see_what_s) else strings.getString(R.string.stravacz_your_canteen_hasn_t_published_any_meals),
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -322,7 +318,7 @@ private fun ConnectCanteenCard(isDemo: Boolean, busy: Boolean, onLogin: (String,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
             trailingIcon = {
                 IconButton(onClick = { showPassword = !showPassword }) {
-                    Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    HugeIcon(if (showPassword) HugeIcons.ViewOff else HugeIcons.View,
                         contentDescription = if (showPassword) strings.getString(R.string.stravacz_hide_password) else strings.getString(R.string.stravacz_show_password))
                 }
             })
@@ -340,7 +336,7 @@ private fun MealRow(meal: StravaCZMeal, currency: String, disabled: Boolean, onT
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm), verticalAlignment = Alignment.CenterVertically) {
             Text(meal.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (meal.ordered) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                HugeIcon(HugeIcons.CheckmarkCircle02, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Text(strings.getString(R.string.stravacz_ordered), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
         }

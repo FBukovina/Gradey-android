@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.timetable
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
@@ -31,19 +34,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.MeetingRoom
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -54,6 +47,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.MaterialTheme
 import com.bukovinafilip.gradey.ui.adaptiveColor
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.brandGradient
+import com.bukovinafilip.gradey.ui.gradeyColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -90,23 +86,17 @@ import java.time.Duration
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val BackgroundTop: Color
-    @Composable get() = adaptiveColor(Color(0xFFCBDDDD), Color(0xFF17382D))
-private val BackgroundBottom: Color
-    @Composable get() = adaptiveColor(Color(0xFFF2F2F7), Color(0xFF0C1713))
 private val AccentTeal: Color
     @Composable get() = MaterialTheme.colorScheme.primary
-private val HeroStart = Color(0xFF18A182)
-private val HeroEnd = Color(0xFF1CA567)
 private val MutedText: Color
-    @Composable get() = adaptiveColor(Color(0xFF8A8A8E), Color(0xFFB0C5B9))
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val MutedLight: Color
-    @Composable get() = adaptiveColor(Color(0xFFB9BAC0), Color(0xFF8DA79A))
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
 private val SubjectTile: Color
-    @Composable get() = adaptiveColor(Color(0xFFDEF1ED), Color(0xFF204C3C))
-private val NoticeRed = Color(0xFFD83E4F)
+    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+private val NoticeRed = GradeyColors.Poor
 private val DividerColor: Color
-    @Composable get() = adaptiveColor(Color(0xFFC6C6C8), Color(0xFF344F40))
+    @Composable get() = MaterialTheme.gradeyColors.separator
 
 private data class TimetableDaySlot(
     val date: LocalDate,
@@ -153,28 +143,25 @@ fun TimetableScreen(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundBottom),
-    ) {
-        TimetableBackgroundGlow()
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(top = 20.dp),
+                .padding(top = 8.dp),
             contentPadding = PaddingValues(bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "timetable_controls") {
                 Column {
-                    TimetableHeader(
-                        isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
-                        onOpenAccount = onOpenAccount,
-                        onOpenGradeyTools = onOpenGradeyTools,
+                    com.bukovinafilip.gradey.ui.GradeyPageHeader(
+                        title = strings.getString(R.string.timetable_timetable),
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onOpenAI = onOpenGradeyTools, aiDescription = strings.getString(R.string.timetable_open_gradey_tools),
+                        onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = strings.getString(R.string.timetable_refresh_timetable),
+                        onOpenSettings = onOpenAccount, settingsDescription = strings.getString(R.string.timetable_open_account),
                     )
+                    Spacer(Modifier.height(8.dp))
                     onChangeKind?.let { selectKind ->
                         FlowRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             FilterChip(!isPermanent, { selectKind(TimetableKind.WEEKLY) }, label = { Text(strings.getString(R.string.timetable_weekly)) })
@@ -240,7 +227,7 @@ fun TimetableScreen(
             onDismissRequest = { selectedLesson = null },
             modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
             sheetState = sheetState,
-            shape = RoundedCornerShape(48.dp),
+            shape = RoundedCornerShape(28.dp),
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             tonalElevation = 12.dp,
@@ -257,107 +244,6 @@ fun TimetableScreen(
                     open(itemID)
                 } },
             )
-        }
-    }
-}
-
-@Composable
-private fun TimetableHeader(
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    com.bukovinafilip.gradey.ui.AdaptivePageHeader(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-    ) {
-        Surface(
-            modifier = Modifier
-                .size(44.dp),
-            onClick = onOpenGradeyTools,
-            shape = CircleShape,
-            color = adaptiveColor(Color(0xFFE8FAFB), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = adaptiveColor(Color(0xFFC7ECE9), Color(0xFF2A5142))) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = strings.getString(R.string.timetable_open_gradey_tools),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        Text(
-            text = strings.getString(R.string.timetable_timetable),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 17.sp,
-            lineHeight = 21.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-
-        Surface(
-            modifier = Modifier
-                .width(106.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(22.dp),
-            color = adaptiveColor(Color(0xFFDCFAF6), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    onClick = onRefresh,
-                    enabled = !isRefreshing,
-                    shape = CircleShape,
-                    color = Color.Transparent,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(21.dp),
-                                color = AccentTeal,
-                                strokeWidth = 2.5.dp,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = strings.getString(R.string.timetable_refresh_timetable),
-                                tint = AccentTeal,
-                                modifier = Modifier.size(27.dp),
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.size(36.dp),
-                    onClick = onOpenAccount,
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFBDECE4), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = strings.getString(R.string.timetable_open_account),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -384,7 +270,7 @@ private fun WeekNavigator(
             enabled = enabled,
             onClick = onPrevious,
         ) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
+            HugeIcon(HugeIcons.ArrowLeft01, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
         }
         Text(
             text = formatWeekRange(monday, locale),
@@ -400,7 +286,7 @@ private fun WeekNavigator(
             enabled = enabled,
             onClick = onNext,
         ) {
-            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
+            HugeIcon(HugeIcons.ArrowRight01, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
         }
     }
 }
@@ -420,7 +306,7 @@ private fun WeekArrow(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        color = adaptiveColor(Color(0xFFBFE4DF), Color(0xFF284A3C)).copy(alpha = if (enabled) 0.72f else 0.45f),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 0.12f else 0.06f),
     ) {
         Box(contentAlignment = Alignment.Center) { icon() }
     }
@@ -455,7 +341,7 @@ private fun DayStrip(
                     .clip(shape)
                     .background(
                         if (selected) {
-                            Brush.horizontalGradient(listOf(HeroStart, HeroEnd))
+                            MaterialTheme.colorScheme.brandGradient
                         } else {
                             Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surface))
                         },
@@ -559,7 +445,7 @@ private fun DaySummaryCard(day: ScheduledDay, isToday: Boolean, now: LocalTime, 
     val current = if (isToday) activeLessons.firstOrNull { it.isCurrentAt(now) } else null
     val next = if (isToday && current == null) activeLessons.firstOrNull { it.hour.beginTime.asSchoolTime()?.isAfter(now) == true } else null
     val changed = day.lessons.count { it.changeKind != LessonChangeKind.NONE }
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = adaptiveColor(Color(0xFFDCF0EB), Color(0xFF1C3C2E))) {
+    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), contentColor = MaterialTheme.colorScheme.onSurface) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(when {
                 current != null -> strings.getString(R.string.timetable_now_1_s, current.subjectDisplayName(strings))
@@ -568,7 +454,7 @@ private fun DaySummaryCard(day: ScheduledDay, isToday: Boolean, now: LocalTime, 
                 isToday && activeLessons.any { it.hour.beginTime.asSchoolTime() == null || it.hour.endTime.asSchoolTime() == null } -> strings.getString(R.string.timetable_lesson_times_unavailable)
                 isToday -> strings.getString(R.string.timetable_you_re_done_for_today)
                 else -> strings.getQuantityString(R.plurals.timetable_lessons_scheduled, activeLessons.size, activeLessons.size)
-            }, color = adaptiveColor(Color(0xFF075A4B), Color(0xFFB6EED0)), fontWeight = FontWeight.Bold, fontSize = 17.sp)
+            }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 17.sp)
             val featured = current ?: next
             val description = if (featured != null) {
                 val end = (if (current != null) featured.hour.endTime else featured.hour.beginTime).asSchoolTime()
@@ -580,7 +466,7 @@ private fun DaySummaryCard(day: ScheduledDay, isToday: Boolean, now: LocalTime, 
                 ).joinToString(" · ")
             } else if (activeLessons.isEmpty()) day.dayDescription.ifBlank { strings.getString(R.string.timetable_no_lessons_scheduled) }
             else listOfNotNull(activeLessons.firstOrNull()?.hour?.beginTime, activeLessons.lastOrNull()?.hour?.endTime).joinToString(" – ")
-            Text(description, color = adaptiveColor(Color(0xFF397469), Color(0xFFA9D5C4)), fontSize = 13.sp)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
             current?.let { lesson ->
                 val start = lesson.hour.beginTime.asSchoolTime()
                 val end = lesson.hour.endTime.asSchoolTime()
@@ -589,7 +475,7 @@ private fun DaySummaryCard(day: ScheduledDay, isToday: Boolean, now: LocalTime, 
                     LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth(), color = AccentTeal, trackColor = MaterialTheme.colorScheme.surface)
                 }
             }
-            if (changed > 0) Text(strings.getQuantityString(R.plurals.timetable_timetable_changes, changed, changed), color = adaptiveColor(Color(0xFF8A5A00), Color(0xFFE7BC6F)), fontSize = 12.sp)
+            if (changed > 0) Text(strings.getQuantityString(R.plurals.timetable_timetable_changes, changed, changed), color = GradeyColors.Average, fontSize = 12.sp)
             onPlanDay?.let { action -> TextButton(onClick = action) { Text(strings.getString(R.string.timetable_plan_this_day), color = AccentTeal) } }
         }
     }
@@ -641,7 +527,7 @@ private fun LessonRow(
                 },
             onClick = onClick,
             shape = RoundedCornerShape(20.dp),
-            color = if (isCanceled) adaptiveColor(Color(0xFFFFF1F2), Color(0xFF44262C)) else if (isCurrent) adaptiveColor(Color(0xFFE8F8F2), Color(0xFF1D4031)) else MaterialTheme.colorScheme.surface,
+            color = if (isCanceled) GradeyColors.Poor.copy(alpha = 0.12f) else if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surface,
             border = if (isCurrent) BorderStroke(1.5.dp, AccentTeal) else null,
             shadowElevation = 1.dp,
         ) {
@@ -681,8 +567,8 @@ private fun LessonRow(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MeetingRoom,
+                        HugeIcon(
+                            name = HugeIcons.DoorOpen,
                             contentDescription = null,
                             tint = MutedText,
                             modifier = Modifier.size(15.dp),
@@ -694,8 +580,8 @@ private fun LessonRow(
                             lineHeight = 18.sp,
                             maxLines = 1,
                         )
-                        Icon(
-                            imageVector = Icons.Default.Person,
+                        HugeIcon(
+                            name = HugeIcons.User,
                             contentDescription = null,
                             tint = MutedText,
                             modifier = Modifier.size(16.dp),
@@ -780,22 +666,14 @@ private fun LessonDetailSheet(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 360.dp, max = 680.dp)
-            .clip(RoundedCornerShape(48.dp))
-            .background(
-                Brush.verticalGradient(
-                    colorStops = arrayOf(
-                        0f to adaptiveColor(Color(0xFFD3E7E7), Color(0xFF19392C)),
-                        0.26f to adaptiveColor(Color(0xFFC4E1DD), Color(0xFF204638)),
-                        0.68f to adaptiveColor(Color(0xFFEDF1F3), Color(0xFF15271E)),
-                        1f to BackgroundBottom,
-                    ),
-                ),
-            ),
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surface),
     ) {
+        val glow = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(Color(0x4930A78E), Color.Transparent),
+                    colors = listOf(glow, Color.Transparent),
                     center = Offset(size.width * 0.76f, size.height * 0.05f),
                     radius = size.width * 0.65f,
                 ),
@@ -811,7 +689,7 @@ private fun LessonDetailSheet(
             Box(
                 modifier = Modifier
                     .size(width = 34.dp, height = 5.dp)
-                    .background(Color(0xFF83A5A3), RoundedCornerShape(3.dp)),
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(3.dp)),
             )
             Spacer(Modifier.height(16.dp))
             Text(
@@ -828,7 +706,7 @@ private fun LessonDetailSheet(
                     .fillMaxWidth()
                     .heightIn(min = 96.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Brush.horizontalGradient(listOf(HeroStart, HeroEnd)))
+                    .background(MaterialTheme.colorScheme.brandGradient)
                     .semantics {
                         contentDescription = "${lesson.subjectDisplayName(strings)}, ${lesson.formattedTimeRange()}"
                     },
@@ -837,7 +715,7 @@ private fun LessonDetailSheet(
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
                     Text(
                         text = lesson.formattedTimeRange(),
-                        color = Color(0xFFE2F7F1),
+                        color = GradeyColors.OnAccent.copy(alpha = 0.85f),
                         fontSize = 16.sp,
                         lineHeight = 20.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -845,7 +723,7 @@ private fun LessonDetailSheet(
                     Spacer(Modifier.height(5.dp))
                     Text(
                         text = lesson.subjectDisplayName(strings),
-                        color = Color.White,
+                        color = GradeyColors.OnAccent,
                         fontSize = 22.sp,
                         lineHeight = 28.sp,
                         fontWeight = FontWeight.Bold,
@@ -872,40 +750,40 @@ private fun LessonDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     DetailRow(
-                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        icon = { HugeIcon(HugeIcons.User, contentDescription = null) },
                         label = strings.getString(R.string.timetable_teacher),
                         value = lesson.teacherName ?: lesson.teacherAbbrev ?: "—",
                     )
                     DetailRow(
-                        icon = { Icon(Icons.Outlined.MeetingRoom, contentDescription = null) },
+                        icon = { HugeIcon(HugeIcons.DoorOpen, contentDescription = null) },
                         label = strings.getString(R.string.timetable_room),
                         value = lesson.roomName ?: lesson.roomAbbrev ?: "—",
                     )
                     if (lesson.groups.isNotEmpty()) DetailRow(
-                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        icon = { HugeIcon(HugeIcons.User, contentDescription = null) },
                         label = strings.getString(R.string.timetable_groups),
                         value = lesson.groups.joinToString(", "),
                     )
                     if (lesson.cycles.isNotEmpty()) DetailRow(
-                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                        icon = { HugeIcon(HugeIcons.InformationCircle, contentDescription = null) },
                         label = strings.getString(R.string.timetable_cycles),
                         value = lesson.cycles.joinToString(", "),
                     )
                     if (lesson.hasHomework) DetailRow(
-                        icon = { Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null) },
+                        icon = { HugeIcon(HugeIcons.Book02, contentDescription = null) },
                         label = strings.getString(R.string.timetable_homework),
                         value = strings.getString(R.string.timetable_homework_assigned_for_this_lesson),
                     )
                     lesson.theme?.takeIf { it.isNotBlank() }?.let { topic ->
                         DetailRow(
-                            icon = { Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null) },
+                            icon = { HugeIcon(HugeIcons.Book02, contentDescription = null) },
                             label = strings.getString(R.string.timetable_topic),
                             value = topic,
                         )
                     }
                     lesson.changeDescription?.takeIf { it.isNotBlank() }?.let { change ->
                         DetailRow(
-                            icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                            icon = { HugeIcon(HugeIcons.InformationCircle, contentDescription = null) },
                             label = strings.getString(R.string.timetable_change),
                             value = change,
                         )
@@ -958,37 +836,6 @@ private fun DetailRow(
                 fontWeight = FontWeight.Normal,
             )
         }
-    }
-}
-
-@Composable
-private fun TimetableBackgroundGlow() {
-    val glowTop = BackgroundTop
-    val glowBottom = BackgroundBottom
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colorStops = arrayOf(
-                    0f to glowTop,
-                    0.34f to glowBottom,
-                    1f to glowBottom,
-                ),
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x3830A78E), Color.Transparent),
-                center = Offset(size.width, size.height * 0.22f),
-                radius = size.width * 0.78f,
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x245EAEB5), Color.Transparent),
-                center = Offset(0f, size.height * 0.56f),
-                radius = size.width * 0.72f,
-            ),
-        )
     }
 }
 

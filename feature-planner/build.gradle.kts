@@ -28,7 +28,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
 }

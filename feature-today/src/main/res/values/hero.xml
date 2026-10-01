@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_greeting_morning">Good morning</string>
+    <string name="today_greeting_afternoon">Good afternoon</string>
+    <string name="today_greeting_evening">Good evening</string>
+    <string name="today_hero_average">Average</string>
+    <string name="today_hero_lessons_today">Lessons today</string>
+    <string name="today_hero_new_marks">New marks</string>
+    <string name="today_summary_empty_title">No school today</string>
+    <string name="today_summary_empty_message">There are no lessons in today\'s timetable.</string>
+    <string name="today_summary_before_school_title">School starts soon</string>
+    <string name="today_summary_between_title">Between lessons</string>
+    <string name="today_summary_now_title">Now: %1$s</string>
+    <string name="today_summary_after_title">Done for today</string>
+    <string name="today_summary_after_done">All listed lessons are over.</string>
+    <string name="today_summary_after_changes">Check today’s timetable changes before you finish for the day.</string>
+    <string name="today_summary_remaining">%1$d min remaining</string>
+    <string name="today_summary_next_in">%1$s starts in %2$d min</string>
+    <string name="today_summary_next_is">%1$s is next</string>
+    <string name="today_summary_lesson_fallback">Lesson</string>
+    <string name="today_lesson_next_at">%1$s starts at %2$s</string>
+    <string name="today_lesson_starts_at">Starts at %1$s</string>
+    <string name="today_lesson_starts_in">Starts in %1$d min</string>
+    <string name="today_current_lesson">Current lesson</string>
+    <string name="today_next_lesson">Next lesson</string>
+    <string name="today_no_more_lessons">No more lessons</string>
+    <string name="today_no_more_lessons_subtitle">No further lessons are listed for today.</string>
+    <string name="today_timetable_unavailable_subtitle">Pull down to refresh or open Timetable.</string>
+    <string name="today_recent_marks_empty">Your recorded marks will appear here.</string>
+    <string name="today_no_meal">No meal ordered</string>
+    <string name="today_no_meal_subtitle">Open Meals to order or check the menu.</string>
+    <string name="today_lunch">Lunch</string>
+    <string name="today_school_account">School account</string>
+    <string name="today_open_gradey_ai">Open Gradey AI</string>
+    <string name="today_absence_adjusted">Adjusted locally</string>
+    <string name="today_absence_threshold_unavailable">School limit unavailable. Current percentages are shown without guessing a threshold.</string>
+    <string name="today_absence_missed">%1$d of %2$d lessons missed</string>
+    <plurals name="today_summary_changes">
+        <item quantity="one">1 change today: %2$s</item>
+        <item quantity="other">%1$d changes today</item>
+    </plurals>
+    <string name="today_planner_title">Planner</string>
+</resources>

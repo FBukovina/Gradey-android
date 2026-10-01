@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.planner
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
@@ -20,21 +23,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -229,13 +223,13 @@ fun PlannerRoute(
         items.filter { it.isCompleted == complete && (filterDay == null || PersonalPlanner.orderingDate(it)?.toString() == filterDay) }
             .sortedWith(compareBy<PersonalPlannerItem> { PersonalPlanner.orderingDate(it) ?: LocalDate.MAX }.thenBy { it.dueTime ?: "23:59" }.thenBy { it.title.lowercase() })
     }
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         LazyColumn(Modifier.testTag("plannerList"), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, strings.getString(R.string.planner_back)) }
+                    IconButton(onClick = onBack) { HugeIcon(HugeIcons.ArrowLeft01, strings.getString(R.string.planner_back)) }
                     Text(strings.getString(R.string.planner_planner), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) }, enabled = loaded && !busy) { Icon(Icons.Default.Add, strings.getString(R.string.planner_add_planner_item)) }
+                    IconButton(onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) }, enabled = loaded && !busy) { HugeIcon(HugeIcons.Add01, strings.getString(R.string.planner_add_planner_item)) }
                 }
             }
             item { GradeyHero(strings.getString(R.string.planner_a_little_more_prepared), strings.getString(R.string.planner_keep_homework_tests_and_everything_in_between)) }
@@ -262,7 +256,7 @@ fun PlannerRoute(
             }
             if (loaded && visible.isEmpty()) item {
                 GradeySectionCard {
-                    Icon(Icons.Default.Checklist, null, tint = MaterialTheme.colorScheme.primary)
+                    HugeIcon(HugeIcons.CheckList, null, tint = MaterialTheme.colorScheme.primary)
                     Text(if (complete) strings.getString(R.string.planner_completed_and_collected) else strings.getString(R.string.planner_make_room_for_what_s_next), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(if (complete) strings.getString(R.string.planner_items_you_finish_will_appear_here) else strings.getString(R.string.planner_add_homework_a_test_a_presentation_a), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!complete) Button(onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) }, enabled = !busy) { Text(strings.getString(R.string.planner_add_an_item)) }
@@ -275,7 +269,7 @@ fun PlannerRoute(
                     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
                         Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { mutate({ repository.setCompleted(item.id, !item.isCompleted) }) }, enabled = !busy) {
-                                Icon(if (item.isCompleted) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                HugeIcon(if (item.isCompleted) HugeIcons.CheckmarkCircle02 else HugeIcons.Circle,
                                     if (item.isCompleted) strings.getString(R.string.planner_mark_1_s_incomplete, item.title) else strings.getString(R.string.planner_mark_1_s_complete, item.title), tint = MaterialTheme.colorScheme.primary)
                             }
                             Column(Modifier.weight(1f).clickable(enabled = !busy) { edit(item) }.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -288,7 +282,7 @@ fun PlannerRoute(
                                     TextButton(onClick = { onAskTestAI(item.id) }) { Text(strings.getString(R.string.planner_prepare_with_ai)) }
                                 }
                             }
-                            IconButton(onClick = { edit(item) }, enabled = !busy) { Icon(Icons.Default.ChevronRight, strings.getString(R.string.planner_edit_1_s, item.title)) }
+                            IconButton(onClick = { edit(item) }, enabled = !busy) { HugeIcon(HugeIcons.ArrowRight01, strings.getString(R.string.planner_edit_1_s, item.title)) }
                         }
                     }
                 }
@@ -429,7 +423,7 @@ private fun PlannerEditor(
             if (PersonalPlanner.orderingDate(item) != null) item {
                 GradeySectionCard(title = strings.getString(R.string.planner_calendar_copy)) {
                     Text(strings.getString(R.string.planner_export_a_copy_to_your_calendar_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = { onSave(item, PlannerExport.CALENDAR) }, enabled = enabled && item.title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Icon(Icons.Default.CalendarMonth, null); Text(strings.getString(R.string.planner_save_add_to_calendar)) }
+                    OutlinedButton(onClick = { onSave(item, PlannerExport.CALENDAR) }, enabled = enabled && item.title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { HugeIcon(HugeIcons.Calendar03, null); Text(strings.getString(R.string.planner_save_add_to_calendar)) }
                     TextButton(onClick = { onSave(item, PlannerExport.ICS) }, enabled = enabled && item.title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.planner_save_export_calendar_file)) }
                 }
             }

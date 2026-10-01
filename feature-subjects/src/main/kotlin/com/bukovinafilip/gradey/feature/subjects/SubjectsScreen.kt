@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.subjects
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -31,32 +34,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
-import androidx.compose.material.icons.automirrored.filled.TrendingFlat
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
-import com.bukovinafilip.gradey.ui.adaptiveColor
+import com.bukovinafilip.gradey.ui.color
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.brandGradient
+import com.bukovinafilip.gradey.ui.gradeyColors
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -108,31 +102,23 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 
-private val BackgroundTop: Color
-    @Composable get() = adaptiveColor(Color(0xFFCBDDDD), Color(0xFF17382D))
-private val BackgroundBottom: Color
-    @Composable get() = adaptiveColor(Color(0xFFEFEFF4), Color(0xFF0C1713))
 private val AccentTeal: Color
     @Composable get() = MaterialTheme.colorScheme.primary
-private val HeroStart = Color(0xFF18A182)
-private val HeroEnd = Color(0xFF1CA567)
-private val DetailHeroStart = Color(0xFF148A94)
-private val DetailHeroEnd = Color(0xFF3099A1)
 private val CardWhite: Color
-    @Composable get() = adaptiveColor(Color(0xFFFDFDFE), Color(0xFF17261F))
+    @Composable get() = MaterialTheme.colorScheme.surface
 private val MutedText: Color
-    @Composable get() = adaptiveColor(Color(0xFF8E8E93), Color(0xFFB0C5B9))
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val DividerColor: Color
-    @Composable get() = adaptiveColor(Color(0xFFC6C6C8), Color(0xFF344F40))
+    @Composable get() = MaterialTheme.gradeyColors.separator
 private val SoftTeal: Color
-    @Composable get() = adaptiveColor(Color(0xFFDEEFF0), Color(0xFF244B46))
+    @Composable get() = GradeyColors.Good.copy(alpha = 0.14f)
 private val SoftMint: Color
-    @Composable get() = adaptiveColor(Color(0xFFE0F3EA), Color(0xFF214F3D))
+    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
 private val SoftGray: Color
-    @Composable get() = adaptiveColor(Color(0xFFEEEEF0), Color(0xFF293D33))
-private val ExcellentGreen = Color(0xFF18A56F)
-private val WarningOrange = Color(0xFFE0921A)
-private val DangerRed = Color(0xFFD95461)
+    @Composable get() = MaterialTheme.gradeyColors.tertiaryFill
+private val ExcellentGreen = GradeyColors.Excellent
+private val WarningOrange = GradeyColors.Average
+private val DangerRed = GradeyColors.Poor
 private val PragueZone = ZoneId.of("Europe/Prague")
 
 private enum class SubjectSortMode(val label: Int) {
@@ -269,26 +255,20 @@ private fun SubjectsOverview(
         }
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundBottom),
-    ) {
-        MarksBackgroundGlow()
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 16.dp, top = 13.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                MarksHeader(
+                com.bukovinafilip.gradey.ui.GradeyPageHeader(
                     title = strings.getString(R.string.subjects_marks),
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
-                    onOpenAccount = onOpenAccount,
-                    onOpenGradeyTools = onOpenGradeyTools,
+                    onOpenAI = onOpenGradeyTools, aiDescription = strings.getString(R.string.subjects_open_gradey_tools),
+                    onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = strings.getString(R.string.subjects_refresh_marks),
+                    onOpenSettings = onOpenAccount, settingsDescription = strings.getString(R.string.subjects_open_account),
                 )
             }
             item { OverallAverageCard(subjects) }
@@ -352,7 +332,7 @@ private fun GradeMovementCard(trends: List<GradeHistoryTrend>, subjects: List<Su
                 ) {
                     Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(12.dp)) {
                         Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                            Icon(if (improved) Icons.AutoMirrored.Filled.TrendingDown else if (worsened) Icons.AutoMirrored.Filled.TrendingUp else Icons.AutoMirrored.Filled.TrendingFlat,
+                            HugeIcon(if (improved) HugeIcons.ChartDecrease else if (worsened) HugeIcons.ChartIncrease else HugeIcons.ArrowRight02,
                                 contentDescription = if (improved) strings.getString(R.string.subjects_average_improved) else if (worsened) strings.getString(R.string.subjects_average_increased) else strings.getString(R.string.subjects_average_unchanged), tint = color)
                         }
                     }
@@ -376,7 +356,7 @@ private fun SubjectSearchField(query: String, onQueryChange: (String) -> Unit) {
     val strings = androidx.compose.ui.platform.LocalResources.current
     Surface(modifier = Modifier.fillMaxWidth(), color = CardWhite, shape = RoundedCornerShape(14.dp)) {
         Row(modifier = Modifier.heightIn(min = 52.dp).padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Search, contentDescription = null, tint = MutedText, modifier = Modifier.size(22.dp))
+            HugeIcon(HugeIcons.Search01, contentDescription = null, tint = MutedText, modifier = Modifier.size(22.dp))
             BasicTextField(
                 value = query,
                 onValueChange = onQueryChange,
@@ -392,112 +372,7 @@ private fun SubjectSearchField(query: String, onQueryChange: (String) -> Unit) {
                 },
             )
             IconButton(onClick = { onQueryChange("") }, enabled = query.isNotEmpty()) {
-                Icon(Icons.Default.Close, contentDescription = strings.getString(R.string.subjects_clear_subject_search), tint = if (query.isEmpty()) Color.Transparent else MutedText)
-            }
-        }
-    }
-}
-
-@Composable
-private fun MarksHeader(
-    title: String,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    com.bukovinafilip.gradey.ui.AdaptivePageHeader(
-        modifier = Modifier
-            .fillMaxWidth(),
-    ) {
-        Surface(
-            modifier = Modifier
-                .size(44.dp),
-            onClick = onOpenGradeyTools,
-            shape = CircleShape,
-            color = adaptiveColor(Color(0xFFE8FAFB), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.size(30.dp),
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFC7ECE9), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = strings.getString(R.string.subjects_open_gradey_tools),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 18.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-
-        Surface(
-            modifier = Modifier
-                .width(105.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(22.dp),
-            color = adaptiveColor(Color(0xFFDCFAF6), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    onClick = onRefresh,
-                    enabled = !isRefreshing,
-                    shape = CircleShape,
-                    color = Color.Transparent,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(21.dp),
-                                color = AccentTeal,
-                                strokeWidth = 2.5.dp,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = strings.getString(R.string.subjects_refresh_marks),
-                                tint = AccentTeal,
-                                modifier = Modifier.size(27.dp),
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.size(32.dp),
-                    onClick = onOpenAccount,
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFBDECE4), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = strings.getString(R.string.subjects_open_account),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
+                HugeIcon(HugeIcons.Cancel01, contentDescription = strings.getString(R.string.subjects_clear_subject_search), tint = if (query.isEmpty()) Color.Transparent else MutedText)
             }
         }
     }
@@ -508,57 +383,25 @@ private fun OverallAverageCard(subjects: List<Subject>) {
     val strings = androidx.compose.ui.platform.LocalResources.current
     val overallAverage = formatAverage(GradeMath.overallAverage(subjects))
     val totalMarks = subjects.sumOf { it.marks.size }
-
-    Surface(
+    val onAccent = GradeyColors.OnAccent
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 124.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
-        shadowElevation = 2.dp,
+            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = AccentTeal.copy(alpha = 0.24f), spotColor = AccentTeal.copy(alpha = 0.24f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.brandGradient)
+            .padding(24.dp)
+            .semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.Top,
     ) {
-        Row(
-            modifier = Modifier
-                .background(Brush.horizontalGradient(listOf(HeroStart, HeroEnd)))
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column {
-                Text(
-                    text = strings.getString(R.string.subjects_overall_average),
-                    color = Color(0xFF073C35),
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = overallAverage,
-                    color = Color(0xFF001D19),
-                    fontSize = 50.sp,
-                    lineHeight = 55.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = strings.getQuantityString(R.plurals.subjects_count_subject, subjects.size, subjects.size),
-                    color = Color(0xFF073C35),
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    text = strings.getQuantityString(R.plurals.subjects_count_mark, totalMarks, totalMarks),
-                    color = Color(0xFF073C35),
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(strings.getString(R.string.subjects_overall_average), style = GradeyType.captionBold, color = onAccent.copy(alpha = 0.7f))
+            Text(overallAverage, style = GradeyType.display(48), color = onAccent, maxLines = 1)
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(strings.getQuantityString(R.plurals.subjects_count_subject, subjects.size, subjects.size), style = GradeyType.caption.copy(fontWeight = FontWeight.SemiBold), color = onAccent.copy(alpha = 0.72f))
+            Text(strings.getQuantityString(R.plurals.subjects_count_mark, totalMarks, totalMarks), style = GradeyType.caption.copy(fontWeight = FontWeight.SemiBold), color = onAccent.copy(alpha = 0.72f))
         }
     }
 }
@@ -574,7 +417,7 @@ private fun SubjectsSectionHeader(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            color = adaptiveColor(Color(0xFFD7E4E4), Color(0xFF253A30)).copy(alpha = 0.92f),
+            color = MaterialTheme.gradeyColors.tertiaryFill,
         ) {
             Row(modifier = Modifier.padding(3.dp)) {
                 SubjectSortMode.entries.forEach { mode ->
@@ -597,16 +440,15 @@ private fun SortSegment(
         modifier = modifier.heightIn(min = 36.dp),
         onClick = onClick,
         shape = RoundedCornerShape(15.dp),
-        color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
-        shadowElevation = if (selected) 1.dp else 0.dp,
+        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
     ) {
         Box(Modifier.padding(horizontal = 4.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
             Text(
                 text = strings.getString(mode.label),
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 lineHeight = 17.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 1,
             )
         }
@@ -687,7 +529,7 @@ private fun SubjectRow(
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = subject.subjectInfo.abbrev.ifBlank { subject.displayName.take(2) },
-                    color = adaptiveColor(Color(0xFF108A94), Color(0xFF76CFD5)),
+                    color = GradeyColors.Good,
                     fontSize = 17.sp,
                     lineHeight = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -726,7 +568,7 @@ private fun SubjectRow(
         ) {
             Text(
                 text = formatAverage(average),
-                color = adaptiveColor(Color(0xFF108A94), Color(0xFF76CFD5)),
+                color = GradeyColors.Good,
                 fontSize = 20.sp,
                 lineHeight = 23.sp,
                 fontWeight = FontWeight.Bold,
@@ -741,8 +583,8 @@ private fun SubjectRow(
             )
         }
         Spacer(Modifier.width(4.dp))
-        Icon(
-            imageVector = Icons.Default.ChevronRight,
+        HugeIcon(
+            name = HugeIcons.ArrowRight01,
             contentDescription = strings.getString(R.string.subjects_open_1_s, subject.displayName),
             tint = Color(0xFFC7C7CC),
             modifier = Modifier.size(22.dp),
@@ -815,18 +657,11 @@ private fun SubjectDetail(
         } ?: GradeMath.subjectAverage(subject)
     }
 
-    StatusBarAppearance(useDarkIcons = !isScrolled)
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundBottom),
-    ) {
-        MarksBackgroundGlow()
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = PaddingValues(start = 16.dp, top = 117.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
+            contentPadding = PaddingValues(start = 16.dp, top = 104.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
         ) {
             item {
                 SubjectAverageHero(
@@ -839,14 +674,9 @@ private fun SubjectDetail(
             }
             item { Spacer(Modifier.height(16.dp)) }
             item {
-                Surface(onClick = { showSimulator = true }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = SoftTeal) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = AccentTeal)
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(strings.getString(R.string.subjects_grade_simulator), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
-                            Text(strings.getString(R.string.subjects_reach_a_target_or_try_multiple_new), color = MutedText, fontSize = 13.sp)
-                        }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = AccentTeal)
+                com.bukovinafilip.gradey.ui.GradeyCard(onClick = { showSimulator = true }) {
+                    com.bukovinafilip.gradey.ui.InfoRow(HugeIcons.Calculator, strings.getString(R.string.subjects_grade_simulator), strings.getString(R.string.subjects_reach_a_target_or_try_multiple_new)) {
+                        com.bukovinafilip.gradey.ui.DisclosureIcon()
                     }
                 }
             }
@@ -940,46 +770,23 @@ private fun SubjectDetailHeader(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(101.dp)
-            .background(
-                if (isScrolled) Color(0xE61A7B80) else Color.Transparent,
-            ),
-    )
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
+            .background(if (isScrolled) MaterialTheme.gradeyColors.groupedBackground.copy(alpha = 0.92f) else Color.Transparent)
             .statusBarsPadding()
-            .padding(top = 13.dp, start = 16.dp, end = 16.dp)
-            .height(64.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .height(56.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .size(44.dp),
-            onClick = onBack,
-            shape = CircleShape,
-            color = if (isScrolled) adaptiveColor(Color(0xFFA3E3E6), Color(0xFF1B4544)) else adaptiveColor(Color(0xFFE9FCFB), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = strings.getString(R.string.subjects_back),
-                    tint = adaptiveColor(Color(0xFF061C1B), Color(0xFFCFE9DE)),
-                    modifier = Modifier.size(28.dp),
-                )
-            }
-        }
+        com.bukovinafilip.gradey.ui.GradeyIconButton(
+            HugeIcons.ArrowLeft01, strings.getString(R.string.subjects_back), onBack,
+            modifier = Modifier.align(Alignment.CenterStart), size = 44.dp, iconSize = 18.dp, tint = MaterialTheme.colorScheme.onSurface,
+        )
         Text(
             text = title,
             modifier = Modifier.padding(horizontal = 56.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            color = if (isScrolled) Color.White else MaterialTheme.colorScheme.onSurface,
-            fontSize = 17.sp,
-            lineHeight = 21.sp,
-            fontWeight = FontWeight.Medium,
+            style = GradeyType.headline,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -993,49 +800,36 @@ private fun SubjectAverageHero(
     predictionLabel: String = androidx.compose.ui.res.stringResource(R.string.subjects_predicted_average),
 ) {
     val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(
+    val band = GradeMath.band(average)
+    val base = if (band == GradeBand.NEUTRAL) MaterialTheme.colorScheme.primary else band.color()
+    val foreground = if (band == GradeBand.NEUTRAL) GradeyColors.OnAccent else Color.White
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 194.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
-        shadowElevation = 2.dp,
+            .shadow(10.dp, RoundedCornerShape(20.dp), ambientColor = base.copy(alpha = 0.22f), spotColor = base.copy(alpha = 0.22f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Brush.linearGradient(listOf(base, base.copy(alpha = 0.78f))))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .background(Brush.horizontalGradient(listOf(DetailHeroStart, DetailHeroEnd)))
-                .padding(top = 24.dp, bottom = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = if (predicted) predictionLabel else strings.getString(R.string.subjects_average),
-                color = Color.White,
-                fontSize = 17.sp,
-                lineHeight = 21.sp,
-                fontWeight = FontWeight.SemiBold,
+        Text(
+            text = if (predicted) predictionLabel else strings.getString(R.string.subjects_average),
+            style = GradeyType.subheadline.copy(fontWeight = FontWeight.SemiBold),
+            color = foreground.copy(alpha = 0.85f),
+        )
+        Text(formatAverage(average), style = GradeyType.display(64), color = foreground, maxLines = 1)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            DetailChip(
+                icon = { HugeIcon(HugeIcons.CheckmarkBadge02, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                text = strings.getQuantityString(R.plurals.subjects_count_mark, markCount, markCount),
+                contentColor = foreground,
             )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = formatAverage(average),
-                color = Color.White,
-                fontSize = 66.sp,
-                lineHeight = 70.sp,
-                fontWeight = FontWeight.ExtraBold,
+            DetailChip(
+                icon = { HugeIcon(HugeIcons.Calendar03, contentDescription = null, modifier = Modifier.size(14.dp)) },
+                text = absencePercentage?.let { strings.getString(R.string.subjects_absence_1_s, formatOneDecimal(it)) } ?: strings.getString(R.string.subjects_absence),
+                contentColor = foreground,
             )
-            Spacer(Modifier.height(18.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                DetailChip(
-                    icon = { Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    text = strings.getQuantityString(R.plurals.subjects_count_mark, markCount, markCount),
-                )
-                DetailChip(
-                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                    text = absencePercentage?.let { strings.getString(R.string.subjects_absence_1_s, formatOneDecimal(it)) } ?: strings.getString(R.string.subjects_absence),
-                )
-            }
         }
     }
 }
@@ -1044,12 +838,13 @@ private fun SubjectAverageHero(
 private fun DetailChip(
     icon: @Composable () -> Unit,
     text: String,
+    contentColor: Color,
 ) {
     Surface(
         modifier = Modifier.heightIn(min = 28.dp),
         shape = RoundedCornerShape(14.dp),
         color = Color.White.copy(alpha = 0.22f),
-        contentColor = Color.White,
+        contentColor = contentColor,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -1059,7 +854,7 @@ private fun DetailChip(
             icon()
             Text(
                 text = text,
-                color = Color.White,
+                color = contentColor,
                 fontSize = 14.sp,
                 lineHeight = 17.sp,
                 fontWeight = FontWeight.Medium,
@@ -1251,7 +1046,7 @@ private fun TryMarkCard(
                     contentDescription = strings.getString(R.string.subjects_decrease_weight),
                     tint = Color(0xFFD1D1D6),
                 ) {
-                    Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(22.dp))
+                    HugeIcon(HugeIcons.MinusSign, contentDescription = null, modifier = Modifier.size(22.dp))
                 }
                 Text(
                     text = strings.getString(R.string.subjects_weight_1_d, weight),
@@ -1266,7 +1061,7 @@ private fun TryMarkCard(
                     contentDescription = strings.getString(R.string.subjects_increase_weight),
                     tint = AccentTeal,
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(27.dp))
+                    HugeIcon(HugeIcons.Add01, contentDescription = null, modifier = Modifier.size(27.dp))
                 }
             }
         }
@@ -1357,7 +1152,7 @@ private fun MarkCard(mark: Mark, weight: Double?) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TagPill(text = caption, color = adaptiveColor(Color(0xFFF0F0F2), Color(0xFF293D33)), textColor = MutedText)
+                    TagPill(text = caption, color = SoftGray, textColor = MutedText)
                     TagPill(
                         text = weight?.let { strings.getString(R.string.subjects_weight_1_s, GradeMath.formattedWeight(it, displayLocale)) } ?: strings.getString(R.string.subjects_not_included_in_average),
                         color = SoftMint,
@@ -1445,54 +1240,6 @@ private fun SectionHeading(text: String) {
     )
 }
 
-@Composable
-private fun StatusBarAppearance(useDarkIcons: Boolean) {
-    val isLight = MaterialTheme.colorScheme.background.luminance() >= 0.5f
-    val view = LocalView.current
-    val activity = androidx.activity.compose.LocalActivity.current
-    if (activity != null && !view.isInEditMode) {
-        SideEffect {
-            WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = useDarkIcons && isLight
-        }
-        DisposableEffect(isLight) {
-            onDispose {
-                WindowCompat.getInsetsController(activity.window, view).isAppearanceLightStatusBars = isLight
-            }
-        }
-    }
-}
-
-@Composable
-private fun MarksBackgroundGlow() {
-    val glowTop = BackgroundTop
-    val glowBottom = BackgroundBottom
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colorStops = arrayOf(
-                    0f to glowTop,
-                    0.32f to glowBottom,
-                    1f to glowBottom,
-                ),
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x35309C89), Color.Transparent),
-                center = Offset(size.width, size.height * 0.24f),
-                radius = size.width * 0.75f,
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x265EAEB5), Color.Transparent),
-                center = Offset(0f, size.height * 0.59f),
-                radius = size.width * 0.70f,
-            ),
-        )
-    }
-}
-
 private fun Subject.averagePoints(): List<AveragePoint> {
     val ordered = GradeSimulation.prepare(this).marks.sortedWith(compareBy({ it.date ?: LocalDate.MIN }, { it.id }))
     var sum = 0.0
@@ -1506,10 +1253,10 @@ private fun Subject.averagePoints(): List<AveragePoint> {
 
 @Composable
 private fun Mark.gradeColors(): Pair<Color, Color> = when (GradeMath.band(this)) {
-    GradeBand.EXCELLENT -> SoftMint to ExcellentGreen
-    GradeBand.GOOD -> SoftTeal to adaptiveColor(Color(0xFF108A94), Color(0xFF76CFD5))
-    GradeBand.AVERAGE -> adaptiveColor(Color(0xFFFFF0D7), Color(0xFF493C21)) to WarningOrange
-    GradeBand.POOR -> adaptiveColor(Color(0xFFFFE5E8), Color(0xFF4B2A30)) to DangerRed
+    GradeBand.EXCELLENT -> ExcellentGreen.copy(alpha = 0.14f) to ExcellentGreen
+    GradeBand.GOOD -> SoftTeal to GradeyColors.Good
+    GradeBand.AVERAGE -> WarningOrange.copy(alpha = 0.14f) to WarningOrange
+    GradeBand.POOR -> DangerRed.copy(alpha = 0.14f) to DangerRed
     GradeBand.NEUTRAL -> SoftGray to MutedText
 }
 

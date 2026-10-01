@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.updates
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 import com.bukovinafilip.gradey.R
 import androidx.compose.foundation.background
@@ -13,14 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -66,14 +63,14 @@ fun UpdateScreen(
         }
     }
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(GradeySpacing.lg),
         verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
     ) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.app_back))
+                    HugeIcon(HugeIcons.ArrowLeft01, contentDescription = stringResource(R.string.app_back))
                 }
                 Text(stringResource(R.string.app_updates), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             }
@@ -92,12 +89,12 @@ fun UpdateScreen(
         item {
             GradeySectionCard {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(
-                        imageVector = when (state.phase) {
-                            UpdatePhase.READY -> Icons.Default.CheckCircleOutline
-                            UpdatePhase.QUEUED, UpdatePhase.DOWNLOADING -> Icons.Default.CloudDownload
-                            UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) Icons.Default.CheckCircleOutline else Icons.Default.SystemUpdate
-                            else -> Icons.Default.SystemUpdate
+                    HugeIcon(
+                        name = when (state.phase) {
+                            UpdatePhase.READY -> HugeIcons.CheckmarkCircle02
+                            UpdatePhase.QUEUED, UpdatePhase.DOWNLOADING -> HugeIcons.CloudDownload
+                            UpdatePhase.IDLE -> if (state.lastCheckedAt > 0) HugeIcons.CheckmarkCircle02 else HugeIcons.Download04
+                            else -> HugeIcons.Download04
                         },
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,

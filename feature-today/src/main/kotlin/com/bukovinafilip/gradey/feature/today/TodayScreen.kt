@@ -1,6 +1,5 @@
 package com.bukovinafilip.gradey.feature.today
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,95 +15,86 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.automirrored.filled.EventNote
-import androidx.compose.material.icons.automirrored.filled.ShowChart
-import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import com.bukovinafilip.gradey.ui.adaptiveColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.bukovinafilip.gradey.domain.AbsenceRiskLevel
 import com.bukovinafilip.gradey.domain.AbsenceRiskSummary
-import com.bukovinafilip.gradey.domain.AbsencePlanning
+import com.bukovinafilip.gradey.domain.AbsenceSubjectSummary
 import com.bukovinafilip.gradey.domain.GradeMath
-import com.bukovinafilip.gradey.model.AbsenceResponse
-import com.bukovinafilip.gradey.model.DashboardData
-import com.bukovinafilip.gradey.model.PlannedAbsence
-import com.bukovinafilip.gradey.model.LessonChangeKind
-import com.bukovinafilip.gradey.model.ScheduledLesson
-import com.bukovinafilip.gradey.model.TimetableWeek
-import com.bukovinafilip.gradey.model.StravaCZMenu
-import com.bukovinafilip.gradey.model.Subject
-import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.domain.SchoolInsightState
 import com.bukovinafilip.gradey.domain.TodayInsight
-import com.bukovinafilip.gradey.domain.TodayInsightCopy
-import com.bukovinafilip.gradey.domain.TodayInsightKind
 import com.bukovinafilip.gradey.domain.TodayInsights
-import com.bukovinafilip.gradey.ui.color
+import com.bukovinafilip.gradey.domain.TodayTimetableOverview
+import com.bukovinafilip.gradey.domain.TodayOverview
+import com.bukovinafilip.gradey.model.AbsenceResponse
+import com.bukovinafilip.gradey.model.DashboardData
+import com.bukovinafilip.gradey.model.LessonChangeKind
+import com.bukovinafilip.gradey.model.LinkedSchoolAccount
+import com.bukovinafilip.gradey.model.Mark
+import com.bukovinafilip.gradey.model.PersonalPlannerItem
+import com.bukovinafilip.gradey.model.StravaCZMenu
+import com.bukovinafilip.gradey.model.Subject
+import com.bukovinafilip.gradey.model.TimetableWeek
+import com.bukovinafilip.gradey.ui.AbsenceRiskRing
+import com.bukovinafilip.gradey.ui.GradeBadge
+import com.bukovinafilip.gradey.ui.GradeBadgeSize
+import com.bukovinafilip.gradey.ui.GradeyCard
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyPageHeader
+import com.bukovinafilip.gradey.ui.GradeyRadius
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.InfoRow
+import com.bukovinafilip.gradey.ui.LinkPill
+import com.bukovinafilip.gradey.ui.SectionHeader
+import com.bukovinafilip.gradey.ui.SectionHeaderRow
+import com.bukovinafilip.gradey.ui.StatTile
+import com.bukovinafilip.gradey.ui.StatusChip
+import com.bukovinafilip.gradey.ui.brandGradient
+import com.bukovinafilip.gradey.ui.floatingNavigationContentPadding
+import com.bukovinafilip.gradey.ui.gradeyColors
 import com.bukovinafilip.gradey.ui.rememberSchoolTime
+import com.bukovinafilip.gradey.ui.riskColor
+import java.time.Duration
 import java.time.LocalDate
-import java.time.Instant
+import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
-private val BackgroundTop: Color
-    @Composable get() = adaptiveColor(Color(0xFFDDF4F2), Color(0xFF17382D))
-private val BackgroundMiddle: Color
-    @Composable get() = adaptiveColor(Color(0xFFF0F8F8), Color(0xFF12251E))
-private val BackgroundBottom: Color
-    @Composable get() = adaptiveColor(Color(0xFFF7F7FA), Color(0xFF0C1713))
-private val AccentTeal: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-private val HeroStart = Color(0xFF16A083)
-private val AccentGreen = Color(0xFF1CA46A)
-private val AccentDark = Color(0xFF063C36)
-private val CardWhite: Color
-    @Composable get() = adaptiveColor(Color(0xFFFDFDFE), Color(0xFF17261F))
-private val MutedText: Color
-    @Composable get() = adaptiveColor(Color(0xFF919196), Color(0xFFB0C5B9))
-private val SoftMint: Color
-    @Composable get() = adaptiveColor(Color(0xFFDDF4EF), Color(0xFF214F3D))
-private val SoftGray: Color
-    @Composable get() = adaptiveColor(Color(0xFFF0F0F2), Color(0xFF293D33))
-private val WarningOrange = Color(0xFFFF8D28)
-private val DangerRed = Color(0xFFE5545D)
 private val PragueZone = ZoneId.of("Europe/Prague")
 
 @Composable
@@ -120,12 +110,14 @@ fun TodayScreen(
     onOpenAbsence: () -> Unit,
     onOpenTimetable: () -> Unit,
     modifier: Modifier = Modifier,
-    plannedAbsences: List<PlannedAbsence> = emptyList(),
-    onPlanAbsence: () -> Unit = onOpenAbsence,
+    onOpenSubject: ((String) -> Unit)? = null,
     mealMenu: StravaCZMenu? = null,
     hasMealAccount: Boolean = false,
     onOpenMeals: (() -> Unit)? = null,
-    schoolAccountContent: (@Composable () -> Unit)? = null,
+    linkedAccounts: List<LinkedSchoolAccount> = emptyList(),
+    activeAccountID: String? = null,
+    onSelectAccount: ((LinkedSchoolAccount) -> Unit)? = null,
+    isSwitchingAccount: Boolean = false,
     insightState: SchoolInsightState? = null,
     plannerItems: List<PersonalPlannerItem> = emptyList(),
     schoolScope: String? = null,
@@ -134,719 +126,372 @@ fun TodayScreen(
     onOpenPlannerItem: ((String) -> Unit)? = null,
     onStudyPrioritiesAI: (() -> Unit)? = null,
     onWeekSummaryAI: (() -> Unit)? = null,
+    hasLocalAbsenceAdjustments: Boolean = false,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
+    val strings = LocalResources.current
+    val locale = LocalConfiguration.current.locales[0]
     val subjects = dashboard.marksResponse.subjects
-    val displayLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val overall = remember(subjects, displayLocale) { GradeMath.formattedAverage(GradeMath.overallAverage(subjects), displayLocale) }
-    val totalMarks = subjects.sumOf { it.marks.size }
-    val absenceRows = AbsenceRiskSummary.make(absence, absence.absencesPerSubject).subjects.take(2)
+    val overall = remember(subjects, locale) { GradeMath.formattedAverage(GradeMath.overallAverage(subjects), locale) }
     val schoolTime by rememberSchoolTime()
+    val today = schoolTime.toLocalDate()
+    val now = schoolTime.toLocalTime()
+    val overview = remember(timetable, today, now) { TodayOverview.timetable(timetable, today, now) }
     val attention = remember(insightState, plannerItems, schoolScope, schoolTime) {
         TodayInsights.make(schoolScope, insightState, plannerItems, schoolTime.toInstant(), PragueZone)
     }
+    val newMarkIDs = remember(insightState, schoolScope) {
+        insightState?.takeIf { it.scope == schoolScope }?.observations.orEmpty().filter { it.seenAt == null }.flatMap { it.addedMarkIDs }.toSet()
+    }
+    val absenceRisk = remember(absence) { AbsenceRiskSummary.make(absence, absence.absencesPerSubject) }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(BackgroundTop, BackgroundMiddle, BackgroundBottom),
-                ),
-            ),
+    LazyColumn(
+        modifier = modifier.fillMaxSize().testTag("todayScroll").statusBarsPadding(),
+        contentPadding = PaddingValues(start = GradeySpacing.lg, top = GradeySpacing.sm, end = GradeySpacing.lg, bottom = floatingNavigationContentPadding()),
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("todayScroll")
-                .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 16.dp, top = 30.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        item {
+            GradeyPageHeader(
+                title = strings.getString(R.string.today_today),
+                onOpenAI = onOpenGradeyTools, aiDescription = strings.getString(R.string.today_open_gradey_tools),
+                onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = strings.getString(R.string.today_refresh_today),
+                onOpenSettings = onOpenAccount, settingsDescription = strings.getString(R.string.today_open_account),
+            )
+        }
+        item {
+            TodayHero(
+                fullName = dashboard.user?.fullName, classAbbrev = dashboard.user?.classAbbrev,
+                accounts = linkedAccounts, activeAccountID = activeAccountID, onSelectAccount = onSelectAccount, isSwitchingAccount = isSwitchingAccount,
+                now = schoolTime, overview = overview, timetableAvailable = timetable != null,
+                overallAverage = overall, newMarks = newMarkIDs.size, isRefreshing = isRefreshing,
+            )
+        }
+        item { TodayTimetableCard(timetable, overview, today, now, onOpenTimetable) }
+        onOpenAttention?.let { open -> item { AttentionCard(attention, insightState?.sources?.get("marks")?.failed == true, open) } }
+        if (onStudyPrioritiesAI != null || onWeekSummaryAI != null) item { TodayAIActions(onStudyPrioritiesAI, onWeekSummaryAI) }
+        item { RecentMarksCard(subjects, newMarkIDs, onOpenMarks, onOpenSubject) }
+        onOpenPlanner?.let { open -> item { TodayPlannerCard(plannerItems, schoolScope, schoolTime.toInstant(), open, onOpenPlannerItem) } }
+        if (absenceRisk.subjects.isNotEmpty()) item { AbsenceRiskCard(absenceRisk, hasLocalAbsenceAdjustments, onOpenAbsence) }
+        if (hasMealAccount && onOpenMeals != null) item { LunchCard(mealMenu, today, onOpenMeals) }
+    }
+}
+
+// MARK: - Hero
+
+private enum class DayState { UNAVAILABLE, EMPTY, UNTIMED, BEFORE_SCHOOL, CURRENT, BETWEEN, AFTER }
+
+private fun dayState(overview: TodayTimetableOverview?, timetableAvailable: Boolean, now: LocalTime): DayState {
+    if (!timetableAvailable) return DayState.UNAVAILABLE
+    if (overview == null) return DayState.EMPTY
+    val active = overview.lessons.filter { it.changeKind != LessonChangeKind.CANCELED }
+    if (active.isEmpty()) return DayState.EMPTY
+    val starts = active.mapNotNull { parseTime(it.hour.beginTime) }
+    if (starts.isEmpty()) return DayState.UNTIMED
+    if (overview.current != null) return DayState.CURRENT
+    if (overview.next != null) return if (starts.min() > now) DayState.BEFORE_SCHOOL else DayState.BETWEEN
+    return DayState.AFTER
+}
+
+@Composable
+private fun TodayHero(
+    fullName: String?,
+    classAbbrev: String?,
+    accounts: List<LinkedSchoolAccount>,
+    activeAccountID: String?,
+    onSelectAccount: ((LinkedSchoolAccount) -> Unit)?,
+    isSwitchingAccount: Boolean,
+    now: ZonedDateTime,
+    overview: TodayTimetableOverview?,
+    timetableAvailable: Boolean,
+    overallAverage: String,
+    newMarks: Int,
+    isRefreshing: Boolean,
+) {
+    val strings = LocalResources.current
+    val locale = LocalConfiguration.current.locales[0]
+    val accessibility = LocalDensity.current.fontScale > 1.3f
+    val onAccent = GradeyColors.OnAccent
+    val state = dayState(overview, timetableAvailable, now.toLocalTime())
+    val activeLessons = overview?.lessons?.count { it.changeKind != LessonChangeKind.CANCELED }
+    val activeAccount = accounts.firstOrNull { it.id == activeAccountID }
+    val greetingName = fullName?.let { nameWithoutClass(it, classAbbrev) }?.takeIf { it.isNotBlank() }
+        ?: activeAccount?.displayName?.let { nameWithoutClass(it, classAbbrev) }?.takeIf { it.isNotBlank() }
+    val greetingKey = when (now.hour) { in 5..11 -> R.string.today_greeting_morning; in 12..17 -> R.string.today_greeting_afternoon; else -> R.string.today_greeting_evening }
+    val greeting = strings.getString(greetingKey) + (greetingName?.let { ", $it" } ?: "")
+    val chipLabel = when {
+        accounts.size > 1 && activeAccount != null -> nameWithoutClass(activeAccount.displayName, classAbbrev).ifBlank { null }
+        else -> null
+    } ?: classAbbrev?.trim()?.takeIf { it.isNotEmpty() } ?: activeAccount?.displayName?.trim()?.takeIf { it.isNotEmpty() }
+    val dateText = remember(now.toLocalDate(), locale) {
+        val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
+        now.format(DateTimeFormatter.ofPattern(pattern, locale))
+    }
+
+    Column(
+        Modifier.fillMaxWidth().testTag("todayHero")
+            .shadow(16.dp, RoundedCornerShape(GradeyRadius.card), ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f))
+            .clip(RoundedCornerShape(GradeyRadius.card)).background(MaterialTheme.colorScheme.brandGradient).padding(GradeySpacing.xl),
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
+    ) {
+        val dateRow: @Composable () -> Unit = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                Text(dateText.uppercase(locale), style = GradeyType.captionBold.copy(letterSpacing = 0.6.sp), color = onAccent.copy(alpha = 0.72f), maxLines = if (accessibility) 2 else 1, overflow = TextOverflow.Ellipsis)
+                if (isRefreshing) CircularProgressIndicator(Modifier.size(12.dp), color = onAccent, strokeWidth = 1.5.dp)
+            }
+        }
+        val chip: @Composable () -> Unit = {
+            if (chipLabel != null) AccountChip(chipLabel, accounts.takeIf { it.size > 1 && onSelectAccount != null }.orEmpty(), activeAccountID, onSelectAccount, isSwitchingAccount, compact = !accessibility)
+        }
+        if (accessibility) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) { chip(); dateRow() }
+        else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            Box(Modifier.weight(1f)) { dateRow() }
+            chip()
+        }
+
+        Text(greeting, style = GradeyType.display(30), color = onAccent, maxLines = 3, overflow = TextOverflow.Ellipsis)
+
+        // Status panel
+        val icon = when (state) {
+            DayState.UNAVAILABLE, DayState.UNTIMED -> HugeIcons.Calendar03
+            DayState.EMPTY -> HugeIcons.Sun01
+            DayState.BEFORE_SCHOOL -> HugeIcons.Sunrise
+            DayState.CURRENT -> HugeIcons.PlayCircle
+            DayState.BETWEEN -> HugeIcons.Coffee02
+            DayState.AFTER -> HugeIcons.CheckmarkCircle02
+        }
+        val current = overview?.current
+        val next = overview?.next
+        val minutesRemaining = current?.let { lesson -> parseTime(lesson.hour.endTime)?.let { minutesBetween(now.toLocalTime(), it) } }
+        val minutesUntilNext = next?.takeIf { current == null }?.let { lesson -> parseTime(lesson.hour.beginTime)?.let { minutesBetween(now.toLocalTime(), it) } }
+        val title = when (state) {
+            DayState.UNAVAILABLE -> strings.getString(R.string.today_timetable_unavailable)
+            DayState.UNTIMED -> strings.getString(R.string.today_lesson_times_unavailable)
+            DayState.EMPTY -> strings.getString(R.string.today_summary_empty_title)
+            DayState.BEFORE_SCHOOL -> strings.getString(R.string.today_summary_before_school_title)
+            DayState.CURRENT -> strings.getString(R.string.today_summary_now_title, current?.let { lessonSubject(it, strings) } ?: strings.getString(R.string.today_summary_lesson_fallback))
+            DayState.BETWEEN -> strings.getString(R.string.today_summary_between_title)
+            DayState.AFTER -> strings.getString(R.string.today_summary_after_title)
+        }
+        val subtitle = when (state) {
+            DayState.UNAVAILABLE -> strings.getString(R.string.today_timetable_unavailable_subtitle)
+            DayState.UNTIMED -> strings.getString(R.string.today_open_timetable_to_view_today_s_lessons)
+            DayState.EMPTY -> strings.getString(R.string.today_summary_empty_message)
+            DayState.BEFORE_SCHOOL, DayState.BETWEEN -> next?.let { nextLessonSummary(it, minutesUntilNext, strings) }
+            DayState.CURRENT -> minutesRemaining?.let { strings.getString(R.string.today_summary_remaining, it) }
+            DayState.AFTER -> strings.getString(if (!overview?.changedLessons.isNullOrEmpty()) R.string.today_summary_after_changes else R.string.today_summary_after_done)
+        }
+        val progress = current?.let { lesson ->
+            val start = parseTime(lesson.hour.beginTime); val end = parseTime(lesson.hour.endTime)
+            if (start != null && end != null && end > start) (Duration.between(start, now.toLocalTime()).seconds.toFloat() / Duration.between(start, end).seconds.toFloat()).coerceIn(0f, 1f) else null
+        }
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(GradeyRadius.md)).background(Color.White.copy(alpha = 0.16f)).padding(GradeySpacing.md).testTag("todayHeroStatus"),
+            horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md), verticalAlignment = Alignment.Top,
         ) {
-            item {
-                TodayHeader(
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
-                    onOpenAccount = onOpenAccount,
-                    onOpenGradeyTools = onOpenGradeyTools,
-                )
+            Box(Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.22f)), contentAlignment = Alignment.Center) {
+                GradeyIcon(icon, size = 18.dp, tint = onAccent)
             }
-            item {
-                AverageCard(
-                    fullName = dashboard.user?.fullName ?: strings.getString(R.string.today_student),
-                    overallAverage = overall,
-                    subjectCount = subjects.size,
-                    markCount = totalMarks,
-                )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                Text(title, style = GradeyType.headline.copy(fontWeight = FontWeight.Bold), color = onAccent)
+                if (subtitle != null) Text(subtitle, style = GradeyType.subheadline, color = onAccent.copy(alpha = 0.78f))
+                if (progress != null) Box(Modifier.fillMaxWidth().padding(top = GradeySpacing.xs).height(5.dp).clip(CircleShape).background(onAccent.copy(alpha = 0.14f))) {
+                    Box(Modifier.fillMaxWidth(fraction = progress.coerceAtLeast(0.03f)).height(5.dp).clip(CircleShape).background(onAccent))
+                }
             }
-            schoolAccountContent?.let { accountContent -> item { accountContent() } }
-            item { MarksShortcut(onClick = onOpenMarks) }
-            item { TodayTimetableCard(timetable, schoolTime.toLocalDate(), schoolTime.toLocalTime(), onOpenTimetable) }
-            onOpenAttention?.let { open -> item {
-                AttentionCard(attention, insightState?.sources?.get("marks")?.failed == true, open)
-            } }
-            if (onStudyPrioritiesAI != null || onWeekSummaryAI != null) item { TodayAIActions(onStudyPrioritiesAI, onWeekSummaryAI) }
-            item { RecentMarksCard(subjects, onOpenMarks) }
-            onOpenPlanner?.let { open -> item { TodayPlannerCard(plannerItems, schoolScope, schoolTime.toInstant(), open, onOpenPlannerItem) } }
-            item { AbsenceRiskCard(rows = absenceRows, onOpenAbsence = onOpenAbsence) }
-            onOpenMeals?.let { openMeals ->
-                item { LunchCard(mealMenu, hasMealAccount, schoolTime.toLocalDate(), openMeals) }
+        }
+
+        // Stats
+        val tiles: List<Pair<String, String>> = listOf(
+            strings.getString(R.string.today_hero_average) to overallAverage,
+            strings.getString(R.string.today_hero_lessons_today) to (activeLessons?.toString()?.takeIf { timetableAvailable } ?: "–"),
+            strings.getString(R.string.today_hero_new_marks) to newMarks.toString(),
+        )
+        if (accessibility) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) { tiles.forEach { (label, value) -> StatTile(label, value) } }
+        else Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            tiles.forEachIndexed { index, (label, value) ->
+                if (index > 0) Box(Modifier.width(1.dp).height(30.dp).background(onAccent.copy(alpha = 0.14f)))
+                StatTile(label, value, Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$label $value" })
             }
-            item {
-                val upcomingLessons = AbsencePlanning.upcomingLessons(plannedAbsences)
-                AbsencePredictorCard(
-                    plannedLessonCount = upcomingLessons.size,
-                    plannedDayCount = upcomingLessons.map { it.dateKey }.distinct().size,
-                    onPlanAbsence = onPlanAbsence,
+        }
+    }
+}
+
+@Composable
+private fun AccountChip(label: String, accounts: List<LinkedSchoolAccount>, activeAccountID: String?, onSelect: ((LinkedSchoolAccount) -> Unit)?, isSwitching: Boolean, compact: Boolean) {
+    val strings = LocalResources.current
+    val onAccent = GradeyColors.OnAccent
+    var expanded by remember { mutableStateOf(false) }
+    val canSwitch = accounts.size > 1 && onSelect != null
+    Box {
+        Surface(
+            onClick = { if (canSwitch) expanded = true }, enabled = canSwitch && !isSwitching, shape = CircleShape, color = Color.White.copy(alpha = 0.22f),
+            modifier = Modifier.heightIn(min = 30.dp).widthIn(max = if (compact) 190.dp else 320.dp).testTag("todayAccountSwitcher")
+                .semantics { contentDescription = strings.getString(R.string.today_school_account) + ": " + label },
+        ) {
+            Row(Modifier.padding(horizontal = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                if (isSwitching) CircularProgressIndicator(Modifier.size(12.dp), color = onAccent, strokeWidth = 1.5.dp)
+                else {
+                    if (compact) GradeyIcon(HugeIcons.UserGroup, size = 13.dp, tint = onAccent)
+                    Text(label, style = GradeyType.captionBold, color = onAccent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (canSwitch) GradeyIcon(HugeIcons.ArrowDataTransferVertical, size = 12.dp, tint = onAccent)
+                }
+            }
+        }
+        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+            accounts.forEach { account ->
+                DropdownMenuItem(
+                    text = { Column { Text(account.displayName); Text(account.schoolName ?: account.provider.displayName, style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+                    leadingIcon = { GradeyIcon(if (account.id == activeAccountID) HugeIcons.CheckmarkCircle02 else HugeIcons.University, size = 18.dp) },
+                    onClick = { expanded = false; onSelect?.invoke(account) },
                 )
             }
         }
     }
 }
+
+/** Bakaláři appends the class to `FullName` ("Novák Jan, 3.A"), which reads oddly in a greeting. */
+internal fun nameWithoutClass(fullName: String, classAbbrev: String?): String {
+    val trimmed = fullName.trim()
+    val abbrev = classAbbrev?.trim().orEmpty()
+    if (abbrev.isNotEmpty()) {
+        val compact = trimmed.replace(", ", ",")
+        if (compact.endsWith(",$abbrev") && compact.length > abbrev.length + 1) return trimmed.substringBeforeLast(',').trim()
+    }
+    val comma = trimmed.lastIndexOf(',')
+    if (comma < 0) return trimmed
+    val candidate = trimmed.substring(comma + 1).trim()
+    val looksLikeClass = candidate.isNotEmpty() && candidate.length <= 6 && candidate.any(Char::isDigit) && ' ' !in candidate
+    if (!looksLikeClass) return trimmed
+    return trimmed.substring(0, comma).trim().ifEmpty { trimmed }
+}
+
+// MARK: - Attention
 
 @Composable
 private fun AttentionCard(insights: List<TodayInsight>, cachedWarning: Boolean, onOpen: (TodayInsight) -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    Surface(Modifier.fillMaxWidth().testTag("today-attention"), shape = RoundedCornerShape(24.dp), color = CardWhite) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(strings.getString(R.string.today_attention_title), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                if (insights.isNotEmpty()) Surface(shape = CircleShape, color = SoftMint) {
-                    Text(insights.size.toString(), Modifier.padding(horizontal = 9.dp, vertical = 3.dp), color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium)
-                }
-            }
-            if (insights.isEmpty()) Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.CheckCircleOutline, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(strings.getString(R.string.today_attention_empty_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    Text(strings.getString(R.string.today_attention_empty), style = MaterialTheme.typography.bodySmall, color = MutedText)
-                }
-            }
-            insights.forEach { insight ->
-                val tint = when (insight.kind) {
-                    TodayInsightKind.ASSESSMENT, TodayInsightKind.BUSY_TESTS -> adaptiveColor(Color(0xFFA86708), Color(0xFFFFC16F))
-                    TodayInsightKind.DEADLINE -> adaptiveColor(Color(0xFF805BB3), Color(0xFFCBA7F8))
-                    TodayInsightKind.WORSENING_TREND -> adaptiveColor(Color(0xFFBE3F4A), Color(0xFFFF9BA4))
-                    else -> MaterialTheme.colorScheme.primary
-                }
-                val icon = when (insight.kind) {
-                    TodayInsightKind.ASSESSMENT -> Icons.Default.EditNote
-                    TodayInsightKind.DEADLINE -> Icons.Default.Checklist
-                    TodayInsightKind.BUSY_TESTS -> Icons.AutoMirrored.Filled.EventNote
-                    TodayInsightKind.AVERAGE_CHANGE -> Icons.AutoMirrored.Filled.ShowChart
-                    TodayInsightKind.WORSENING_TREND -> Icons.AutoMirrored.Filled.TrendingDown
-                    TodayInsightKind.RECENT_GRADE -> Icons.Default.Verified
-                }
-                val resource = when (insight.copy) {
-                    TodayInsightCopy.ASSESSMENT_DUE -> R.string.insight_assessment_due
-                    TodayInsightCopy.DEADLINE_DUE -> R.string.insight_deadline_due
-                    TodayInsightCopy.AVERAGE_CHANGED -> R.string.insight_average_changed
-                    TodayInsightCopy.BUSY_TESTS -> R.string.insight_busy_tests
-                    TodayInsightCopy.TREND_WORSENING -> R.string.insight_trend_worsening
-                    TodayInsightCopy.GRADE_NEW -> R.string.insight_grade_new
-                    TodayInsightCopy.GRADE_EDITED -> R.string.insight_grade_edited
-                }
-                val number = NumberFormat.getNumberInstance(locale).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
-                val title = if (insight.copy == TodayInsightCopy.AVERAGE_CHANGED) strings.getString(resource, insight.titleValue,
-                    insight.previousAverage?.let(number::format).orEmpty(), insight.average?.let(number::format).orEmpty()) else strings.getString(resource, insight.titleValue)
-                val subtitle = if (insight.eventIDs.isNotEmpty()) Instant.ofEpochMilli(insight.relevantAt)
-                    .atZone(insight.dateZoneID?.let { runCatching { ZoneId.of(it) }.getOrNull() } ?: PragueZone)
-                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
-                    else strings.getString(R.string.today_insight_recorded_average)
-                Surface(onClick = { onOpen(insight) }, Modifier.fillMaxWidth().testTag("today-insight-${insight.id}"), color = Color.Transparent, shape = RoundedCornerShape(14.dp)) {
-                    Row(Modifier.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = RoundedCornerShape(10.dp), color = tint.copy(alpha = 0.13f)) {
-                            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) { Icon(icon, null, Modifier.size(20.dp), tint = tint) }
-                        }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MutedText)
-                        }
-                        Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = MutedText)
-                    }
-                }
-            }
-            if (cachedWarning) Text(strings.getString(R.string.today_cached_warning), style = MaterialTheme.typography.bodySmall, color = MutedText)
+    val strings = LocalResources.current
+    GradeyCard(Modifier.testTag("today-attention")) {
+        SectionHeaderRow(strings.getString(R.string.today_attention_title)) {
+            if (insights.isNotEmpty()) StatusChip(insights.size.toString(), color = MaterialTheme.colorScheme.primary)
         }
+        if (insights.isEmpty()) InfoRow(HugeIcons.CheckmarkCircle02, strings.getString(R.string.today_attention_empty_title), strings.getString(R.string.today_attention_empty))
+        insights.forEach { insight -> TodayInsightRow(insight, onOpen) }
+        if (cachedWarning) Text(strings.getString(R.string.today_cached_warning), style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
-@Composable
-private fun TodayHeader(
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    com.bukovinafilip.gradey.ui.AdaptivePageHeader(
-        modifier = Modifier
-            .fillMaxWidth(),
-    ) {
-        Surface(
-            modifier = Modifier
-                .size(44.dp),
-            onClick = onOpenGradeyTools,
-            shape = CircleShape,
-            color = adaptiveColor(Color(0xFFE9FCFB), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(
-                    modifier = Modifier.size(30.dp),
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFCFF3EE), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = strings.getString(R.string.today_open_gradey_tools),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        Text(
-            text = strings.getString(R.string.today_today),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 18.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-
-        Surface(
-            modifier = Modifier
-                .width(106.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(25.dp),
-            color = adaptiveColor(Color(0xFFE8FCFA), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    onClick = onRefresh,
-                    enabled = !isRefreshing,
-                    shape = CircleShape,
-                    color = Color.Transparent,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(21.dp),
-                                color = AccentTeal,
-                                strokeWidth = 2.5.dp,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = strings.getString(R.string.today_refresh_today),
-                                tint = AccentTeal,
-                                modifier = Modifier.size(27.dp),
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    onClick = onOpenAccount,
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFC9F2EC), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = strings.getString(R.string.today_open_account),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(23.dp),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// MARK: - Recent marks
 
 @Composable
-private fun AverageCard(
-    fullName: String,
-    overallAverage: String,
-    subjectCount: Int,
-    markCount: Int,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 166.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
-        shadowElevation = 4.dp,
-    ) {
-        Column(
-            modifier = Modifier
-                .background(Brush.horizontalGradient(listOf(HeroStart, AccentGreen)))
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-        ) {
-            Text(
-                text = fullName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = Color(0xFF021D1A),
-                fontSize = 22.sp,
-                lineHeight = 27.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(18.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                Column {
-                    Text(
-                        text = strings.getString(R.string.today_overall_average),
-                        color = AccentDark,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = overallAverage,
-                        color = Color(0xFF001D19),
-                        fontSize = 50.sp,
-                        lineHeight = 53.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
-                Column(
-                    modifier = Modifier.padding(top = 1.dp),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = strings.getQuantityString(R.plurals.today_subject_count, subjectCount, subjectCount),
-                        color = AccentDark,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Text(
-                        text = strings.getQuantityString(R.plurals.today_mark_count, markCount, markCount),
-                        color = AccentDark,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MarksShortcut(onClick: () -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    DashboardSurface(
-        modifier = Modifier.heightIn(min = 62.dp),
-        onClick = onClick,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconTile(background = SoftMint) {
-                Icon(
-                    imageVector = Icons.Default.Verified,
-                    contentDescription = null,
-                    tint = AccentTeal,
-                    modifier = Modifier.size(25.dp),
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = strings.getString(R.string.today_marks),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 17.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = strings.getString(R.string.today_averages_subjects_trends_and_calculator),
-                    color = MutedText,
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp,
-                )
-            }
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = Color(0xFF858589),
-                modifier = Modifier.size(27.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun AbsenceRiskCard(
-    rows: List<com.bukovinafilip.gradey.domain.AbsenceSubjectSummary>,
-    onOpenAbsence: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    DashboardSurface(modifier = Modifier.heightIn(min = 190.dp)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 15.dp, bottom = 11.dp),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                SectionHeading(strings.getString(R.string.today_absence_risk))
-                ActionPill(text = strings.getString(R.string.today_open), onClick = onOpenAbsence)
-            }
-            Spacer(Modifier.height(5.dp))
-            if (rows.isEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconTile(background = SoftGray) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MutedText)
-                    }
-                    Spacer(Modifier.width(13.dp))
-                    Text(strings.getString(R.string.today_absence_data_unavailable), color = MutedText, fontSize = 14.sp)
-                }
-            } else {
-                rows.forEach { row ->
-                    val color = row.level.riskColor()
-                    RiskRow(
-                        subjectName = row.subjectName,
-                        percentage = row.absencePercentage,
-                        threshold = row.threshold,
-                        missesUntilLimit = row.missesUntilLimit,
-                        color = color,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RiskRow(
-    subjectName: String,
-    percentage: Double,
-    threshold: Double?,
-    missesUntilLimit: Int?,
-    color: Color,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 70.dp)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RiskRing(
-            progress = if (threshold != null && threshold > 0.0) percentage / threshold else percentage / 100.0,
-            color = color,
-        )
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = subjectName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                lineHeight = 19.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = absenceLimitDescription(missesUntilLimit, strings),
-                color = MutedText,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = "${percentage.roundToInt()}%",
-            color = color,
-            fontSize = 17.sp,
-            lineHeight = 23.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.End,
-        )
-    }
-}
-
-@Composable
-private fun RiskRing(progress: Double, color: Color) {
-    Canvas(modifier = Modifier.size(58.dp)) {
-        val strokeWidth = 6.dp.toPx()
-        val inset = Offset(strokeWidth / 2f, strokeWidth / 2f)
-        val ringSize = Size(size.width - strokeWidth, size.height - strokeWidth)
-        drawArc(
-            color = color.copy(alpha = 0.28f),
-            startAngle = -90f,
-            sweepAngle = 360f,
-            useCenter = false,
-            topLeft = inset,
-            size = ringSize,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-        drawArc(
-            color = color,
-            startAngle = -90f,
-            sweepAngle = (progress.coerceIn(0.0, 1.0) * 360.0).toFloat(),
-            useCenter = false,
-            topLeft = inset,
-            size = ringSize,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-        )
-    }
-}
-
-@Composable
-private fun AbsencePredictorCard(plannedLessonCount: Int, plannedDayCount: Int, onPlanAbsence: () -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    DashboardSurface(modifier = Modifier.heightIn(min = 138.dp)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 15.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                SectionHeading(strings.getString(R.string.today_absence_predictor))
-                ActionPill(text = strings.getString(R.string.today_plan_absence), onClick = onPlanAbsence)
-            }
-            Spacer(Modifier.height(13.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconTile(background = SoftGray, size = 38.dp) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = MutedText,
-                        modifier = Modifier.size(22.dp),
-                    )
-                }
-                Spacer(Modifier.width(13.dp))
-                Column {
-                    Text(
-                        text = if (plannedLessonCount == 0) strings.getString(R.string.today_no_planned_absences)
-                            else strings.getQuantityString(R.plurals.today_planned_lessons, plannedLessonCount, plannedLessonCount),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        lineHeight = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = if (plannedLessonCount == 0) strings.getString(R.string.today_plan_lessons_to_preview_your_absence_risk)
-                            else strings.getQuantityString(R.plurals.today_planned_days, plannedDayCount, plannedDayCount),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MutedText,
-                        fontSize = 13.sp,
-                        lineHeight = 17.sp,
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun LunchCard(menu: StravaCZMenu?, hasAccount: Boolean, today: LocalDate, onOpen: () -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val day = menu?.days?.firstOrNull { it.date.take(10) == today.toString() }
-    val ordered = day?.meals.orEmpty().filter { it.ordered }
-    DashboardSurface(onClick = onOpen) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                SectionHeading(strings.getString(R.string.today_today_s_lunch))
-                ActionPill(if (hasAccount) strings.getString(R.string.today_meals) else strings.getString(R.string.today_connect), onOpen)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                IconTile(SoftMint) { Icon(Icons.Default.Restaurant, null, tint = AccentTeal) }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(when {
-                        ordered.isNotEmpty() -> ordered.joinToString(" · ") { it.description?.takeIf(String::isNotBlank) ?: it.title }
-                        !hasAccount -> strings.getString(R.string.today_connect_your_canteen)
-                        menu == null -> strings.getString(R.string.today_menu_unavailable)
-                        day == null -> strings.getString(R.string.today_no_meals_for_today)
-                        else -> strings.getString(R.string.today_no_lunch_ordered)
-                    }, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                    Text(when {
-                        ordered.isNotEmpty() -> strings.getString(R.string.today_ordered_strava_cz)
-                        !hasAccount -> strings.getString(R.string.today_see_your_lunch_and_manage_meal_orders)
-                        menu == null -> strings.getString(R.string.today_open_meals_to_refresh_your_canteen)
-                        day == null -> strings.getString(R.string.today_open_meals_to_see_upcoming_days)
-                        else -> strings.getString(R.string.today_open_meals_to_see_today_s_menu)
-                    }, color = MutedText, fontSize = 13.sp)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecentMarksCard(subjects: List<Subject>, onOpenMarks: () -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
+private fun RecentMarksCard(subjects: List<Subject>, newMarkIDs: Set<String>, onOpenMarks: () -> Unit, onOpenSubject: ((String) -> Unit)?) {
+    val strings = LocalResources.current
+    val locale = LocalConfiguration.current.locales[0]
     val recent = remember(subjects) {
         subjects.flatMap { subject -> subject.marks.map { subject to it } }
-            .sortedWith(compareByDescending<Pair<Subject, com.bukovinafilip.gradey.model.Mark>> {
-                it.second.markDate.orEmpty()
-            }.thenBy { it.second.id }).take(5)
+            .sortedWith(compareByDescending<Pair<Subject, Mark>> { it.second.markDate.orEmpty() }.thenBy { it.second.id })
+            .distinctBy { it.second.id }.take(3)
     }
-    DashboardSurface {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                SectionHeading(strings.getString(R.string.today_recent_marks))
-                ActionPill(strings.getString(R.string.today_view_all), onOpenMarks)
-            }
-            if (recent.isEmpty()) {
-                Text(strings.getString(R.string.today_your_latest_marks_will_appear_here_when), color = MutedText, fontSize = 14.sp)
-            }
-            recent.forEach { (subject, mark) ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val color = GradeMath.band(mark).color()
-                    Surface(shape = RoundedCornerShape(12.dp), color = color.copy(alpha = 0.12f)) {
-                        Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                            Text(mark.markText, color = color, fontWeight = FontWeight.Bold, fontSize = 20.sp, maxLines = 1)
+    GradeyCard(Modifier.testTag("today-recent-marks")) {
+        SectionHeaderRow(strings.getString(R.string.today_recent_marks)) { LinkPill(strings.getString(R.string.today_marks), onOpenMarks, testTag = "todayOpenMarksButton") }
+        if (recent.isEmpty()) InfoRow(HugeIcons.CheckmarkBadge02, strings.getString(R.string.today_recent_marks), strings.getString(R.string.today_recent_marks_empty), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        recent.forEach { (subject, mark) ->
+            val date = mark.markDate?.take(10)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            Surface(onClick = { onOpenSubject?.invoke(subject.id) ?: onOpenMarks() }, color = Color.Transparent, shape = RoundedCornerShape(GradeyRadius.sm), modifier = Modifier.fillMaxWidth().testTag("todayRecentMark-${mark.id}")) {
+                Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                    GradeBadge(mark.markText, GradeMath.band(mark), size = GradeBadgeSize.SMALL)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(subject.displayName, style = GradeyType.subheadlineBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            if (mark.id in newMarkIDs) Box(Modifier.size(7.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                         }
+                        Text(mark.caption?.takeIf(String::isNotBlank) ?: mark.theme?.takeIf(String::isNotBlank) ?: subject.subjectInfo.abbrev.ifBlank { subject.displayName },
+                            style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(subject.displayName, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(mark.caption?.takeIf(String::isNotBlank) ?: mark.theme?.takeIf(String::isNotBlank) ?: strings.getString(R.string.today_new_mark),
-                            color = MutedText, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    }
-                    val date = mark.markDate?.take(10)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-                    date?.let { Text(it.format(DateTimeFormatter.ofPattern("d. M.")), color = MutedText, fontSize = 12.sp) }
+                    Text(date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)) ?: "–", style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                    com.bukovinafilip.gradey.ui.DisclosureIcon()
                 }
             }
         }
     }
 }
 
-@Composable
-private fun DashboardSurface(
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    content: @Composable () -> Unit,
-) {
-    if (onClick == null) {
-        Surface(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = CardWhite.copy(alpha = 0.98f),
-            shadowElevation = 3.dp,
-            content = content,
-        )
-    } else {
-        Surface(
-            modifier = modifier.fillMaxWidth(),
-            onClick = onClick,
-            shape = RoundedCornerShape(20.dp),
-            color = CardWhite.copy(alpha = 0.98f),
-            shadowElevation = 3.dp,
-            content = content,
-        )
-    }
-}
+// MARK: - Absence risk
 
 @Composable
-private fun SectionHeading(text: String) {
-    Text(
-        text = text,
-        color = MutedText,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.65.sp,
-        fontWeight = FontWeight.Bold,
-    )
-}
-
-@Composable
-private fun ActionPill(text: String, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.heightIn(min = 28.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
-        color = SoftMint,
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 14.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                color = AccentTeal,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.Bold,
-            )
+private fun AbsenceRiskCard(risk: AbsenceRiskSummary, adjusted: Boolean, onOpenAbsence: () -> Unit) {
+    val strings = LocalResources.current
+    val rows = risk.subjects.take(3)
+    GradeyCard(Modifier.testTag("today-absence-risk")) {
+        SectionHeaderRow(strings.getString(R.string.today_absence_risk)) { LinkPill(strings.getString(R.string.today_open), onOpenAbsence, testTag = "todayOpenAbsenceButton") }
+        if (adjusted) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            GradeyIcon(HugeIcons.ViewOff, size = 12.dp, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(strings.getString(R.string.today_absence_adjusted), style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        rows.forEach { RiskRow(it) }
+        if (risk.isThresholdUnavailable) Text(strings.getString(R.string.today_absence_threshold_unavailable), style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
-private fun IconTile(
-    background: Color,
-    size: androidx.compose.ui.unit.Dp = 38.dp,
-    content: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.size(size),
-        shape = RoundedCornerShape(13.dp),
-        color = background,
-    ) {
-        Box(contentAlignment = Alignment.Center) { content() }
+private fun RiskRow(subject: AbsenceSubjectSummary) {
+    val strings = LocalResources.current
+    val subtitle = when (val misses = subject.missesUntilLimit) {
+        null -> strings.getString(R.string.today_absence_missed, subject.base, subject.lessonsCount)
+        0 -> strings.getString(R.string.today_at_or_above_the_absence_limit)
+        1 -> strings.getString(R.string.today_1_more_missed_lesson_reaches_the_limit)
+        else -> strings.getQuantityString(R.plurals.today_lessons_until_limit, misses, misses)
+    }
+    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+        AbsenceRiskRing(subject.absencePercentage, subject.threshold, subject.level)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            Text(subject.subjectName, style = GradeyType.subheadlineBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, style = GradeyType.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text("${subject.absencePercentage.roundToInt()}%", style = GradeyType.headline, color = subject.level.riskColor())
     }
 }
 
+// MARK: - Lunch
+
 @Composable
-private fun AbsenceRiskLevel.riskColor(): Color = when (this) {
-    AbsenceRiskLevel.SAFE -> AccentTeal
-    AbsenceRiskLevel.WATCH -> WarningOrange
-    AbsenceRiskLevel.HIGH -> WarningOrange
-    AbsenceRiskLevel.OVER_LIMIT -> DangerRed
-    AbsenceRiskLevel.UNAVAILABLE -> MutedText
+private fun LunchCard(menu: StravaCZMenu?, today: LocalDate, onOpen: () -> Unit) {
+    val strings = LocalResources.current
+    val locale = LocalConfiguration.current.locales[0]
+    val day = menu?.days?.firstOrNull { it.date.take(10) == today.toString() }
+    val ordered = day?.meals.orEmpty().firstOrNull { it.ordered }
+    GradeyCard(Modifier.testTag("today-lunch"), onClick = onOpen) {
+        SectionHeader(strings.getString(R.string.today_lunch))
+        if (ordered != null) InfoRow(
+            HugeIcons.Restaurant02, ordered.description?.takeIf(String::isNotBlank) ?: ordered.title,
+            ordered.price?.let { java.text.NumberFormat.getCurrencyInstance(locale).apply { currency = java.util.Currency.getInstance("CZK"); maximumFractionDigits = 0 }.format(it) },
+        ) else InfoRow(HugeIcons.Restaurant02, strings.getString(R.string.today_no_meal), strings.getString(R.string.today_no_meal_subtitle), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
-private fun absenceLimitDescription(missesUntilLimit: Int?, strings: android.content.res.Resources): String = when (missesUntilLimit) {
-    null -> strings.getString(R.string.today_absence_limit_unavailable)
-    0 -> strings.getString(R.string.today_at_or_above_the_absence_limit)
-    1 -> strings.getString(R.string.today_1_more_missed_lesson_reaches_the_limit)
-    else -> strings.getQuantityString(R.plurals.today_lessons_until_limit, missesUntilLimit, missesUntilLimit)
+// MARK: - Helpers
+
+internal fun parseTime(raw: String): LocalTime? {
+    val parts = Regex("^([01]?[0-9]|2[0-3]):([0-5][0-9])$").matchEntire(raw.trim()) ?: return null
+    return LocalTime.of(parts.groupValues[1].toInt(), parts.groupValues[2].toInt())
 }
 
-private fun plural(count: Int, singular: String, plural: String): String =
-    if (count == 1) singular else plural
+internal fun minutesBetween(from: LocalTime, to: LocalTime): Int = ceil(Duration.between(from, to).seconds / 60.0).toInt().coerceAtLeast(0)
+
+internal fun lessonSubject(lesson: com.bukovinafilip.gradey.model.ScheduledLesson, strings: android.content.res.Resources): String =
+    lesson.subjectName?.takeIf { it.isNotBlank() } ?: lesson.subjectAbbrev?.takeIf { it.isNotBlank() }
+    ?: lesson.changeDescription?.takeIf { it.isNotBlank() } ?: strings.getString(R.string.today_summary_lesson_fallback)
+
+/** Countdowns only help for the next couple of hours; further out the start time is easier to read. */
+private const val CountdownLimitMinutes = 120
+
+internal fun nextLessonSummary(lesson: com.bukovinafilip.gradey.model.ScheduledLesson, minutes: Int?, strings: android.content.res.Resources): String {
+    val subject = lessonSubject(lesson, strings)
+    if (minutes != null && minutes <= CountdownLimitMinutes) return strings.getString(R.string.today_summary_next_in, subject, minutes)
+    if (lesson.hour.beginTime.isBlank()) return strings.getString(R.string.today_summary_next_is, subject)
+    return strings.getString(R.string.today_lesson_next_at, subject, lesson.hour.beginTime)
+}
+
+internal fun startsIn(lesson: com.bukovinafilip.gradey.model.ScheduledLesson, minutes: Int?, strings: android.content.res.Resources): String? {
+    if (minutes != null && minutes <= CountdownLimitMinutes) return strings.getString(R.string.today_lesson_starts_in, minutes)
+    if (lesson.hour.beginTime.isBlank()) return minutes?.let { strings.getString(R.string.today_lesson_starts_in, it) }
+    return strings.getString(R.string.today_lesson_starts_at, lesson.hour.beginTime)
+}

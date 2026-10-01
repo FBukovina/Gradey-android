@@ -2,6 +2,9 @@
 
 package com.bukovinafilip.gradey.feature.absence
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 
@@ -27,18 +30,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
 import com.bukovinafilip.gradey.ui.adaptiveColor
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.gradeyColors
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -84,31 +81,27 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 import kotlin.math.max
 
-private val BackgroundTop: Color
-    @Composable get() = adaptiveColor(Color(0xFFCBDDDD), Color(0xFF17382D))
-private val BackgroundBottom: Color
-    @Composable get() = adaptiveColor(Color(0xFFF2F2F7), Color(0xFF0C1713))
 private val AccentTeal: Color
     @Composable get() = MaterialTheme.colorScheme.primary
-private val NavigationTeal = Color(0xFF0C967C)
-private val ExcusedGreen = Color(0xFF1DA565)
-private val RiskOrange = Color(0xFFFF8D28)
-private val LateOrange = Color(0xFFD98F10)
-private val MissedRed = Color(0xFFD95461)
+private val NavigationTeal: Color
+    @Composable get() = MaterialTheme.colorScheme.primary
+private val ExcusedGreen = GradeyColors.Excellent
+private val RiskOrange: Color
+    @Composable get() = MaterialTheme.gradeyColors.orange
+private val LateOrange = GradeyColors.Average
+private val MissedRed = GradeyColors.Poor
 private val MutedText: Color
-    @Composable get() = adaptiveColor(Color(0xFF8A8A8E), Color(0xFFB0C5B9))
+    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
 private val CardWhite: Color
     @Composable get() = MaterialTheme.colorScheme.surface
 private val DividerColor: Color
-    @Composable get() = adaptiveColor(Color(0xFFC6C6C8), Color(0xFF344F40))
-private val SoftTeal = Color(0xFFDDF0EC)
-private val SoftGreen = Color(0xFFDFF2E9)
-private val SoftOrange = Color(0xFFF9EEDD)
-private val SoftRed = Color(0xFFF7E4E6)
+    @Composable get() = MaterialTheme.gradeyColors.separator
+private val SoftTeal: Color
+    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
 private val SoftGray: Color
-    @Composable get() = adaptiveColor(Color(0xFFF2F2F7), Color(0xFF293D33))
+    @Composable get() = MaterialTheme.gradeyColors.tertiaryFill
 private val ProgressRail: Color
-    @Composable get() = adaptiveColor(Color(0xFFEFEFF0), Color(0xFF344F40))
+    @Composable get() = MaterialTheme.gradeyColors.tertiaryFill
 private val DayFormatter: DateTimeFormatter
     @Composable get() = DateTimeFormatter.ofPattern("EEE d. M.", LocalConfiguration.current.locales[0])
 private val MonthFormatter: DateTimeFormatter
@@ -164,24 +157,19 @@ fun AbsenceScreen(
         AbsenceRiskSummary.make(response, response.absencesPerSubject)
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(BackgroundBottom),
-    ) {
-        AbsenceBackgroundGlow()
+    Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 16.dp, top = 28.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
+            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
         ) {
             item {
-                AbsenceHeader(
-                    isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
-                    onOpenAccount = onOpenAccount,
-                    onOpenGradeyTools = onOpenGradeyTools,
+                com.bukovinafilip.gradey.ui.GradeyPageHeader(
+                    title = stringResource(R.string.absence_absence_f7eb4),
+                    onOpenAI = onOpenGradeyTools, aiDescription = stringResource(R.string.absence_open_gradey_tools_fba07),
+                    onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = stringResource(R.string.absence_refresh_absence_64777),
+                    onOpenSettings = onOpenAccount, settingsDescription = stringResource(R.string.absence_open_account_db17a),
                 )
             }
             item { Spacer(Modifier.height(12.dp)) }
@@ -195,22 +183,9 @@ fun AbsenceScreen(
             if (onPlanAbsence != null) {
                 item { Spacer(Modifier.height(12.dp)) }
                 item {
-                    Surface(
-                        onClick = onPlanAbsence,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        color = adaptiveColor(SoftTeal, Color(0xFF20483A)),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = NavigationTeal)
-                            Column {
-                                Text(stringResource(R.string.absence_plan_absence_c429a), color = NavigationTeal, fontWeight = FontWeight.SemiBold)
-                                Text(stringResource(R.string.absence_preview_the_impact_of_missed_lessons_de5c9), color = MutedText, fontSize = 13.sp)
-                            }
+                    com.bukovinafilip.gradey.ui.GradeyCard(onClick = onPlanAbsence) {
+                        com.bukovinafilip.gradey.ui.InfoRow(HugeIcons.CalendarAdd01, stringResource(R.string.absence_plan_absence_c429a), stringResource(R.string.absence_preview_the_impact_of_missed_lessons_de5c9)) {
+                            com.bukovinafilip.gradey.ui.DisclosureIcon()
                         }
                     }
                 }
@@ -244,105 +219,6 @@ fun AbsenceScreen(
                     item { MonthsChartCard(timeline.months) }
                     item { Spacer(Modifier.height(9.dp)) }
                     item { MonthsCard(timeline) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AbsenceHeader(
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
-) {
-    com.bukovinafilip.gradey.ui.AdaptivePageHeader(
-        modifier = Modifier
-            .fillMaxWidth(),
-    ) {
-        Surface(
-            modifier = Modifier
-                .size(44.dp),
-            onClick = onOpenGradeyTools,
-            shape = CircleShape,
-            color = adaptiveColor(Color(0xFFE8FAFB), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Surface(modifier = Modifier.size(30.dp), shape = CircleShape, color = adaptiveColor(Color(0xFFC7ECE9), Color(0xFF2A5142))) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = stringResource(R.string.absence_open_gradey_tools_fba07),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        Text(
-            text = stringResource(R.string.absence_absence_f7eb4),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 17.sp,
-            lineHeight = 21.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-
-        Surface(
-            modifier = Modifier
-                .width(105.dp)
-                .height(44.dp),
-            shape = RoundedCornerShape(22.dp),
-            color = adaptiveColor(Color(0xFFDCFAF6), Color(0xFF203E33)),
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    onClick = onRefresh,
-                    enabled = !isRefreshing,
-                    shape = CircleShape,
-                    color = Color.Transparent,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isRefreshing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(21.dp),
-                                color = AccentTeal,
-                                strokeWidth = 2.5.dp,
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = stringResource(R.string.absence_refresh_absence_64777),
-                                tint = AccentTeal,
-                                modifier = Modifier.size(27.dp),
-                            )
-                        }
-                    }
-                }
-                Surface(
-                    modifier = Modifier.size(32.dp),
-                    onClick = onOpenAccount,
-                    shape = CircleShape,
-                    color = adaptiveColor(Color(0xFFBDECE4), Color(0xFF2A5142)),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = stringResource(R.string.absence_open_account_db17a),
-                            tint = AccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    }
                 }
             }
         }
@@ -420,29 +296,7 @@ private fun AbsenceSummaryCard(
 
 @Composable
 private fun AbsenceIconTile() {
-    Surface(
-        modifier = Modifier.size(46.dp),
-        shape = RoundedCornerShape(13.dp),
-        color = adaptiveColor(SoftTeal, Color(0xFF20483A)),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = Icons.Default.CalendarMonth,
-                contentDescription = null,
-                tint = AccentTeal,
-                modifier = Modifier.size(25.dp),
-            )
-            Icon(
-                imageVector = Icons.Default.Error,
-                contentDescription = null,
-                tint = AccentTeal,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 8.dp, bottom = 8.dp)
-                    .size(11.dp),
-            )
-        }
-    }
+    com.bukovinafilip.gradey.ui.IconTile(HugeIcons.CalendarRemove02, AccentTeal, size = 46.dp, iconSize = 22.dp, cornerRadius = 13.dp)
 }
 
 @Composable
@@ -848,15 +702,14 @@ private fun MonthRow(month: AbsenceMonthSummary) {
 private enum class AttendanceKind(
     val label: Int,
     val foreground: Color,
-    val background: Color,
 ) {
-    Unresolved(R.string.absence_unresolved_eeccd, Color(0xFF007E68), SoftTeal),
-    Excused(R.string.absence_excused_6c2a9, ExcusedGreen, SoftGreen),
-    Late(R.string.absence_late_arrivals_9e2a1, LateOrange, SoftOrange),
-    Missed(R.string.absence_unexcused_9076d, MissedRed, SoftRed),
-    Early(R.string.absence_early_departures_b3f13, Color(0xFF7562B5), Color(0xFFECE7F8)),
-    School(R.string.absence_school_events_4b8bc, Color(0xFF2474A8), Color(0xFFE0EDF6)),
-    Distance(R.string.absence_distance_learning_e96ec, Color(0xFF657D89), Color(0xFFE8EEF1)),
+    Unresolved(R.string.absence_unresolved_eeccd, GradeyColors.Good),
+    Excused(R.string.absence_excused_6c2a9, ExcusedGreen),
+    Late(R.string.absence_late_arrivals_9e2a1, LateOrange),
+    Missed(R.string.absence_unexcused_9076d, MissedRed),
+    Early(R.string.absence_early_departures_b3f13, Color(0xFF9A7FD6)),
+    School(R.string.absence_school_events_4b8bc, Color(0xFF4C98CC)),
+    Distance(R.string.absence_distance_learning_e96ec, Color(0xFF8DA3AE)),
 }
 
 private fun absenceCategories(counts: AbsenceCounts): List<Pair<AttendanceKind, Int>> = listOf(
@@ -875,7 +728,7 @@ private fun CountPill(kind: AttendanceKind, count: Int) {
     Surface(
         modifier = Modifier.heightIn(min = 25.dp).semantics { contentDescription = accessibleLabel },
         shape = RoundedCornerShape(13.dp),
-        color = adaptiveColor(kind.background, kind.foreground.copy(alpha = 0.18f)),
+        color = kind.foreground.copy(alpha = 0.14f),
         contentColor = kind.foreground,
     ) {
         Row(
@@ -900,7 +753,7 @@ private fun LegendPill(kind: AttendanceKind, label: String) {
     Surface(
         modifier = Modifier.height(25.dp),
         shape = RoundedCornerShape(13.dp),
-        color = adaptiveColor(kind.background, kind.foreground.copy(alpha = 0.18f)),
+        color = kind.foreground.copy(alpha = 0.14f),
         contentColor = kind.foreground,
     ) {
         Row(
@@ -924,7 +777,7 @@ private fun LegendPill(kind: AttendanceKind, label: String) {
 private fun AttendanceIcon(kind: AttendanceKind) {
     when (kind) {
         AttendanceKind.Unresolved -> Text("?", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-        AttendanceKind.Excused -> Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+        AttendanceKind.Excused -> HugeIcon(HugeIcons.Tick02, contentDescription = null, modifier = Modifier.size(14.dp))
         AttendanceKind.Late -> Text("P", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         AttendanceKind.Missed -> Text("!", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
         AttendanceKind.Early -> Text("↗", color = kind.foreground, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -954,34 +807,3 @@ private fun formatWhole(value: Double): String =
 
 @Composable
 private fun formatOneDecimal(value: Double): String = String.format(LocalConfiguration.current.locales[0], "%.1f", value)
-
-@Composable
-private fun AbsenceBackgroundGlow() {
-    val glowTop = BackgroundTop
-    val glowBottom = BackgroundBottom
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colorStops = arrayOf(
-                    0f to glowTop,
-                    0.32f to glowBottom,
-                    1f to glowBottom,
-                ),
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x35309C89), Color.Transparent),
-                center = Offset(size.width, size.height * 0.24f),
-                radius = size.width * 0.75f,
-            ),
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x265EAEB5), Color.Transparent),
-                center = Offset(0f, size.height * 0.59f),
-                radius = size.width * 0.70f,
-            ),
-        )
-    }
-}

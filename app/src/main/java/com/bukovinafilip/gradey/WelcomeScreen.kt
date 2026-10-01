@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 import com.bukovinafilip.gradey.R
 import androidx.activity.compose.BackHandler
@@ -7,8 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,7 +43,7 @@ internal fun WelcomeScreen(onComplete: (String) -> Unit) {
         }
         LinearProgressIndicator(progress = { if (age == null) .5f else 1f }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(12.dp))
-        Icon(if (age == null) Icons.Default.School else Icons.Default.PrivacyTip, null, Modifier.size(52.dp), tint = MaterialTheme.colorScheme.primary)
+        HugeIcon(if (age == null) HugeIcons.University else HugeIcons.SecurityLock, null, Modifier.size(52.dp), tint = MaterialTheme.colorScheme.primary)
         Text(if (age == null) stringResource(R.string.app_welcome_title) else stringResource(R.string.app_privacy_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Text(if (age == null) stringResource(R.string.app_welcome_body) else stringResource(R.string.app_privacy_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (age == null) {
@@ -57,7 +58,7 @@ internal fun WelcomeScreen(onComplete: (String) -> Unit) {
                             Text(title, style = MaterialTheme.typography.titleMedium)
                             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                         }
-                        Icon(Icons.Default.ChevronRight, null)
+                        HugeIcon(HugeIcons.ArrowRight01, null)
                     }
                 }
             }
@@ -128,7 +129,7 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
                 (viewport != null && last != null && last.top >= viewport.top && last.bottom <= viewport.bottom))) readToEnd = true
     }
     BackHandler { onClose?.invoke() }
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp)) {
             if (!review) {
                 LinearProgressIndicator(progress = { if (readToEnd || accessibleReading) 1f else
@@ -144,7 +145,7 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
             Column(Modifier.verticalScroll(scroll).padding(vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PrivacyTip, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
+                    HugeIcon(HugeIcons.SecurityLock, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     onClose?.let { close -> TextButton(onClick = close) { Text(stringResource(R.string.privacy_update_done)) } }
                 }
@@ -162,7 +163,7 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
                         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(stringResource(title), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                                Icon(if (expanded == index) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                HugeIcon(if (expanded == index) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
                                     contentDescription = stringResource(if (expanded == index) R.string.privacy_update_collapse else R.string.privacy_update_expand))
                             }
                             Text(stringResource(summary), color = MaterialTheme.colorScheme.onSurfaceVariant)

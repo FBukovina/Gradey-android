@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">settings</string>
+    <string name="settings_close">done</string>
+    <string name="settings_back">back</string>
+    <string name="settings_group_app">app</string>
+    <string name="settings_destination_account_title">account</string>
+    <string name="settings_destination_account_subtitle">profile &amp; login</string>
+    <string name="settings_destination_connected_title">connected services</string>
+    <string name="settings_destination_connected_subtitle">school and canteen connections</string>
+    <string name="settings_destination_notifications_title">notifications</string>
+    <string name="settings_destination_notifications_subtitle">alerts, privacy &amp; quiet hours</string>
+    <string name="settings_destination_privacy_title">privacy &amp; data</string>
+    <string name="settings_destination_privacy_subtitle">manage your data</string>
+    <string name="settings_destination_preferences_title">language and preferences</string>
+    <string name="settings_destination_preferences_subtitle">language and app preferences</string>
+    <string name="settings_destination_support_title">support &amp; about</string>
+    <string name="settings_destination_support_subtitle">help, feedback &amp; app info</string>
+    <string name="settings_overview_school_active">school active</string>
+    <string name="settings_overview_school_not_connected">school not connected</string>
+    <string name="settings_overview_school_action_required">school accounts: action required</string>
+    <string name="settings_overview_canteen_connected">canteen connected</string>
+    <string name="settings_overview_canteen_not_connected">canteen not connected</string>
+    <string name="settings_overview_notifications_on">on</string>
+    <string name="settings_overview_notifications_off">off</string>
+    <string name="settings_overview_notifications_quiet_until">on · quiet until %1$s</string>
+    <string name="settings_overview_notifications_unavailable">link a school to enable</string>
+    <string name="settings_overview_meals_shown">meals tab shown</string>
+    <string name="settings_overview_meals_hidden">meals tab hidden</string>
+    <string name="settings_profile_gradey_id">Gradey ID</string>
+    <string name="settings_profile_local">on this device</string>
+    <string name="settings_profile_demo">demo data</string>
+    <string name="settings_profile_add_name_title">add your name</string>
+    <string name="settings_profile_add_name_message">personalize your Gradey profile</string>
+    <string name="settings_profile_action_required">action required</string>
+    <string name="settings_support_tips">support Gradey</string>
+    <string name="settings_support_tips_subtitle">tips and supporter perks</string>
+    <string name="settings_version">Gradey %1$s</string>
+    <string name="settings_documents">documents</string>
+    <string name="settings_school_connections">school</string>
+    <string name="settings_canteen_connections">canteen</string>
+</resources>

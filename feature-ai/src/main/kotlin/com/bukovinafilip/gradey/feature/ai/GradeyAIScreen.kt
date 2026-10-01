@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.ai
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import android.content.Context
 import android.app.Activity
 import android.content.ContextWrapper
@@ -23,22 +26,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ChatBubbleOutline
-import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -46,7 +33,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -161,21 +147,21 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
             list.animateScrollToItem((list.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
         }
     }
-    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
         Column(Modifier.fillMaxSize().imePadding()) {
             if (chat != null) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = controller::close, enabled = !state.busy) { Icon(Icons.AutoMirrored.Filled.ArrowBack, resources.getString(R.string.gradey_ai_conversations_back)) }
+                    IconButton(onClick = controller::close, enabled = !state.busy) { HugeIcon(HugeIcons.ArrowLeft01, resources.getString(R.string.gradey_ai_conversations_back)) }
                     Column(Modifier.weight(1f)) {
                         Text(chat.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(resources.getString(R.string.ai_companion), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    IconButton(onClick = controller::reload, enabled = !state.busy) { Icon(Icons.Default.Refresh, resources.getString(R.string.ai_reload)) }
+                    IconButton(onClick = controller::reload, enabled = !state.busy) { HugeIcon(HugeIcons.Refresh04, resources.getString(R.string.ai_reload)) }
                     Box {
-                        IconButton(onClick = { menu = true }, enabled = !state.busy) { Icon(Icons.Default.MoreVert, resources.getString(R.string.gradey_ai_options)) }
+                        IconButton(onClick = { menu = true }, enabled = !state.busy) { HugeIcon(HugeIcons.MoreVertical, resources.getString(R.string.gradey_ai_options)) }
                         DropdownMenu(menu, { menu = false }) {
                             DropdownMenuItem(text = { Text(resources.getString(R.string.gradey_ai_conversation_delete_action)) }, onClick = { menu = false; confirmation = chat.id },
-                                leadingIcon = { Icon(Icons.Default.DeleteOutline, null) })
+                                leadingIcon = { HugeIcon(HugeIcons.Delete02, null) })
                             DropdownMenuItem(text = { Text(resources.getString(R.string.gradey_ai_privacy_revoke_action)) }, onClick = { menu = false; confirmation = "revoke" })
                         }
                     }
@@ -224,7 +210,7 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
                             item {
                                 Button(onClick = { controller.newChat(if (state.selection.action == AIAction.REPLY) "" else resources.getString(state.selection.action.promptResource)) },
                                     enabled = !state.busy && status.canAfford(state.selection.action) && (state.selection.action != AIAction.SUBJECT || state.selection.subjectID != null) && (state.selection.action != AIAction.TEST || state.selection.eventID != null), modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(16.dp)) {
-                                    Icon(Icons.Default.Add, null, Modifier.size(20.dp)); Spacer(Modifier.size(8.dp)); Text(resources.getString(R.string.gradey_ai_new_chat))
+                                    HugeIcon(HugeIcons.Add01, null, Modifier.size(20.dp)); Spacer(Modifier.size(8.dp)); Text(resources.getString(R.string.gradey_ai_new_chat))
                                 }
                             }
                             if (state.chats.isEmpty()) item {
@@ -239,12 +225,12 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
                                 items(state.chats, key = { "chat-${it.id}" }) { conversation ->
                                     GradeySectionCard(Modifier.clickable(enabled = !state.busy) { controller.open(conversation) }) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            Icon(Icons.Default.ChatBubbleOutline, null, tint = MaterialTheme.colorScheme.primary)
+                                            HugeIcon(HugeIcons.Message01, null, tint = MaterialTheme.colorScheme.primary)
                                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 Text(conversation.title, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                                                 if (conversation.updatedAt > 0) Text(formatDate(conversation.updatedAt, context), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
-                                            IconButton(onClick = { confirmation = conversation.id }, enabled = !state.busy) { Icon(Icons.Default.DeleteOutline, resources.getString(R.string.ai_delete_named, conversation.title)) }
+                                            IconButton(onClick = { confirmation = conversation.id }, enabled = !state.busy) { HugeIcon(HugeIcons.Delete02, resources.getString(R.string.ai_delete_named, conversation.title)) }
                                         }
                                     }
                                 }
@@ -277,7 +263,7 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
                             state.notice?.let { notice -> item { Text(localizedAIMessage(context, notice), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                             if (state.pending != null && !state.busy) item {
                                 OutlinedButton(onClick = { controller.send(retry = true) }, enabled = status.enabled && !status.consentRequired) {
-                                    Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.size(8.dp)); Text(resources.getString(R.string.ai_retry_question))
+                                    HugeIcon(HugeIcons.Refresh04, null, Modifier.size(18.dp)); Spacer(Modifier.size(8.dp)); Text(resources.getString(R.string.ai_retry_question))
                                 }
                             }
                         }
@@ -293,7 +279,7 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
                             trailingIcon = {
                                 FilledIconButton(onClick = { if (state.sending) controller.stop() else { keyboard?.hide(); controller.send() } },
                                     enabled = state.sending || state.canSend, modifier = Modifier.padding(end = 8.dp)) {
-                                    Icon(if (state.sending) Icons.Default.Stop else Icons.AutoMirrored.Filled.Send,
+                                    HugeIcon(if (state.sending) HugeIcons.Stop else HugeIcons.Sent,
                                         if (state.sending) resources.getString(R.string.gradey_ai_stop) else resources.getString(R.string.gradey_ai_send), Modifier.size(20.dp))
                                 }
                             })
@@ -329,7 +315,7 @@ internal fun GradeyAIScreen(state: AIState, controller: GradeyAIController, isDe
 @Composable
 private fun AIEmblem() {
     Box(Modifier.size(48.dp).background(MaterialTheme.colorScheme.primaryContainer, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-        Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(25.dp))
+        HugeIcon(HugeIcons.Sparkles, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(25.dp))
     }
 }
 
@@ -342,11 +328,11 @@ private fun ConsentCard(status: AIStatus, busy: Boolean, onAccept: () -> Unit) {
         Text(resources.getString(R.string.gradey_ai_consent_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
         Text(resources.getString(R.string.gradey_ai_consent_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Default.School, null, tint = MaterialTheme.colorScheme.primary)
+            HugeIcon(HugeIcons.University, null, tint = MaterialTheme.colorScheme.primary)
             Text(resources.getString(R.string.gradey_ai_consent_azure_message))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Default.Shield, null, tint = MaterialTheme.colorScheme.primary)
+            HugeIcon(HugeIcons.SecurityCheck, null, tint = MaterialTheme.colorScheme.primary)
             Text(resources.getString(R.string.gradey_ai_consent_retention_message))
         }
         Text(resources.getString(R.string.ai_notice_version, status.termsVersion), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -364,7 +350,7 @@ private fun UsageCard(status: AIStatus, busy: Boolean, refresh: () -> Unit, revo
                 Text(if (status.enabled) resources.getString(R.string.ai_compute_available, status.remaining) else resources.getString(R.string.gradey_ai_availability_paused_title), fontWeight = FontWeight.SemiBold)
                 Text(if (status.linked) resources.getString(R.string.ai_allowance_linked, status.dailyLimit) else resources.getString(R.string.ai_allowance_guest, status.dailyLimit), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            IconButton(onClick = refresh, enabled = !busy) { Icon(Icons.Default.Refresh, resources.getString(R.string.ai_refresh_status)) }
+            IconButton(onClick = refresh, enabled = !busy) { HugeIcon(HugeIcons.Refresh04, resources.getString(R.string.ai_refresh_status)) }
         }
         if (status.dailyLimit > 0) LinearProgressIndicator(progress = { (status.remaining.toFloat() / status.dailyLimit).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
         if ((status.compute?.reserved ?: 0) > 0) Text(resources.getString(R.string.ai_reserved, status.compute?.reserved ?: 0), style = MaterialTheme.typography.bodySmall)
@@ -386,7 +372,7 @@ private fun ActionPicker(state: AIState, select: (AIAction) -> Unit, subject: (S
                 Text(resources.getString(state.selection.action.titleResource), Modifier.weight(1f))
                 Text(state.status?.cost(state.selection.action)?.let { resources.getString(R.string.ai_price, it) }
                     ?: resources.getString(R.string.gradey_ai_compute_action_unavailable), style = MaterialTheme.typography.labelMedium)
-                Icon(Icons.Default.ExpandMore, null, Modifier.padding(start = 8.dp).size(18.dp))
+                HugeIcon(HugeIcons.ArrowDown01, null, Modifier.padding(start = 8.dp).size(18.dp))
             }
             DropdownMenu(actionMenu, { actionMenu = false }) {
                 AIAction.entries.forEach { action ->
@@ -398,7 +384,7 @@ private fun ActionPicker(state: AIState, select: (AIAction) -> Unit, subject: (S
                                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }, onClick = { actionMenu = false; select(action) }, leadingIcon = {
-                        Icon(if (state.selection.action == action) Icons.Default.CheckCircleOutline else Icons.Default.AutoAwesome, null, Modifier.size(18.dp))
+                        HugeIcon(if (state.selection.action == action) HugeIcons.CheckmarkCircle02 else HugeIcons.Sparkles, null, Modifier.size(18.dp))
                     })
                 }
             }
@@ -446,13 +432,13 @@ private fun ContextCard(state: AIState, expanded: Boolean, toggle: () -> Unit, r
     val stale = state.context?.boolean("isStale") == true
     GradeySectionCard {
         Row(Modifier.fillMaxWidth().clickable(onClick = toggle), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(if (selected) Icons.Default.School else Icons.Default.Shield, null, tint = MaterialTheme.colorScheme.primary)
+            HugeIcon(if (selected) HugeIcons.University else HugeIcons.SecurityCheck, null, tint = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text(resources.getString(state.selection.action.titleResource), style = MaterialTheme.typography.labelLarge)
                 Text(when { !selected -> resources.getString(R.string.gradey_ai_context_none); stale -> resources.getString(R.string.gradey_ai_context_partial); state.context == null -> resources.getString(R.string.ai_refresh_before_send); else -> resources.getString(R.string.gradey_ai_context_ready) },
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (expanded) resources.getString(R.string.ai_hide_context) else resources.getString(R.string.ai_show_context))
+            HugeIcon(if (expanded) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01, if (expanded) resources.getString(R.string.ai_hide_context) else resources.getString(R.string.ai_show_context))
         }
         if (expanded) {
             Text(if (state.selection.includeNotes) resources.getString(R.string.ai_notes_shared) else resources.getString(R.string.ai_context_privacy), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -473,7 +459,7 @@ private fun ContextCard(state: AIState, expanded: Boolean, toggle: () -> Unit, r
                     }
                 }
             }
-            TextButton(onClick = refresh, enabled = !state.busy && selected) { Icon(Icons.Default.Refresh, null, Modifier.size(18.dp)); Spacer(Modifier.size(6.dp)); Text(resources.getString(R.string.gradey_ai_context_refresh)) }
+            TextButton(onClick = refresh, enabled = !state.busy && selected) { HugeIcon(HugeIcons.Refresh04, null, Modifier.size(18.dp)); Spacer(Modifier.size(6.dp)); Text(resources.getString(R.string.gradey_ai_context_refresh)) }
         }
     }
 }
@@ -498,7 +484,7 @@ private fun MessageBubble(message: AIMessage) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (user) Arrangement.End else Arrangement.Start) {
         Column(Modifier.widthIn(max = 640.dp).then(if (user) Modifier.padding(start = 28.dp) else Modifier.fillMaxWidth()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (!user) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Default.AutoAwesome, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
+                HugeIcon(HugeIcons.Sparkles, null, Modifier.size(15.dp), tint = MaterialTheme.colorScheme.primary)
                 Text("Gradey AI", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
             Surface(color = if (user) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
@@ -516,7 +502,7 @@ private fun MessageBubble(message: AIMessage) {
             }
             if (!user && message.text.isNotBlank() && message.status != "streaming") {
                 TextButton(onClick = { clipboard.setText(AnnotatedString(message.text)) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    Icon(Icons.Default.ContentCopy, null, Modifier.size(15.dp)); Spacer(Modifier.size(6.dp)); Text(resources.getString(R.string.ai_copy), style = MaterialTheme.typography.labelSmall)
+                    HugeIcon(HugeIcons.Copy01, null, Modifier.size(15.dp)); Spacer(Modifier.size(6.dp)); Text(resources.getString(R.string.ai_copy), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

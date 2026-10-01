@@ -1,20 +1,15 @@
 package com.bukovinafilip.gradey.feature.timetable
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import android.content.res.Resources
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.EventNote
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -55,7 +50,7 @@ internal fun TimetablePlannerBadge(items: List<PersonalPlannerItem>) {
         modifier = Modifier.padding(top = 5.dp).testTag("timetable-planner-badge")) {
         Row(Modifier.padding(horizontal = 7.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(plannerTypeIcon(first.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+            HugeIcon(plannerTypeIcon(first.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             Text(if (items.size == 1) type else strings.getString(R.string.timetable_planner_multiple, type, items.size - 1),
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
@@ -78,12 +73,12 @@ internal fun LessonPlannerItems(items: List<PersonalPlannerItem>, onOpen: ((Stri
                         Text(item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(plannerTypeIcon(item.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
+                                HugeIcon(plannerTypeIcon(item.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                                 Text(plannerTypeTitle(item.type, strings), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             item.subject?.let { Text(it.abbreviation?.takeIf(String::isNotBlank) ?: it.name,
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            if (item.calendarID != null) Icon(Icons.Default.CalendarMonth,
+                            if (item.calendarID != null) HugeIcon(HugeIcons.Calendar03,
                                 strings.getString(R.string.timetable_planner_calendar), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         // An undated permanent lesson has no invented calendar date. A user-chosen
@@ -97,7 +92,7 @@ internal fun LessonPlannerItems(items: List<PersonalPlannerItem>, onOpen: ((Stri
                             schedule?.let { text -> Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         }
                     }
-                    if (onOpen != null) Icon(Icons.Default.ChevronRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (onOpen != null) HugeIcon(HugeIcons.ArrowRight01, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -112,9 +107,9 @@ private fun plannerTypeTitle(type: PlannerItemType, strings: Resources): String 
     PlannerItemType.TASK -> R.string.timetable_planner_task
 })
 
-private fun plannerTypeIcon(type: PlannerItemType): ImageVector = when (type) {
-    PlannerItemType.HOMEWORK -> Icons.Default.EditNote
-    PlannerItemType.TEST, PlannerItemType.PRESENTATION -> Icons.Default.School
-    PlannerItemType.NOTE -> Icons.AutoMirrored.Filled.EventNote
-    PlannerItemType.TASK -> Icons.Default.Checklist
+private fun plannerTypeIcon(type: PlannerItemType): String = when (type) {
+    PlannerItemType.HOMEWORK -> HugeIcons.Edit02
+    PlannerItemType.TEST, PlannerItemType.PRESENTATION -> HugeIcons.University
+    PlannerItemType.NOTE -> HugeIcons.TaskDaily02
+    PlannerItemType.TASK -> HugeIcons.CheckList
 }

@@ -1,12 +1,13 @@
 package com.bukovinafilip.gradey
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Watch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -109,7 +110,7 @@ private fun WatchAccessDialogContent(
                 Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
-                            Icon(Icons.Outlined.Watch, null, Modifier.padding(12.dp).size(28.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            HugeIcon(HugeIcons.Watch01, null, Modifier.padding(12.dp).size(28.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         Text(stringResource(R.string.watch_access_title), style = MaterialTheme.typography.headlineSmall)
                     }
@@ -168,7 +169,7 @@ private fun WatchAccessDialogContent(
     }
     review?.let { selected -> AlertDialog(
         onDismissRequest = { review = null },
-        icon = { Icon(Icons.Outlined.Watch, null) },
+        icon = { HugeIcon(HugeIcons.Watch01, null) },
         title = { Text(stringResource(R.string.watch_access_review_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {

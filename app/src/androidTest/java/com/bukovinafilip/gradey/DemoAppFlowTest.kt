@@ -82,7 +82,7 @@ class DemoAppFlowTest {
         if (state().phase == AppPhase.SIGNED_IN) signOutThroughUi()
         compose.onNodeWithText("Use demo data").performScrollTo().performClick()
         compose.waitUntil(15_000) { state().phase == AppPhase.SIGNED_IN && !state().loading }
-        compose.onNodeWithText("Overall average").assertIsDisplayed()
+        compose.onNodeWithTag("todayHero").assertIsDisplayed()
     }
 
     @Test fun navigationSearchAndActivityRecreationPreserveTheSelectedScreen() {
@@ -103,7 +103,7 @@ class DemoAppFlowTest {
         compose.onNodeWithContentDescription("Timetable").performClick()
         assertEquals(AppTab.TIMETABLE, state().tab)
         compose.onNodeWithContentDescription("Today").performClick()
-        compose.onNodeWithText("Overall average").assertExists()
+        compose.onNodeWithTag("todayHero").assertExists()
     }
 
     @Test fun plannedAbsenceIsSavedRestoredAndRemovedFromEncryptedStorage() {
@@ -146,7 +146,7 @@ class DemoAppFlowTest {
         compose.onNodeWithText("Regular weekly schedule without date-specific changes.").assertExists()
         compose.onNodeWithContentDescription("Today").performClick()
         assertEquals(datedWeek, state().currentTimetable)
-        compose.onNodeWithText("Overall average").assertExists()
+        compose.onNodeWithTag("todayHero").assertExists()
     }
 
     @Test fun timetableSelectedDaySurvivesOpeningAttachedPlannerItemAndBack() {
@@ -238,6 +238,7 @@ class DemoAppFlowTest {
     @Test fun signOutClearsPrivateStateAndDoesNotDisplayCredentialValues() {
         compose.onNodeWithContentDescription("Open account").performClick()
         assertNoCredentialText()
+        compose.onNodeWithTag("settingsDestination-account").performClick()
         scrollTo(hasText("Sign out"))
         compose.onNodeWithText("Sign out").performClick()
         compose.onNodeWithText("Sign out of Gradey?").assertIsDisplayed()
@@ -256,7 +257,10 @@ class DemoAppFlowTest {
     @Test fun demoSchoolControlsCannotOpenLoginOrRemoveSampleAccount() {
         val school = state().school
         compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithTag("settingsDestination-account").performClick()
         compose.onNodeWithText("Explore Gradey with sample data. Real school accounts cannot be connected or changed in demo mode.").assertExists()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
         scrollTo(hasText("Add school"))
         compose.onNodeWithText("Add school").assertIsNotEnabled().performClick()
         scrollTo(hasText("Remove"))
@@ -337,7 +341,7 @@ class DemoAppFlowTest {
             assertTrue(preferences.edit().putInt("privacyRevision", PrivacyRevision - 1).commit())
             compose.activityRule.scenario.recreate()
             compose.onNodeWithText("Privacy updates").assertIsDisplayed()
-            compose.onNodeWithText("Overall average").assertDoesNotExist()
+            compose.onNodeWithTag("todayHero").assertDoesNotExist()
             compose.onNodeWithText("I’m 16 or older").assertDoesNotExist()
             assertEquals(PrivacyRevision - 1, preferences.getInt("privacyRevision", 0))
         } finally {
@@ -475,6 +479,7 @@ class DemoAppFlowTest {
     private fun signOutThroughUi() {
         compose.onNodeWithContentDescription("Today").performClick()
         compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithTag("settingsDestination-account").performClick()
         scrollTo(hasText("Sign out"))
         compose.onNodeWithText("Sign out").performClick()
         compose.onNode(hasText("Sign out") and hasAnyAncestor(dialog)).performClick()

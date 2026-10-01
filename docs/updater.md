@@ -2,34 +2,34 @@
 
 The phone app supports updates distributed through the public stable releases in [FBukovina/Gradey-android](https://github.com/FBukovina/Gradey-android/releases). This is the distribution channel for APKs installed directly. No release is published by building the app or generating its update manifest.
 
-The updater is included from version 0.2.1 onward. New installations can download the [0.2.2 debug preview APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-0.2.2-debug.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-update.json) from the [0.2.2 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.2.2). Version 0.2.2 uses code 5 and the existing debug certificate, allowing updates from public 0.2.1 (code 3) and local previews (code 4). The account-configured preview still has the live-service limitations described in [android-configuration.md](android-configuration.md).
+The updater is included from version 0.2.1 onward. New installations can download the [0.3 debug preview APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.3/gradey-0.3-debug.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.3/gradey-update.json) from the [0.3 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.3). Version 0.3 uses code 6 and the existing debug certificate, allowing updates from public 0.2.2 (code 5), public 0.2.1 (code 3), and local previews (code 4). The account-configured preview still has the live-service limitations described in [android-configuration.md](android-configuration.md).
 
 ## What users see
 
-The Updates screen lets users check manually and control automatic updates. When enabled, background work checks about every 12 hours and downloads new versions over an unmetered connection, normally Wi-Fi. Android may delay scheduled work to preserve battery. A manual check and download are available without waiting for the scheduled check.
+The Updates screen lets users check manually and control automatic updates. In 0.3, open it from **Settings → Support & About → App updates**, Gradey tools, or the sign-in screen. When enabled, background work checks about every 12 hours and downloads new versions over an unmetered connection, normally Wi-Fi. Android may delay scheduled work to preserve battery. A manual check and download are available without waiting for the scheduled check.
 
 A downloaded update is verified before it can be opened in Android's package installer. Android asks the user to allow Gradey to install apps when needed and to confirm installation. An ordinary Android app cannot silently replace itself. The updater keeps the user's existing app data when Android accepts the update.
 
 The updater checks version code, package identity, phone target, minimum Android version, file size, SHA-256 checksum, and the APK's signing identity. The APK must be newer than the installed app and have exactly the same set of active signing certificates. Signing-key rotation is not supported by this direct updater. Failed or incompatible downloads are never offered for installation.
 
-Phone and Wear OS currently share a package name for Wear Data Layer communication, so every update manifest must explicitly contain `"target": "phone"`. This feed updates the phone APK only; publish and install the Wear companion separately.
+Phone and Wear OS currently share a package name for Wear Data Layer communication, so every update manifest must explicitly contain `"target": "phone"`. This feed updates the phone APK only; publish and install the Wear companion separately. The 0.3 release does not publish a Wear APK; Wear remains independently versioned at 0.2.0.
 
 ## Prepare a direct APK release
 
-1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. Version 0.2.2 uses `-Pgradey.versionCode=5 -Pgradey.versionName=0.2.2`; choose a higher code for the next update. Version codes must increase for every published phone update.
+1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. Version 0.3 uses `-Pgradey.versionCode=6 -Pgradey.versionName=0.3`; choose a higher code for the next update. Version codes must increase for every published phone update.
 2. Build a signed standalone phone APK. Keep the signing key used for earlier direct installations. A debug APK can only update compatible debug installations signed with that same debug key; a production key cannot update an existing debug installation.
-3. Choose the GitHub release tag and the final APK asset filename. Generate the manifest from the exact signed APK that will be uploaded. For example, after building version `0.2.2`:
+3. Choose the GitHub release tag and the final APK asset filename. Generate the manifest from the exact signed APK that will be uploaded. For example, after building the version `0.3` debug preview:
 
    ```bash
    python3 scripts/create-update-manifest.py \
-     --apk "$HOME/Library/Caches/GradeyAndroid-build/app/outputs/apk/release/app-release.apk" \
-     --apk-url https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-0.2.2.apk \
-     --output artifacts/0.2.2/gradey-update.json
+     --apk "$HOME/Library/Caches/GradeyAndroid-build/app/outputs/apk/debug/app-debug.apk" \
+     --apk-url https://github.com/FBukovina/Gradey-android/releases/download/v0.3/gradey-0.3-debug.apk \
+     --output artifacts/0.3/gradey-update.json
    ```
 
    The root Gradle build redirects outputs to `~/Library/Caches/GradeyAndroid-build`; replace the APK path if you have copied or signed the output elsewhere. An unsigned release output must be signed before generating the manifest. Add `--notes-file path/to/release-notes.txt` for optional plain-text notes and `--android-sdk /path/to/Android/sdk` if the SDK is outside the standard locations. The script uses `apkanalyzer manifest print`, or `aapt2 dump badging` when apkanalyzer is unavailable, to read the actual APK. It computes the SHA-256 and byte size from that file and rejects Wear or foreign-package APKs. It does not sign or upload the APK.
 
-4. Attach the exact APK as `gradey-0.2.2.apk` and the generated manifest as `gradey-update.json` to the same GitHub release. Keep it a draft while assembling the assets, then publish it as the latest stable release. Drafts and prereleases are excluded by the updater. The app requires the manifest's APK URL and size to match the release's actual asset.
+4. Attach the exact APK as `gradey-0.3-debug.apk` and the generated manifest as `gradey-update.json` to the same GitHub release. Keep it a draft while assembling the assets, then publish it as the latest stable release. Drafts and prereleases are excluded by the updater. The app requires the manifest's APK URL and size to match the release's actual asset. The stable distribution label makes the preview discoverable by the updater; it does not establish production readiness.
 5. Check from an older installation made with the same signing key, complete the Android installation confirmation, and verify the new version and existing data.
 
 Do not modify an APK after generating its manifest. Regenerate the manifest if the APK is rebuilt or signed again. The GitHub API is accessed without a token; rate limits and network errors are shown as retryable errors. The app accepts initial asset URLs only from this repository, and download redirects only from the allowed GitHub release-storage hosts over HTTPS.
@@ -39,11 +39,11 @@ Do not modify an APK after generating its manifest. Regenerate the manifest if t
 ```json
 {
   "target": "phone",
-  "versionCode": 5,
-  "versionName": "0.2.2",
+  "versionCode": 6,
+  "versionName": "0.3",
   "packageName": "com.bukovinafilip.gradey",
   "minSdk": 26,
-  "apkUrl": "https://github.com/FBukovina/Gradey-android/releases/download/v0.2.2/gradey-0.2.2.apk",
+  "apkUrl": "https://github.com/FBukovina/Gradey-android/releases/download/v0.3/gradey-0.3-debug.apk",
   "sha256": "<64 hexadecimal characters generated from the APK>",
   "sizeBytes": 42000000,
   "releaseNotes": "Optional plain-text changes shown before installation."

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Nastavení</string>
+    <string name="settings_close">Hotovo</string>
+    <string name="settings_back">Zpět</string>
+    <string name="settings_group_app">Aplikace</string>
+    <string name="settings_destination_account_title">Účet</string>
+    <string name="settings_destination_account_subtitle">Profil a přihlášení</string>
+    <string name="settings_destination_connected_title">Propojené služby</string>
+    <string name="settings_destination_connected_subtitle">Připojení školy a jídelny</string>
+    <string name="settings_destination_notifications_title">Upozornění</string>
+    <string name="settings_destination_notifications_subtitle">Upozornění, soukromí a klidový režim</string>
+    <string name="settings_destination_privacy_title">Soukromí a data</string>
+    <string name="settings_destination_privacy_subtitle">Tvoje data v bezpečí</string>
+    <string name="settings_destination_preferences_title">Jazyk a předvolby</string>
+    <string name="settings_destination_preferences_subtitle">Jazyk a předvolby aplikace</string>
+    <string name="settings_destination_support_title">Podpora a informace</string>
+    <string name="settings_destination_support_subtitle">Pomoc, zpětná vazba a informace</string>
+    <string name="settings_overview_school_active">Škola aktivní</string>
+    <string name="settings_overview_school_not_connected">Škola nepřipojena</string>
+    <string name="settings_overview_school_action_required">Školní účty: Vyžaduje pozornost</string>
+    <string name="settings_overview_canteen_connected">Jídelna připojena</string>
+    <string name="settings_overview_canteen_not_connected">Jídelna nepřipojena</string>
+    <string name="settings_overview_notifications_on">Zapnuto</string>
+    <string name="settings_overview_notifications_off">Vypnuto</string>
+    <string name="settings_overview_notifications_quiet_until">Zapnuto · Klid do %1$s</string>
+    <string name="settings_overview_notifications_unavailable">Pro zapnutí propoj školu</string>
+    <string name="settings_overview_meals_shown">Záložka Jídelna zobrazena</string>
+    <string name="settings_overview_meals_hidden">Záložka Jídelna skryta</string>
+    <string name="settings_profile_gradey_id">Gradey ID</string>
+    <string name="settings_profile_local">V tomto zařízení</string>
+    <string name="settings_profile_demo">Ukázková data</string>
+    <string name="settings_profile_add_name_title">Přidat jméno</string>
+    <string name="settings_profile_add_name_message">Přizpůsob si profil v Gradey</string>
+    <string name="settings_profile_action_required">Vyžaduje pozornost</string>
+    <string name="settings_support_tips">Podpořit Gradey</string>
+    <string name="settings_support_tips_subtitle">Příspěvky a výhody pro podporovatele</string>
+    <string name="settings_version">Gradey %1$s</string>
+    <string name="settings_documents">Dokumenty</string>
+    <string name="settings_school_connections">Škola</string>
+    <string name="settings_canteen_connections">Jídelna</string>
+</resources>

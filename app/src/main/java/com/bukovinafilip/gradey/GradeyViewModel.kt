@@ -160,6 +160,10 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         mutableState.update { it.copy(tab = AppTab.AI, aiEntry = request) }
     }
 
+    fun openSubject(subjectID: String) {
+        mutableState.update { it.copy(tab = AppTab.SUBJECTS, focusedSubjectID = subjectID) }
+    }
+
     fun plannerChanged(items: List<PersonalPlannerItem>) {
         mutableState.update { it.copy(personalPlannerItems = items) }
     }

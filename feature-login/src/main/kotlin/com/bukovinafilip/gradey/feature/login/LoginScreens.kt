@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.login
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.layout.Arrangement
@@ -8,11 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.foundation.text.KeyboardActions
@@ -25,7 +23,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -170,7 +167,7 @@ fun SchoolLoginScreen(
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            HugeIcon(if (passwordVisible) HugeIcons.ViewOff else HugeIcons.View,
                                 contentDescription = if (passwordVisible) stringResource(R.string.login_hide_password_e4012) else stringResource(R.string.login_show_password_044b8))
                         }
                     },
@@ -184,7 +181,7 @@ fun SchoolLoginScreen(
                     enabled = canSubmit,
                     onClick = { submit() },
                 ) {
-                    Icon(Icons.Default.Link, contentDescription = null)
+                    HugeIcon(HugeIcons.Link04, contentDescription = null)
                     Text(if (isLoading) stringResource(R.string.login_connecting_fd3e7) else if (isReconnecting) stringResource(R.string.login_reconnect_school_14a5a) else stringResource(R.string.login_connect_school_85e9d))
                 }
                 if (isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -249,7 +246,7 @@ private fun SchoolSignInHelp(label: String, onOpenHelp: () -> Unit) {
     androidx.compose.material3.TextButton(
         onClick = { focusManager.clearFocus(); onOpenHelp() }, modifier = Modifier.fillMaxWidth(),
     ) {
-        Icon(Icons.Default.HelpOutline, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+        HugeIcon(HugeIcons.HelpCircle, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
         Text(label)
     }
 }

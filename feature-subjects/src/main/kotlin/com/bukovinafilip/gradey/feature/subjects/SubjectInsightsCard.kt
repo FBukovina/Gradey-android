@@ -1,9 +1,9 @@
 package com.bukovinafilip.gradey.feature.subjects
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,7 +55,7 @@ internal fun SubjectInsightsCard(subject: Subject, schoolScope: String?, state: 
         }
         onAskAI?.let { ask ->
             OutlinedButton(onClick = { ask(subject.id) }, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                HugeIcon(HugeIcons.Sparkles, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.subjects_review_this_subject_with_ai))
             }
@@ -63,7 +63,7 @@ internal fun SubjectInsightsCard(subject: Subject, schoolScope: String?, state: 
         summary.upcomingEvents.forEach { event ->
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
-                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                HugeIcon(HugeIcons.Calendar03, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(event.title, fontWeight = FontWeight.Medium)
                     val formatter = if (event.hasTime) DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)

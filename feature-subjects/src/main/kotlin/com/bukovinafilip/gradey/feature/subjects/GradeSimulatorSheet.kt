@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.subjects
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,14 +16,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -167,7 +165,7 @@ internal fun GradeSimulatorSheet(subject: Subject, onDismiss: () -> Unit) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(strings.getString(R.string.subjects_hypothetical_mark_1_d, index + 1), fontWeight = FontWeight.SemiBold)
                             IconButton(onClick = { grades = grades.filterNot { it.id == grade.id } }) {
-                                Icon(Icons.Default.DeleteOutline, strings.getString(R.string.subjects_remove_hypothetical_mark_1_d, index + 1), tint = MaterialTheme.colorScheme.error)
+                                HugeIcon(HugeIcons.Delete02, strings.getString(R.string.subjects_remove_hypothetical_mark_1_d, index + 1), tint = MaterialTheme.colorScheme.error)
                             }
                         }
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -183,7 +181,7 @@ internal fun GradeSimulatorSheet(subject: Subject, onDismiss: () -> Unit) {
                 }
                 item {
                     OutlinedButton(onClick = { grades = grades + HypotheticalGrade() }, enabled = grades.size < GradeSimulation.MaximumHypotheticalGrades, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Default.Add, null)
+                        HugeIcon(HugeIcons.Add01, null)
                         Text(strings.getString(R.string.subjects_add_hypothetical_mark_1_d_10, grades.size))
                     }
                     if (grades.isNotEmpty()) TextButton(onClick = { grades = emptyList() }, modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.subjects_reset_scenario)) }
@@ -207,9 +205,9 @@ private fun SimulatorWeightControl(weight: Int, onChange: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(strings.getString(R.string.subjects_weight_1_d, weight), fontWeight = FontWeight.SemiBold)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onChange(weight - 1) }, enabled = weight > 1) { Icon(Icons.Default.Remove, strings.getString(R.string.subjects_decrease_weight)) }
+            IconButton(onClick = { onChange(weight - 1) }, enabled = weight > 1) { HugeIcon(HugeIcons.MinusSign, strings.getString(R.string.subjects_decrease_weight)) }
             Text(weight.toString(), fontWeight = FontWeight.Bold)
-            IconButton(onClick = { onChange(weight + 1) }, enabled = weight < 10) { Icon(Icons.Default.Add, strings.getString(R.string.subjects_increase_weight)) }
+            IconButton(onClick = { onChange(weight + 1) }, enabled = weight < 10) { HugeIcon(HugeIcons.Add01, strings.getString(R.string.subjects_increase_weight)) }
         }
     }
 }

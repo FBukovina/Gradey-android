@@ -1,18 +1,17 @@
 package com.bukovinafilip.gradey.feature.auth
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.dp
-import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -45,7 +44,7 @@ fun GradeyIdLoginScreen(
 
         onOpenHelp?.let { action ->
             androidx.compose.material3.TextButton(onClick = action, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.HelpOutline, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                HugeIcon(HugeIcons.HelpCircle, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
                 Text(stringResource(R.string.auth_help_signing_in))
             }
         }
@@ -60,7 +59,7 @@ fun GradeyIdLoginScreen(
                 enabled = !isLoading && isConfigured,
                 onClick = onGoogleSignIn,
             ) {
-                Icon(Icons.Default.Person, contentDescription = null)
+                HugeIcon(HugeIcons.Google, contentDescription = null, modifier = Modifier.padding(end = 8.dp).size(18.dp))
                 Text(if (isLoading) stringResource(R.string.auth_signing_in_3819f) else stringResource(R.string.auth_continue_with_google_ccc5b))
             }
             if (appleSignInAvailable && onAppleSignIn != null) {
@@ -68,7 +67,10 @@ fun GradeyIdLoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     onClick = onAppleSignIn,
-                ) { Text(stringResource(R.string.auth_continue_with_apple)) }
+                ) {
+                    HugeIcon(HugeIcons.Apple, contentDescription = null, modifier = Modifier.padding(end = 8.dp).size(18.dp))
+                    Text(stringResource(R.string.auth_continue_with_apple))
+                }
                 Text(stringResource(R.string.auth_existing_apple_account), style = MaterialTheme.typography.bodySmall)
             }
             if (!isConfigured && !appleSignInAvailable && onContinueWithoutAccount == null) Text(stringResource(R.string.auth_this_build_only_supports_demo_data_to_connect_your_own_school__4f094), style = MaterialTheme.typography.bodySmall)
@@ -90,7 +92,7 @@ fun GradeyIdLoginScreen(
 
         GradeySectionCard {
             Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                HugeIcon(HugeIcons.SquareLock02, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Text(stringResource(R.string.auth_private_by_default_282ef), fontWeight = FontWeight.SemiBold)
                 Text(stringResource(R.string.auth_gradey_uses_encrypted_local_storage_and_only_registers_push_to_0d945))
             }

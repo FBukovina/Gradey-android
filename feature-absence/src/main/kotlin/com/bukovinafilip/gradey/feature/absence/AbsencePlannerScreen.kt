@@ -1,5 +1,8 @@
 package com.bukovinafilip.gradey.feature.absence
 
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.HugeIcon
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 
@@ -22,18 +25,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -113,19 +109,19 @@ fun AbsencePlannerScreen(
     val unchanged = selectedLessons.map { it.id }.toSet() == savedPlan?.lessons?.map { it.id }?.toSet()
 
     LazyColumn(
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).statusBarsPadding(),
+        modifier = modifier.fillMaxSize().statusBarsPadding(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 36.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onClose) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.absence_back_b52b3))
+                    HugeIcon(HugeIcons.ArrowLeft01, contentDescription = stringResource(R.string.absence_back_b52b3))
                 }
                 Text(stringResource(R.string.absence_plan_absence_c429a), fontSize = 21.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onRefresh, enabled = !isRefreshing) {
                     if (isRefreshing) CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                    else Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.absence_refresh_planner_timetable_a9529))
+                    else HugeIcon(HugeIcons.Refresh04, contentDescription = stringResource(R.string.absence_refresh_planner_timetable_a9529))
                 }
             }
         }
@@ -143,7 +139,7 @@ fun AbsencePlannerScreen(
                         onClick = { onWeekChange(weekStart.minusWeeks(1)) },
                         enabled = !isRefreshing && weekStart.isAfter(TimetableDates.monday(today)),
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.absence_previous_week_c4970))
+                        HugeIcon(HugeIcons.ArrowLeft01, contentDescription = stringResource(R.string.absence_previous_week_c4970))
                     }
                     Text(
                         "${weekStart.format(PlannerDateFormat)} – ${weekStart.plusDays(6).format(PlannerDateFormat)}",
@@ -152,7 +148,7 @@ fun AbsencePlannerScreen(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                     IconButton(onClick = { onWeekChange(weekStart.plusWeeks(1)) }, enabled = !isRefreshing) {
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.absence_next_week_5a207))
+                        HugeIcon(HugeIcons.ArrowRight01, contentDescription = stringResource(R.string.absence_next_week_5a207))
                     }
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -225,7 +221,7 @@ fun AbsencePlannerScreen(
                             )
                         }
                         IconButton(onClick = { onRemovePlan(plan.date) }) {
-                            Icon(Icons.Default.DeleteOutline, contentDescription = stringResource(R.string.absence_delete_plan_for, plan.date), tint = PlannerMuted)
+                            HugeIcon(HugeIcons.Delete02, contentDescription = stringResource(R.string.absence_delete_plan_for, plan.date), tint = PlannerMuted)
                         }
                     }
                     Text(plan.lessons.map { it.subjectName }.distinct().joinToString(" · "), fontSize = 13.sp, color = PlannerMuted)

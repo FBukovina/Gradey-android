@@ -18,8 +18,8 @@ android {
         applicationId = "com.bukovinafilip.gradey"
         minSdk = 26
         targetSdk = 36
-        versionCode = providers.gradleProperty("gradey.versionCode").orElse("5").get().toInt()
-        versionName = providers.gradleProperty("gradey.versionName").orElse("0.2.2").get()
+        versionCode = providers.gradleProperty("gradey.versionCode").orElse("6").get().toInt()
+        versionName = providers.gradleProperty("gradey.versionName").orElse("0.3").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["intercomRegionResource"] = "@integer/intercom_server_region_$intercomRegion"
 
@@ -80,7 +80,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)

@@ -5,10 +5,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.bukovinafilip.gradey.feature.account.AccountScreen
+import com.bukovinafilip.gradey.feature.account.SettingsDestination
 import com.bukovinafilip.gradey.ui.GradeyTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -26,13 +29,15 @@ class AccountDemoExitTest {
             GradeyTheme {
                 AccountScreen(
                     account = null, linkedAccounts = emptyList(), onSignOut = { signOutCalls++ },
-                    isDemo = true, liveSignInAvailable = true,
+                    isDemo = true, liveSignInAvailable = true, initialDestination = SettingsDestination.ACCOUNT,
                 )
             }
         }
 
         compose.onNodeWithText("Connect my school").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, signOutCalls) }
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
         compose.onNodeWithText("Add school").assertIsNotEnabled()
         compose.onAllNodesWithText("School URL").assertCountEquals(0)
     }
@@ -42,13 +47,15 @@ class AccountDemoExitTest {
             GradeyTheme {
                 AccountScreen(
                     account = null, linkedAccounts = emptyList(), onSignOut = {},
-                    isDemo = true, liveSignInAvailable = false,
+                    isDemo = true, liveSignInAvailable = false, initialDestination = SettingsDestination.ACCOUNT,
                 )
             }
         }
 
         compose.onNodeWithText("Explore Gradey with sample data. Real school accounts cannot be connected or changed in demo mode.").assertIsDisplayed()
         compose.onAllNodesWithText("Connect my school").assertCountEquals(0)
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
         compose.onNodeWithText("Add school").assertIsNotEnabled()
     }
 }

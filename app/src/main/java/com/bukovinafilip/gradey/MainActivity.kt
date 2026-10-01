@@ -7,7 +7,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.imePadding
@@ -26,19 +25,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.SystemUpdate
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Verified
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.gradeyColors
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -198,8 +191,8 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     }
     val timetableTabState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val standard = Modifier.fillMaxSize().statusBarsPadding().padding(bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding())
-    Box(Modifier.fillMaxSize().background(androidx.compose.material3.MaterialTheme.colorScheme.background), contentAlignment = Alignment.TopCenter) {
-    Box(Modifier.widthIn(max = 840.dp).fillMaxSize()) {
+    com.bukovinafilip.gradey.ui.AuroraBackground(Modifier.fillMaxSize()) {
+    Box(Modifier.widthIn(max = 840.dp).fillMaxSize().align(Alignment.TopCenter)) {
         if (state.tab == AppTab.UPDATES) {
             com.bukovinafilip.gradey.updates.UpdateScreen(
                 state = updateState, onCheck = { scope.launch { updates.checkForUpdates() } },
@@ -281,12 +274,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                         dashboard = state.dashboard, absence = state.absence, timetable = state.currentTimetable,
                         isRefreshing = state.loading, onRefresh = { model.refresh() },
                         onOpenAccount = { model.select(AppTab.ACCOUNT) }, onOpenGradeyTools = { model.select(AppTab.TOOLS) },
-                        onOpenMarks = { model.select(AppTab.SUBJECTS) }, onOpenAbsence = { model.select(AppTab.ABSENCE) },
+                        onOpenMarks = { model.select(AppTab.SUBJECTS) }, onOpenSubject = model::openSubject, onOpenAbsence = { model.select(AppTab.ABSENCE) },
                         onOpenTimetable = { model.select(AppTab.TIMETABLE) }, modifier = Modifier.fillMaxSize(),
-                        plannedAbsences = state.plans, onPlanAbsence = { model.select(AppTab.PLANNER) },
-                        mealMenu = state.mealMenu, hasMealAccount = state.hasMealAccount,
+                        mealMenu = state.mealMenu, hasMealAccount = state.hasMealAccount && showMealsTab,
                         onOpenMeals = { model.select(AppTab.STRAVACZ) },
-                        schoolAccountContent = { SchoolAccountSwitcher(state, model::activateAccount, model::reconnectAccount) },
+                        linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID,
+                        onSelectAccount = { account -> if (account.status == "active") model.activateAccount(account.id) else model.reconnectAccount(account) },
+                        hasLocalAbsenceAdjustments = state.absenceOverrides.isNotEmpty(),
                     )
                     AppTab.SUBJECTS -> SubjectsScreen(
                         insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
@@ -348,7 +342,8 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                         isGuest = state.isGuest, onGuestSignIn = model::requestGradeySignIn,
                         localSchoolName = state.school?.linkedAccountSchoolName ?: state.dashboard.user?.schoolName ?: state.school?.provider?.displayName,
                         account = state.account, linkedAccounts = state.linkedAccounts, onSignOut = { model.signOut() },
-                        modifier = standard, preferences = state.preferences, onPreferencesChange = { model.preferences(it) },
+                        modifier = Modifier.fillMaxSize(), preferences = state.preferences, onPreferencesChange = { model.preferences(it) },
+                        onClose = model::back, onOpenSupport = { model.select(AppTab.SUPPORT) },
                         students = state.school?.eduPage?.linkedStudents.orEmpty(), activeStudentID = state.school?.eduPage?.activeStudent?.id,
                         onSelectStudent = { model.switchStudent(it) },
                         activeAccountID = state.school?.linkedAccountID, onActivateAccount = { model.activateAccount(it.id) },
@@ -405,19 +400,20 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                     AppTab.TOOLS -> ToolsScreen(state.isDemo, model::select, standard)
                     AppTab.UPDATES -> Unit // Available above, including before sign-in.
                 }
-                if (state.tab != AppTab.PLANNER) GradeyBottomNavigation(state.tab, model::select, Modifier.align(Alignment.BottomCenter), showMealsTab)
+                if (state.tab != AppTab.PLANNER && state.tab != AppTab.ACCOUNT) GradeyBottomNavigation(state.tab, model::select, Modifier.align(Alignment.BottomCenter), showMealsTab)
             }
         }
         if (updateState.phase == com.bukovinafilip.gradey.updates.UpdatePhase.READY && state.tab != AppTab.UPDATES) {
             Surface(
                 onClick = { model.select(AppTab.UPDATES) }, shape = RoundedCornerShape(16.dp),
-                color = androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                 modifier = Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp,
                     bottom = if (state.phase == AppPhase.SIGNED_IN) 112.dp else 32.dp),
             ) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.SystemUpdate, contentDescription = null)
-                    Text(stringResource(R.string.app_update_banner, updateState.release?.versionName.orEmpty()), modifier = Modifier.weight(1f))
+                    GradeyIcon(HugeIcons.Download04, size = 20.dp, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.app_update_banner, updateState.release?.versionName.orEmpty()), modifier = Modifier.weight(1f), style = com.bukovinafilip.gradey.ui.GradeyType.subheadlineBold)
                 }
             }
         }
@@ -441,30 +437,20 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
 private fun ToolsScreen(isDemo: Boolean, onSelect: (AppTab) -> Unit, modifier: Modifier) {
     com.bukovinafilip.gradey.ui.GradeyScreen(modifier.verticalScroll(rememberScrollState())) {
         com.bukovinafilip.gradey.ui.GradeyHero(stringResource(R.string.app_tools), if (isDemo) stringResource(R.string.app_tools_demo) else stringResource(R.string.app_tools_subtitle))
-        listOf(
-            Triple(AppTab.AI, stringResource(R.string.app_tools_ai), Icons.Default.AutoAwesome),
-            Triple(AppTab.PERSONAL_PLANNER, stringResource(R.string.app_tools_planner), Icons.Default.CalendarMonth),
-            Triple(AppTab.PLANNER, stringResource(R.string.app_tools_absence), Icons.Default.CalendarMonth),
-            Triple(AppTab.HISTORY, stringResource(R.string.app_tools_history), Icons.Default.History),
-            Triple(AppTab.STRAVACZ, stringResource(R.string.app_tools_meals), Icons.Default.Restaurant),
-            Triple(AppTab.ACCOUNT, stringResource(R.string.app_tools_account), Icons.Default.Person),
-            Triple(AppTab.SUPPORT, stringResource(R.string.app_tools_support), Icons.Default.Favorite),
-            Triple(AppTab.UPDATES, stringResource(R.string.app_tools_updates), Icons.Default.SystemUpdate),
-        ).forEach { (tab, detail, icon) ->
-            Surface(
-                onClick = { onSelect(tab) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
-                color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainer,
-            ) {
-                Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(26.dp), tint = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(tab.labelRes), style = androidx.compose.material3.MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(detail, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(20.dp))
-                }
+        com.bukovinafilip.gradey.ui.GradeyCard(padding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            val entries = listOf(
+                Triple(AppTab.AI, stringResource(R.string.app_tools_ai), HugeIcons.Sparkles),
+                Triple(AppTab.PERSONAL_PLANNER, stringResource(R.string.app_tools_planner), HugeIcons.CheckList),
+                Triple(AppTab.PLANNER, stringResource(R.string.app_tools_absence), HugeIcons.CalendarRemove02),
+                Triple(AppTab.HISTORY, stringResource(R.string.app_tools_history), HugeIcons.ChartLineData01),
+                Triple(AppTab.STRAVACZ, stringResource(R.string.app_tools_meals), HugeIcons.Restaurant02),
+                Triple(AppTab.ACCOUNT, stringResource(R.string.app_tools_account), HugeIcons.Settings01),
+                Triple(AppTab.SUPPORT, stringResource(R.string.app_tools_support), HugeIcons.Favourite),
+                Triple(AppTab.UPDATES, stringResource(R.string.app_tools_updates), HugeIcons.Download04),
+            )
+            entries.forEachIndexed { index, (tab, detail, icon) ->
+                if (index > 0) com.bukovinafilip.gradey.ui.SettingsRowDivider(leadingInset = 16.dp + 34.dp + 12.dp)
+                com.bukovinafilip.gradey.ui.NavigationRow(icon, stringResource(tab.labelRes), detail, onClick = { onSelect(tab) }, modifier = Modifier.padding(horizontal = 16.dp))
             }
         }
     }
@@ -473,18 +459,23 @@ private fun ToolsScreen(isDemo: Boolean, onSelect: (AppTab) -> Unit, modifier: M
 @Composable
 private fun HistoryScreen(state: GradeyState, onBack: () -> Unit, modifier: Modifier) {
     com.bukovinafilip.gradey.ui.GradeyScreen(modifier.verticalScroll(rememberScrollState())) {
-        com.bukovinafilip.gradey.ui.GradeyHero(stringResource(R.string.app_history), stringResource(R.string.app_history_subtitle))
-        androidx.compose.material3.TextButton(onClick = onBack) { Text(stringResource(R.string.app_back_tools)) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            com.bukovinafilip.gradey.ui.GradeyIconButton(HugeIcons.ArrowLeft01, stringResource(R.string.app_back_tools), onBack, size = 44.dp, iconSize = 18.dp, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
+            com.bukovinafilip.gradey.ui.GradeyHero(stringResource(R.string.app_history), stringResource(R.string.app_history_subtitle), Modifier.weight(1f))
+        }
         if (state.loading) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
-        if (state.history.isEmpty() && !state.loading) Text(stringResource(R.string.app_history_empty))
+        if (state.history.isEmpty() && !state.loading) com.bukovinafilip.gradey.ui.GradeyCard {
+            com.bukovinafilip.gradey.ui.InfoRow(HugeIcons.ChartLineData01, stringResource(R.string.app_history), stringResource(R.string.app_history_empty), tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         state.history.forEach { trend ->
-            com.bukovinafilip.gradey.ui.GradeySectionCard(title = trend.subjectName) {
-                Text(stringResource(R.string.app_average_change, String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%+.2f", trend.averageDelta)))
+            com.bukovinafilip.gradey.ui.GradeyCard {
+                Text(trend.subjectName, style = com.bukovinafilip.gradey.ui.GradeyType.headline)
+                com.bukovinafilip.gradey.ui.MetadataRow(stringResource(R.string.app_average_change, ""), String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%+.2f", trend.averageDelta))
                 Text(when {
                     trend.markCountDelta > 0 -> stringResource(R.string.app_marks_added, trend.markCountDelta)
                     trend.markCountDelta < 0 -> stringResource(R.string.app_marks_removed, kotlin.math.abs(trend.markCountDelta))
                     else -> stringResource(R.string.app_marks_unchanged)
-                })
+                }, style = com.bukovinafilip.gradey.ui.GradeyType.footnote, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -493,20 +484,20 @@ private fun HistoryScreen(state: GradeyState, onBack: () -> Unit, modifier: Modi
 private val CoreTabs = listOf(AppTab.TODAY, AppTab.SUBJECTS, AppTab.ABSENCE, AppTab.TIMETABLE)
 private val MarksTabs = CoreTabs + AppTab.STRAVACZ
 
-@Composable
-private fun AppTab.icon() = when (this) {
-    AppTab.TODAY -> Icons.Default.LightMode
-    AppTab.SUBJECTS -> Icons.Default.Verified
-    AppTab.ABSENCE -> Icons.Default.CalendarMonth
-    AppTab.TIMETABLE -> Icons.Default.CalendarMonth
-    AppTab.STRAVACZ -> Icons.Default.Restaurant
-    AppTab.ACCOUNT -> Icons.Default.Person
-    AppTab.PLANNER, AppTab.PERSONAL_PLANNER -> Icons.Default.CalendarMonth
-    AppTab.HISTORY -> Icons.Default.Verified
-    AppTab.TOOLS -> Icons.Default.LightMode
-    AppTab.AI -> Icons.Default.LightMode
-    AppTab.SUPPORT -> Icons.Default.Verified
-    AppTab.UPDATES -> Icons.Default.SystemUpdate
+/** Tab glyphs match the iOS asset catalog: sun, checkmark badge, calendar-remove, calendar, restaurant. */
+private fun AppTab.icon(): String = when (this) {
+    AppTab.TODAY -> HugeIcons.Sun03
+    AppTab.SUBJECTS -> HugeIcons.CheckmarkBadge02
+    AppTab.ABSENCE -> HugeIcons.CalendarRemove02
+    AppTab.TIMETABLE -> HugeIcons.Calendar03
+    AppTab.STRAVACZ -> HugeIcons.Restaurant02
+    AppTab.ACCOUNT -> HugeIcons.Settings01
+    AppTab.PLANNER -> HugeIcons.CalendarRemove02
+    AppTab.PERSONAL_PLANNER -> HugeIcons.CheckList
+    AppTab.HISTORY -> HugeIcons.ChartLineData01
+    AppTab.TOOLS, AppTab.AI -> HugeIcons.Sparkles
+    AppTab.SUPPORT -> HugeIcons.Favourite
+    AppTab.UPDATES -> HugeIcons.Download04
 }
 
 @Composable
@@ -517,33 +508,30 @@ private fun GradeyBottomNavigation(
     showMealsTab: Boolean = true,
 ) {
     val visibleTabs = if (showMealsTab) MarksTabs else CoreTabs
-    val barHeight = bottomNavigationHeight()
+    val barHeight = com.bukovinafilip.gradey.ui.floatingNavigationBarHeight()
+    val colors = androidx.compose.material3.MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .widthIn(max = 640.dp)
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 21.dp),
+            .padding(horizontal = 20.dp)
+            .padding(bottom = com.bukovinafilip.gradey.ui.FloatingNavigationBottomMargin),
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(barHeight),
-            shape = RoundedCornerShape(31.dp),
-            color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.98f),
-            shadowElevation = 8.dp,
+            modifier = Modifier.fillMaxWidth().height(barHeight),
+            shape = RoundedCornerShape(barHeight / 2),
+            color = colors.surface.copy(alpha = 0.96f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, colors.onSurface.copy(alpha = 0.08f)),
+            shadowElevation = 12.dp,
         ) {
             Row(
-                modifier = Modifier.padding(4.dp),
+                modifier = Modifier.padding(6.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 visibleTabs.forEach { tab ->
-                    BottomNavigationItem(
-                        tab = tab,
-                        selected = selectedTab == tab,
-                        onClick = { onSelect(tab) },
-                    )
+                    BottomNavigationItem(tab = tab, selected = selectedTab == tab, onClick = { onSelect(tab) })
                 }
             }
         }
@@ -556,57 +544,31 @@ private fun androidx.compose.foundation.layout.RowScope.BottomNavigationItem(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val itemHeight = bottomNavigationHeight() - 8.dp
-    val foreground = if (selected) androidx.compose.material3.MaterialTheme.colorScheme.primary else androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+    val colors = androidx.compose.material3.MaterialTheme.colorScheme
+    val foreground = if (selected) colors.primary else colors.onSurface
+    val isDark = androidx.compose.material3.MaterialTheme.gradeyColors.isDark
     Surface(
-        modifier = Modifier
-            .weight(1f)
-            .height(itemHeight),
+        modifier = Modifier.weight(1f).fillMaxHeight().semantics { this.selected = selected; role = androidx.compose.ui.semantics.Role.Tab },
         onClick = onClick,
-        shape = RoundedCornerShape(27.dp),
-        color = if (selected) androidx.compose.material3.MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+        shape = RoundedCornerShape(100),
+        color = if (!selected) Color.Transparent else if (isDark) Color.Black.copy(alpha = 0.55f) else colors.primary.copy(alpha = 0.12f),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                modifier = Modifier.size(26.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = tab.icon(),
-                    contentDescription = stringResource(tab.labelRes),
-                    tint = foreground,
-                    modifier = Modifier.size(24.dp),
-                )
-                if (tab == AppTab.ABSENCE) {
-                    Icon(
-                        imageVector = Icons.Default.Error,
-                        contentDescription = null,
-                        tint = foreground,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(11.dp),
-                    )
-                }
-            }
+            GradeyIcon(tab.icon(), size = 22.dp, tint = foreground, contentDescription = stringResource(tab.labelRes))
             Text(
                 text = stringResource(tab.labelRes).replace("Timetable", "Time\u00adtable").replace("Absence", "Ab\u00adsence").replace("Docházka", "Do\u00adcház\u00adka").replace("Rozvrh", "Roz\u00advrh"),
                 color = foreground,
-                fontSize = 12.sp,
-                lineHeight = 14.sp,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
                 style = androidx.compose.ui.text.TextStyle(hyphens = androidx.compose.ui.text.style.Hyphens.Auto),
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(top = 3.dp),
             )
         }
     }
-}
-
-@Composable
-private fun bottomNavigationHeight() = with(androidx.compose.ui.platform.LocalDensity.current) {
-    // Android's non-linear font scaling must be evaluated at the label's actual line size.
-    if (fontScale > 1.15f) 48.dp + 14.sp.toDp() * 3 else maxOf(62.dp, 34.dp + 14.sp.toDp() * 2)
 }
