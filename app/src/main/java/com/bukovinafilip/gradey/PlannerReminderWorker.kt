@@ -96,9 +96,9 @@ class PlannerReminderWorker(context: Context, parameters: WorkerParameters) : Co
             val pending = PendingIntent.getActivity(context, reminder.day.hashCode(),
                 Intent(context, MainActivity::class.java).setData(Uri.parse("gradey://planner?day=${reminder.day}")),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-            val public = NotificationCompat.Builder(context, PlannerReminderScheduler.channel).setSmallIcon(R.drawable.ic_gradey_logo)
+            val public = NotificationCompat.Builder(context, PlannerReminderScheduler.channel).setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(context.getString(R.string.app_tomorrow_gradey)).setContentText(if (preferences.lockScreenDetail == NotificationLockScreenDetail.PRIVATE_SUMMARY) privateBody else body).build()
-            val notification = NotificationCompat.Builder(context, PlannerReminderScheduler.channel).setSmallIcon(R.drawable.ic_gradey_logo)
+            val notification = NotificationCompat.Builder(context, PlannerReminderScheduler.channel).setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(context.getString(R.string.app_tomorrow_gradey)).setContentText(body).setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setPublicVersion(public).setContentIntent(pending).setAutoCancel(true).build()
             // Reads above may suspend while the app signs out, switches a school, or upgrades a guest.

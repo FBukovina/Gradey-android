@@ -309,7 +309,7 @@ class AppUpdateManager internal constructor(
         if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         val intent = Intent(context, MainActivity::class.java).setData(Uri.parse("gradey://updates"))
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val notification = NotificationCompat.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_gradey_logo)
+        val notification = NotificationCompat.Builder(context, CHANNEL).setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Gradey ${release.versionName} is ready")
             .setContentText("Tap to review and install your downloaded update.").setContentIntent(pending).setAutoCancel(true).build()
         try { NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification) } catch (_: SecurityException) { }
