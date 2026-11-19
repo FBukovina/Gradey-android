@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("androidx.baselineprofile")
 }
 
 if (file("google-services.json").exists()) {
@@ -116,6 +117,9 @@ dependencies {
     implementation(libs.google.identity.googleid)
     implementation(libs.google.play.services.wearable)
     implementation(libs.kotlinx.coroutines.android)
+    // Installs the baseline profile on devices where the store has not delivered one, such as direct APK installs.
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.purchases)

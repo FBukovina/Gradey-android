@@ -1,11 +1,11 @@
 plugins {
-    id("com.android.test")
-    id("androidx.baselineprofile")
+    alias(libs.plugins.android.test)
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
-// Generates app/src/release/generated/baselineProfiles and measures frame timing of the release build:
-//   ./gradlew :app:generateReleaseBaselineProfile        (needs a connected device or emulator, API 28+)
-//   ./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest
+// Generates app/src/release/generated/baselineProfiles from a walk through the app in demo mode:
+//   ./gradlew :app:generateReleaseBaselineProfile -Pgradey.allowDemoRelease=true
+// Needs a connected device or emulator on Android 13 or newer (or a rooted one from Android 9).
 android {
     namespace = "com.bukovinafilip.gradey.baselineprofile"
     compileSdk = 36

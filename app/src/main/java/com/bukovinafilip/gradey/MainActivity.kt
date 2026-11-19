@@ -42,6 +42,7 @@ import com.bukovinafilip.gradey.ui.gradeyColors
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -123,7 +124,8 @@ class MainActivity : ComponentActivity() {
         intent?.data = null // Recreating the process must not replay a consumed creation URL over a saved draft.
         setContent {
             GradeyTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme()) {
-                GradeyApp(initialDestination = destination)
+                // Test tags double as resource ids, so the baseline profile walk finds controls in any language.
+                Box(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }) { GradeyApp(initialDestination = destination) }
             }
         }
     }
