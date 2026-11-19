@@ -6,7 +6,7 @@ The updater is included from version 0.2.1 onward. New installations can downloa
 
 ## What users see
 
-The Updates screen lets users check manually and control automatic updates. In 0.4, open it from **Settings → Support & About → App updates**, Gradey tools, or the sign-in screen. When enabled, background work checks about every 12 hours and downloads new versions over an unmetered connection, normally Wi-Fi. Android may delay scheduled work to preserve battery. A manual check and download are available without waiting for the scheduled check.
+The Updates screen lets users check manually and control automatic updates. Open it from **Settings → Support & About → App updates** or the sign-in screen (0.4 and earlier also list it under Gradey tools). When enabled, background work checks about every 12 hours and downloads new versions over an unmetered connection, normally Wi-Fi. Android may delay scheduled work to preserve battery. A manual check and download are available without waiting for the scheduled check.
 
 A downloaded update is verified before it can be opened in Android's package installer. Android asks the user to allow Gradey to install apps when needed and to confirm installation. An ordinary Android app cannot silently replace itself. The updater keeps the user's existing app data when Android accepts the update.
 
@@ -16,20 +16,27 @@ Phone and Wear OS currently share a package name for Wear Data Layer communicati
 
 ## Prepare a direct APK release
 
-1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. Version 0.4 uses `-Pgradey.versionCode=7 -Pgradey.versionName=0.4`; choose a higher code for the next update. Version codes must increase for every published phone update.
-2. Build a signed standalone phone APK. Keep the signing key used for earlier direct installations. A debug APK can only update compatible debug installations signed with that same debug key; a production key cannot update an existing debug installation.
-3. Choose the GitHub release tag and the final APK asset filename. Generate the manifest from the exact signed APK that will be uploaded. For example, after building the version `0.4` debug preview:
+1. Increase the phone app's `versionCode` and `versionName` in `app/build.gradle.kts`, or set the `gradey.versionCode` and `gradey.versionName` Gradle properties for the build. The checked-in version is 0.5 with code 8; choose a higher code for the next update. Version codes must increase for every published phone update.
+2. Build a signed standalone phone APK. Keep the signing key used for earlier direct installations; a different key cannot update an existing installation. From 0.5 the APK is a release build, which is signed with that key by default:
+
+   ```bash
+   ./gradlew :app:assembleRelease -Pgradey.directPreview=true \
+     -Pgradey.supabaseUrl=… -Pgradey.supabaseAnonKey=… -Pgradey.googleWebClientId=…
+   ```
+
+   `gradey.directPreview=true` accepts a build with Gradey ID accounts only; `gradey.allowDemoRelease=true` builds one with demo data only. After changing screens, regenerate the baseline profile on a connected device or emulator with `./gradlew :app:generateReleaseBaselineProfile -Pgradey.allowDemoRelease=true` and commit the result.
+3. Choose the GitHub release tag and the final APK asset filename. Generate the manifest from the exact signed APK that will be uploaded. For example, for version `0.5`:
 
    ```bash
    python3 scripts/create-update-manifest.py \
-     --apk "$HOME/Library/Caches/GradeyAndroid-build/app/outputs/apk/debug/app-debug.apk" \
-     --apk-url https://github.com/FBukovina/Gradey-android/releases/download/v0.4/gradey-0.4-debug.apk \
-     --output artifacts/0.4/gradey-update.json
+     --apk "$HOME/Library/Caches/GradeyAndroid-build/app/outputs/apk/release/app-release.apk" \
+     --apk-url https://github.com/FBukovina/Gradey-android/releases/download/v0.5/gradey-0.5.apk \
+     --output artifacts/0.5/gradey-update.json
    ```
 
    The root Gradle build redirects outputs to `~/Library/Caches/GradeyAndroid-build`; replace the APK path if you have copied or signed the output elsewhere. An unsigned release output must be signed before generating the manifest. Add `--notes-file path/to/release-notes.txt` for optional plain-text notes and `--android-sdk /path/to/Android/sdk` if the SDK is outside the standard locations. The script uses `apkanalyzer manifest print`, or `aapt2 dump badging` when apkanalyzer is unavailable, to read the actual APK. It computes the SHA-256 and byte size from that file and rejects Wear or foreign-package APKs. It does not sign or upload the APK.
 
-4. Attach the exact APK as `gradey-0.4-debug.apk` and the generated manifest as `gradey-update.json` to the same GitHub release. Keep it a draft while assembling the assets, then publish it as the latest stable release. Drafts and prereleases are excluded by the updater. The app requires the manifest's APK URL and size to match the release's actual asset. The stable distribution label makes the preview discoverable by the updater; it does not establish production readiness.
+4. Attach the exact APK as `gradey-0.5.apk` and the generated manifest as `gradey-update.json` to the same GitHub release. Keep it a draft while assembling the assets, then publish it as the latest stable release. Drafts and prereleases are excluded by the updater. The app requires the manifest's APK URL and size to match the release's actual asset. The stable distribution label makes the preview discoverable by the updater; it does not establish production readiness.
 5. Check from an older installation made with the same signing key, complete the Android installation confirmation, and verify the new version and existing data.
 
 Do not modify an APK after generating its manifest. Regenerate the manifest if the APK is rebuilt or signed again. The GitHub API is accessed without a token; rate limits and network errors are shown as retryable errors. The app accepts initial asset URLs only from this repository, and download redirects only from the allowed GitHub release-storage hosts over HTTPS.
@@ -39,11 +46,11 @@ Do not modify an APK after generating its manifest. Regenerate the manifest if t
 ```json
 {
   "target": "phone",
-  "versionCode": 7,
-  "versionName": "0.4",
+  "versionCode": 8,
+  "versionName": "0.5",
   "packageName": "com.bukovinafilip.gradey",
   "minSdk": 26,
-  "apkUrl": "https://github.com/FBukovina/Gradey-android/releases/download/v0.4/gradey-0.4-debug.apk",
+  "apkUrl": "https://github.com/FBukovina/Gradey-android/releases/download/v0.5/gradey-0.5.apk",
   "sha256": "<64 hexadecimal characters generated from the APK>",
   "sizeBytes": 42000000,
   "releaseNotes": "Optional plain-text changes shown before installation."
