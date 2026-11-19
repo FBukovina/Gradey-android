@@ -112,4 +112,10 @@
     <string name="gradey_ai_welcome_message">nech si pomoct s učením. pro pomoc se známkami, rozvrhem nebo testem vyber, které školní údaje chceš sdílet.</string>
     <string name="gradey_ai_welcome_title">tvůj studijní bestie</string>
     <string name="ai_recovery_save_failed">Požadavek se nepodařilo uložit pro obnovení. Uvolni místo v zařízení a zkus to znovu.</string>
+    <string name="gradey_ai_done">hotovo</string>
+    <string name="gradey_ai_history_open">historie chatů</string>
+    <string name="gradey_ai_close">zavřít</string>
+    <string name="gradey_ai_history_manage">soukromí a data</string>
+    <string name="gradey_ai_message_copy">kopírovat</string>
+    <string name="gradey_ai_message_copied">zkopírováno</string>
 </resources>

@@ -112,4 +112,10 @@
     <string name="gradey_ai_welcome_message">get help with studying. choose what school information to share when you want help with your marks, timetable or a test.</string>
     <string name="gradey_ai_welcome_title">your study bestie</string>
     <string name="ai_recovery_save_failed">The request could not be saved for recovery. Free some device storage and try again.</string>
+    <string name="gradey_ai_done">done</string>
+    <string name="gradey_ai_history_open">chat history</string>
+    <string name="gradey_ai_close">close</string>
+    <string name="gradey_ai_history_manage">privacy &amp; data</string>
+    <string name="gradey_ai_message_copy">copy</string>
+    <string name="gradey_ai_message_copied">copied</string>
 </resources>

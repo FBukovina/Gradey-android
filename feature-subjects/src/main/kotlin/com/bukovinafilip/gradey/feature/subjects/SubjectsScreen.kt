@@ -1,60 +1,36 @@
 package com.bukovinafilip.gradey.feature.subjects
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
-import com.bukovinafilip.gradey.ui.color
-import com.bukovinafilip.gradey.ui.GradeyColors
-import com.bukovinafilip.gradey.ui.GradeyType
-import com.bukovinafilip.gradey.ui.brandGradient
-import com.bukovinafilip.gradey.ui.gradeyColors
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -64,1237 +40,497 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
-import com.bukovinafilip.gradey.domain.AbsenceRiskSummary
-import com.bukovinafilip.gradey.domain.GradeSimulation
-import com.bukovinafilip.gradey.domain.GradeHistoryTrend
 import com.bukovinafilip.gradey.domain.GradeBand
+import com.bukovinafilip.gradey.domain.GradeCalculationIssue
 import com.bukovinafilip.gradey.domain.GradeMath
+import com.bukovinafilip.gradey.domain.GradeSimulation
+import com.bukovinafilip.gradey.domain.HypotheticalGrade
+import com.bukovinafilip.gradey.domain.PreparedGradeCalculation
+import com.bukovinafilip.gradey.domain.SchoolInsightState
+import com.bukovinafilip.gradey.model.AbsenceDayOverride
 import com.bukovinafilip.gradey.model.AbsenceResponse
-import com.bukovinafilip.gradey.model.Mark
+import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.Subject
-import java.text.Collator
-import java.text.Normalizer
+import com.bukovinafilip.gradey.ui.BrandTextField
+import com.bukovinafilip.gradey.ui.DisclosureIcon
+import com.bukovinafilip.gradey.ui.EmptyState
+import com.bukovinafilip.gradey.ui.ErrorState
+import com.bukovinafilip.gradey.ui.GradeBadge
+import com.bukovinafilip.gradey.ui.GradeyAIButton
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyLazyColumn
+import com.bukovinafilip.gradey.ui.GradeyMetrics
+import com.bukovinafilip.gradey.ui.GradeyRadius
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyTopBar
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.InlinePill
+import com.bukovinafilip.gradey.ui.LoadingState
+import com.bukovinafilip.gradey.ui.PlainHeader
+import com.bukovinafilip.gradey.ui.PlainRow
+import com.bukovinafilip.gradey.ui.PlainSectionTitle
+import com.bukovinafilip.gradey.ui.SegmentedControl
+import com.bukovinafilip.gradey.ui.StatusChip
+import com.bukovinafilip.gradey.ui.color
+import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.isScrolled
+import com.bukovinafilip.gradey.ui.softColor
+import com.bukovinafilip.gradey.ui.tabular
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-import kotlin.math.roundToInt
-import kotlinx.coroutines.CancellationException
 
-private val AccentTeal: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-private val CardWhite: Color
-    @Composable get() = MaterialTheme.colorScheme.surface
-private val MutedText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val DividerColor: Color
-    @Composable get() = MaterialTheme.gradeyColors.separator
-private val SoftTeal: Color
-    @Composable get() = GradeyColors.Good.copy(alpha = 0.14f)
-private val SoftMint: Color
-    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-private val SoftGray: Color
-    @Composable get() = MaterialTheme.gradeyColors.tertiaryFill
-private val ExcellentGreen = GradeyColors.Excellent
-private val WarningOrange = GradeyColors.Average
-private val DangerRed = GradeyColors.Poor
-private val PragueZone = ZoneId.of("Europe/Prague")
+private val SchoolZone: ZoneId = ZoneId.of("Europe/Prague")
+private const val PushMillis = 320
 
-private enum class SubjectSortMode(val label: Int) {
-    Focus(R.string.subjects_focus),
-    Average(R.string.subjects_average),
-    Alphabetical(R.string.subjects_a_z),
-}
-
-private enum class SubjectFilterMode(val label: Int) {
-    All(R.string.subjects_all),
-    WithAverage(R.string.subjects_with_average),
-    WithoutAverage(R.string.subjects_no_average),
-}
-
-private data class SchoolPredictionRequest(val mark: String, val weight: Int, val attempt: Int)
-
+/**
+ * Marks tab (iOS 2.8.1 `SubjectsView`): the overall average, the report card and Recap rows, then the
+ * subjects sorted by Priority or Average. Tapping a subject pushes its page inside this tab; system
+ * Back returns to the list. The shell draws the background and the bottom bar.
+ */
 @Composable
 fun SubjectsScreen(
     subjects: List<Subject>,
     absence: AbsenceResponse,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
+    onOpenAI: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
-    predictSubjectAverage: (suspend (Subject, String, Int) -> Double?)? = null,
-    gradeTrends: List<GradeHistoryTrend> = emptyList(),
     onAskAI: ((String) -> Unit)? = null,
     initialSubjectID: String? = null,
-    insightState: com.bukovinafilip.gradey.domain.SchoolInsightState? = null,
-    plannerItems: List<com.bukovinafilip.gradey.model.PersonalPlannerItem> = emptyList(),
+    onInitialSubjectHandled: (() -> Unit)? = null,
+    insightState: SchoolInsightState? = null,
+    plannerItems: List<PersonalPlannerItem> = emptyList(),
     schoolScope: String? = null,
-    onAskTestAI: ((subjectID: String, eventID: String) -> Unit)? = null,
+    absenceOverrides: List<AbsenceDayOverride> = emptyList(),
+    errorMessage: String? = null,
+    reportCardRow: (@Composable () -> Unit)? = null,
+    recapTile: (@Composable () -> Unit)? = null,
 ) {
-    var selectedSubjectID by rememberSaveable(initialSubjectID) { mutableStateOf(initialSubjectID) }
-    var sortMode by rememberSaveable { mutableStateOf(SubjectSortMode.Focus) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var filterMode by rememberSaveable { mutableStateOf(SubjectFilterMode.All) }
-    val selectedSubject = subjects.firstOrNull { it.id == selectedSubjectID }
-
-    LaunchedEffect(selectedSubjectID, subjects) {
-        if (selectedSubjectID != null && selectedSubject == null) selectedSubjectID = null
+    val locale = LocalConfiguration.current.locales[0]
+    var selectedID by rememberSaveable { mutableStateOf<String?>(null) }
+    var sortIndex by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(initialSubjectID) {
+        if (initialSubjectID != null) { selectedID = initialSubjectID; onInitialSubjectHandled?.invoke() }
     }
-    BackHandler(enabled = selectedSubject != null) { selectedSubjectID = null }
+    val entries = remember(subjects, absence) { subjectEntries(subjects, absence) }
+    val insights = remember(insightState, schoolScope) { insightState?.takeIf { it.scope == schoolScope } }
+    val scores = remember(entries, insights, plannerItems, schoolScope) { priorityScores(entries, insights, plannerItems, schoolScope) }
+    val sortMode = SubjectSortMode.entries[sortIndex.coerceIn(0, SubjectSortMode.entries.lastIndex)]
+    val sorted = remember(entries, sortMode, scores, locale) { sortedEntries(entries, sortMode, scores, locale) }
+    val newMarkIDs = remember(insights) {
+        insights?.observations.orEmpty().filter { it.seenAt == null }.flatMapTo(HashSet()) { it.addedMarkIDs }
+    }
+    val activeOverrides = remember(absenceOverrides) { absenceOverrides.active() }
+    val selected = remember(entries, selectedID) { entries.firstOrNull { it.id == selectedID } }
+    BackHandler(enabled = selectedID != null) { selectedID = null }
 
-    if (selectedSubject == null) {
-        SubjectsOverview(
-            subjects = subjects,
-            absence = absence,
-            gradeTrends = gradeTrends,
-            sortMode = sortMode,
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            filterMode = filterMode,
-            onFilterModeChange = { filterMode = it },
-            onSortModeChange = { sortMode = it },
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
-            onOpenAccount = onOpenAccount,
-            onOpenGradeyTools = onOpenGradeyTools,
-            onOpenSubject = { selectedSubjectID = it.id },
-            modifier = modifier,
-        )
-    } else {
-        SubjectDetail(
-            subject = selectedSubject,
-            absence = absence,
-            onBack = { selectedSubjectID = null },
-            modifier = modifier,
-            predictSubjectAverage = predictSubjectAverage,
-            onAskAI = onAskAI,
-            insightState = insightState, plannerItems = plannerItems, schoolScope = schoolScope, onAskTestAI = onAskTestAI,
+    AnimatedContent(
+        targetState = selectedID, modifier = modifier.fillMaxSize(), label = "marks",
+        transitionSpec = {
+            val spec = tween<IntOffset>(PushMillis, easing = FastOutSlowInEasing)
+            if (targetState != null) slideInHorizontally(spec) { it } togetherWith (slideOutHorizontally(spec) { -it / 4 } + fadeOut(tween(PushMillis)))
+            else (slideInHorizontally(spec) { -it / 4 } + fadeIn(tween(PushMillis))) togetherWith slideOutHorizontally(spec) { it }
+        },
+    ) { subjectID ->
+        if (subjectID == null) MarksList(
+            entries = sorted, overall = remember(entries) { overallAverage(entries) }, totalMarks = remember(entries) { entries.sumOf { it.subject.marks.size } },
+            sortIndex = sortIndex, onSortChange = { sortIndex = it }, isRefreshing = isRefreshing, errorMessage = errorMessage,
+            hasAbsenceAdjustments = activeOverrides.isNotEmpty(), onRefresh = onRefresh, onOpenAI = onOpenAI, onOpenSettings = onOpenSettings,
+            onOpenSubject = { selectedID = it }, reportCardRow = reportCardRow, recapTile = recapTile,
+        ) else SubjectDetail(
+            entry = selected.takeIf { it?.id == subjectID } ?: entries.firstOrNull { it.id == subjectID },
+            newMarkIDs = newMarkIDs, hasAbsenceAdjustment = remember(selected, activeOverrides) { hasLocalAbsenceAdjustment(selected?.absence, activeOverrides) },
+            onBack = { selectedID = null }, onAskAI = onAskAI?.let { ask -> { ask(subjectID) } },
         )
     }
 }
 
+// MARK: - List
+
 @Composable
-private fun SubjectsOverview(
-    subjects: List<Subject>,
-    absence: AbsenceResponse,
-    gradeTrends: List<GradeHistoryTrend>,
-    sortMode: SubjectSortMode,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    filterMode: SubjectFilterMode,
-    onFilterModeChange: (SubjectFilterMode) -> Unit,
-    onSortModeChange: (SubjectSortMode) -> Unit,
+private fun MarksList(
+    entries: List<SubjectEntry>,
+    overall: Double?,
+    totalMarks: Int,
+    sortIndex: Int,
+    onSortChange: (Int) -> Unit,
     isRefreshing: Boolean,
+    errorMessage: String?,
+    hasAbsenceAdjustments: Boolean,
     onRefresh: () -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
-    onOpenSubject: (Subject) -> Unit,
-    modifier: Modifier = Modifier,
+    onOpenAI: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenSubject: (String) -> Unit,
+    reportCardRow: (@Composable () -> Unit)?,
+    recapTile: (@Composable () -> Unit)?,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val displayLocale = LocalConfiguration.current.locales[0]
-    val absenceRows = remember(absence) {
-        AbsenceRiskSummary.make(absence, absence.absencesPerSubject).subjects.associateBy { it.subjectName.subjectKey() }
-    }
-    val trendsBySubject = remember(gradeTrends) { gradeTrends.associateBy { it.subjectID } }
-    val sortedSubjects = remember(subjects, absenceRows, sortMode, trendsBySubject, displayLocale) {
-        when (sortMode) {
-            SubjectSortMode.Focus -> subjects.sortedWith(
-                compareByDescending<Subject> {
-                    val average = GradeMath.subjectAverage(it) ?: -1.0
-                    val absencePercentage = absenceRows[it.displayName.subjectKey()]?.absencePercentage ?: 0.0
-                    average + absencePercentage / 25.0 +
-                        ((trendsBySubject[it.id]?.averageDelta ?: 0.0).coerceAtLeast(0.0) * 2) -
-                        (if (it.marks.isEmpty()) 2.0 else 0.0)
-                }.thenBy { it.displayName },
-            )
-
-            SubjectSortMode.Average -> subjects.sortedWith(
-                compareBy<Subject> { GradeMath.subjectAverage(it) ?: Double.MAX_VALUE }.thenBy { it.displayName },
-            )
-
-            SubjectSortMode.Alphabetical -> {
-                val collator = Collator.getInstance(displayLocale)
-                subjects.sortedWith { first, second -> collator.compare(first.displayName, second.displayName) }
-            }
-        }
-    }
-    val visibleSubjects = remember(sortedSubjects, searchQuery, filterMode) {
-        val query = searchQuery.subjectKey()
-        sortedSubjects.filter { subject ->
-            val matchesSearch = query.isEmpty() || subject.displayName.subjectKey().contains(query) ||
-                subject.subjectInfo.abbrev.subjectKey().contains(query)
-            val hasAverage = GradeMath.subjectAverage(subject) != null
-            matchesSearch && when (filterMode) {
-                SubjectFilterMode.All -> true
-                SubjectFilterMode.WithAverage -> hasAverage
-                SubjectFilterMode.WithoutAverage -> !hasAverage
-            }
-        }
-    }
-
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding(),
-            contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                com.bukovinafilip.gradey.ui.GradeyPageHeader(
-                    title = strings.getString(R.string.subjects_marks),
-                    onOpenAI = onOpenGradeyTools, aiDescription = strings.getString(R.string.subjects_open_gradey_tools),
-                    onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = strings.getString(R.string.subjects_refresh_marks),
-                    onOpenSettings = onOpenAccount, settingsDescription = strings.getString(R.string.subjects_open_account),
-                )
-            }
-            item { OverallAverageCard(subjects) }
-            val visibleTrends = if (searchQuery.isBlank() && filterMode == SubjectFilterMode.All) gradeTrends else gradeTrends.filter { trend ->
-                visibleSubjects.any { it.id == trend.subjectID || it.displayName.subjectKey() == trend.subjectName.subjectKey() }
-            }
-            if (visibleTrends.isNotEmpty()) {
-                item { GradeMovementCard(visibleTrends, subjects, onOpenSubject) }
-            }
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SubjectSearchField(searchQuery, onSearchQueryChange)
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(SubjectFilterMode.entries) { filter ->
-                            FilterChip(
-                                selected = filter == filterMode,
-                                onClick = { onFilterModeChange(filter) },
-                                label = { Text(strings.getString(filter.label)) },
-                            )
-                        }
-                    }
-                }
-            }
-            item {
-                Column {
-                    SubjectsSectionHeader(sortMode = sortMode, onSortModeChange = onSortModeChange)
-                    Spacer(Modifier.height(12.dp))
-                    SubjectsCard(
-                        subjects = visibleSubjects,
-                        absenceByName = absenceRows,
-                        onOpenSubject = onOpenSubject,
-                        emptyMessage = if (subjects.isEmpty()) strings.getString(R.string.subjects_no_subjects_available) else strings.getString(R.string.subjects_no_subjects_match_your_search_or_filter),
-                    )
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun GradeMovementCard(trends: List<GradeHistoryTrend>, subjects: List<Subject>, onOpenSubject: (Subject) -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val visible = remember(trends) { trends.sortedByDescending { kotlin.math.abs(it.averageDelta) }.take(4) }
-    Surface(Modifier.fillMaxWidth(), color = CardWhite, shape = RoundedCornerShape(20.dp), shadowElevation = 1.dp) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                SectionHeading(strings.getString(R.string.subjects_grade_movement))
-                Text(strings.getString(R.string.subjects_changes_recorded_in_the_last_90_days), color = MutedText, fontSize = 13.sp)
-            }
-            visible.forEach { trend ->
-                val subject = subjects.firstOrNull { it.id == trend.subjectID || it.displayName.equals(trend.subjectName, ignoreCase = true) }
-                val delta = trend.averageDelta
-                val improved = delta < -0.005
-                val worsened = delta > 0.005
-                val color = if (improved) ExcellentGreen else if (worsened) WarningOrange else MutedText
-                Row(
-                    modifier = Modifier.fillMaxWidth().then(if (subject != null) Modifier.clickable { onOpenSubject(subject) } else Modifier).padding(vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(12.dp)) {
-                        Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                            HugeIcon(if (improved) HugeIcons.ChartDecrease else if (worsened) HugeIcons.ChartIncrease else HugeIcons.ArrowRight02,
-                                contentDescription = if (improved) strings.getString(R.string.subjects_average_improved) else if (worsened) strings.getString(R.string.subjects_average_increased) else strings.getString(R.string.subjects_average_unchanged), tint = color)
-                        }
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(subject?.displayName ?: trend.subjectName, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(when {
-                            trend.markCountDelta > 0 -> strings.getQuantityString(R.plurals.subjects_added_marks, trend.markCountDelta, trend.markCountDelta)
-                            trend.markCountDelta < 0 -> strings.getQuantityString(R.plurals.subjects_removed_marks, -trend.markCountDelta, -trend.markCountDelta)
-                            else -> strings.getString(R.string.subjects_school_average_updated)
-                        }, color = MutedText, fontSize = 13.sp)
-                    }
-                    Text(if (!improved && !worsened) strings.getString(R.string.subjects_no_change) else "${if (delta > 0) "+" else "−"}${formatAverage(kotlin.math.abs(delta))}", color = color, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SubjectSearchField(query: String, onQueryChange: (String) -> Unit) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(modifier = Modifier.fillMaxWidth(), color = CardWhite, shape = RoundedCornerShape(14.dp)) {
-        Row(modifier = Modifier.heightIn(min = 52.dp).padding(start = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            HugeIcon(HugeIcons.Search01, contentDescription = null, tint = MutedText, modifier = Modifier.size(22.dp))
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                modifier = Modifier.weight(1f).padding(horizontal = 10.dp).semantics { contentDescription = strings.getString(R.string.subjects_search_subjects) },
-                singleLine = true,
-                textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp),
-                cursorBrush = SolidColor(AccentTeal),
-                decorationBox = { field ->
-                    Box {
-                        if (query.isEmpty()) Text(strings.getString(R.string.subjects_search_subjects), color = MutedText, fontSize = 16.sp)
-                        field()
-                    }
-                },
-            )
-            IconButton(onClick = { onQueryChange("") }, enabled = query.isNotEmpty()) {
-                HugeIcon(HugeIcons.Cancel01, contentDescription = strings.getString(R.string.subjects_clear_subject_search), tint = if (query.isEmpty()) Color.Transparent else MutedText)
-            }
-        }
-    }
-}
-
-@Composable
-private fun OverallAverageCard(subjects: List<Subject>) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val overallAverage = formatAverage(GradeMath.overallAverage(subjects))
-    val totalMarks = subjects.sumOf { it.marks.size }
-    val onAccent = GradeyColors.OnAccent
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = AccentTeal.copy(alpha = 0.24f), spotColor = AccentTeal.copy(alpha = 0.24f))
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.brandGradient)
-            .padding(24.dp)
-            .semantics(mergeDescendants = true) {},
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(strings.getString(R.string.subjects_overall_average), style = GradeyType.captionBold, color = onAccent.copy(alpha = 0.7f))
-            Text(overallAverage, style = GradeyType.display(48), color = onAccent, maxLines = 1)
-        }
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(strings.getQuantityString(R.plurals.subjects_count_subject, subjects.size, subjects.size), style = GradeyType.caption.copy(fontWeight = FontWeight.SemiBold), color = onAccent.copy(alpha = 0.72f))
-            Text(strings.getQuantityString(R.plurals.subjects_count_mark, totalMarks, totalMarks), style = GradeyType.caption.copy(fontWeight = FontWeight.SemiBold), color = onAccent.copy(alpha = 0.72f))
-        }
-    }
-}
-
-@Composable
-private fun SubjectsSectionHeader(
-    sortMode: SubjectSortMode,
-    onSortModeChange: (SubjectSortMode) -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionHeading(strings.getString(R.string.subjects_subjects))
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.gradeyColors.tertiaryFill,
-        ) {
-            Row(modifier = Modifier.padding(3.dp)) {
-                SubjectSortMode.entries.forEach { mode ->
-                    SortSegment(Modifier.weight(1f), mode, sortMode == mode) { onSortModeChange(mode) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SortSegment(
-    modifier: Modifier,
-    mode: SubjectSortMode,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(
-        modifier = modifier.heightIn(min = 36.dp),
-        onClick = onClick,
-        shape = RoundedCornerShape(15.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
-    ) {
-        Box(Modifier.padding(horizontal = 4.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-            Text(
-                text = strings.getString(mode.label),
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SubjectsCard(
-    subjects: List<Subject>,
-    absenceByName: Map<String, com.bukovinafilip.gradey.domain.AbsenceSubjectSummary>,
-    onOpenSubject: (Subject) -> Unit,
-    emptyMessage: String = androidx.compose.ui.res.stringResource(R.string.subjects_no_subjects_available),
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        if (subjects.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(68.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(emptyMessage, color = MutedText, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 16.dp), textAlign = TextAlign.Center)
-            }
-        } else {
-            Column {
-                subjects.forEachIndexed { index, subject ->
-                    SubjectRow(
-                        subject = subject,
-                        absencePercentage = absenceByName[subject.displayName.subjectKey()]?.absencePercentage,
-                        onClick = { onOpenSubject(subject) },
-                    )
-                    if (index != subjects.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 68.dp),
-                            thickness = 0.5.dp,
-                            color = DividerColor.copy(alpha = 0.72f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SubjectRow(
-    subject: Subject,
-    absencePercentage: Double?,
-    onClick: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val largeText = LocalDensity.current.fontScale > 1.2f
-    val absenceLabel = absencePercentage?.let { strings.getString(R.string.subjects_1_d_absent, it.roundToInt()) } ?: strings.getString(R.string.subjects_absent)
-    val average = GradeMath.subjectAverage(subject)
-    val latestMark = subject.marks.maxByOrNull { it.markDate.orEmpty() }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 68.dp)
-            .clickable(onClick = onClick)
-            .padding(start = 12.dp, end = 7.dp, top = 10.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            modifier = Modifier
-                .width(44.dp)
-                .height(40.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = SoftTeal,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = subject.subjectInfo.abbrev.ifBlank { subject.displayName.take(2) },
-                    color = GradeyColors.Good,
-                    fontSize = 17.sp,
-                    lineHeight = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
-            }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = subject.displayName,
-                maxLines = if (largeText) 2 else 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 18.sp,
-                lineHeight = 21.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                val markCount = subject.marks.size
-                Text(
-                    text = strings.getQuantityString(R.plurals.subjects_count_mark, markCount, markCount),
-                    color = MutedText,
-                    fontSize = 16.sp,
-                    lineHeight = 19.sp,
-                )
-                latestMark?.let {
-                    GradePill(mark = it, compact = true)
-                }
-            }
-            if (largeText) Text(absenceLabel, color = MutedText, fontSize = 13.sp, lineHeight = 17.sp)
-        }
-        Column(
-            modifier = Modifier.padding(start = 8.dp),
-            horizontalAlignment = Alignment.End,
-        ) {
-            Text(
-                text = formatAverage(average),
-                color = GradeyColors.Good,
-                fontSize = 20.sp,
-                lineHeight = 23.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            if (!largeText) Text(
-                text = absenceLabel,
-                color = MutedText,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-        }
-        Spacer(Modifier.width(4.dp))
-        HugeIcon(
-            name = HugeIcons.ArrowRight01,
-            contentDescription = strings.getString(R.string.subjects_open_1_s, subject.displayName),
-            tint = Color(0xFFC7C7CC),
-            modifier = Modifier.size(22.dp),
+    val locale = LocalConfiguration.current.locales[0]
+    val listState = rememberLazyListState()
+    val scrolled by remember { derivedStateOf { listState.isScrolled } }
+    Column(Modifier.fillMaxSize()) {
+        GradeyTopBar(
+            title = stringResource(R.string.subjects_subjects_title), scrolled = scrolled,
+            onOpenAI = onOpenAI, aiDescription = stringResource(R.string.subjects_gradey_ai_title),
+            onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = stringResource(R.string.subjects_action_refresh),
+            onOpenSettings = onOpenSettings, settingsDescription = stringResource(R.string.subjects_settings_title),
         )
+        when {
+            entries.isEmpty() && isRefreshing -> LoadingState(Modifier.weight(1f).padding(top = GradeySpacing.xxl).testTag("subjectsLoadingView"), stringResource(R.string.subjects_subjects_loading))
+            entries.isEmpty() && errorMessage != null -> ErrorState(
+                errorMessage, Modifier.weight(1f).padding(top = GradeySpacing.xxl).testTag("subjectsErrorView"),
+                title = stringResource(R.string.subjects_error_title), retryLabel = stringResource(R.string.subjects_action_retry), onRetry = onRefresh,
+            )
+            entries.isEmpty() -> EmptyState(
+                stringResource(R.string.subjects_subjects_empty_title), Modifier.weight(1f).padding(top = GradeySpacing.xxl).testTag("subjectsEmptyView"),
+                message = stringResource(R.string.subjects_subjects_empty_message), icon = HugeIcons.LeftToRightListBullet,
+            )
+            else -> GradeyLazyColumn(Modifier.weight(1f).testTag("subjectsList"), state = listState, itemSpacing = 0.dp) {
+                item(key = "hero", contentType = "hero") {
+                    val average = remember(overall, locale) { GradeMath.formattedAverage(overall, locale) }
+                    PlainHeader(
+                        label = stringResource(R.string.subjects_marks_hero_average), value = average, valueColor = GradeMath.band(overall).color(),
+                        summary = pluralStringResource(R.plurals.subjects_marks_hero_subject_count, entries.size, entries.size) + " · " +
+                            pluralStringResource(R.plurals.subjects_subject_mark_count, totalMarks, totalMarks),
+                        modifier = Modifier.testTag("marksHeroCard"),
+                    )
+                }
+                if (reportCardRow != null) item(key = "reportCard", contentType = "reportCard") { Box(Modifier.padding(top = GradeySpacing.xl)) { reportCardRow() } }
+                if (recapTile != null) item(key = "recap", contentType = "recap") { Box(Modifier.padding(top = GradeySpacing.xl)) { recapTile() } }
+                if (hasAbsenceAdjustments) item(key = "adjusted", contentType = "note") {
+                    AdjustedLabel(
+                        stringResource(R.string.subjects_absence_title) + " · " + stringResource(R.string.subjects_absence_override_adjusted),
+                        Modifier.padding(top = GradeySpacing.xl, start = GradeySpacing.xs).testTag("subjectsAbsenceAdjusted"),
+                    )
+                }
+                item(key = "directoryTitle", contentType = "title") {
+                    PlainSectionTitle(
+                        stringResource(R.string.subjects_marks_directory_title), Modifier.padding(top = GradeySpacing.xl, bottom = GradeySpacing.sm),
+                        trailing = {
+                            SegmentedControl(
+                                options = listOf(stringResource(R.string.subjects_marks_sort_focus), stringResource(R.string.subjects_marks_sort_average)),
+                                selectedIndex = sortIndex, onSelect = onSortChange, modifier = Modifier.widthIn(max = 220.dp).testTag("subjectsSortPicker"),
+                            )
+                        },
+                    )
+                }
+                items(entries, key = { it.id }, contentType = { "subject" }) { entry ->
+                    SubjectRow(entry, onClick = { onOpenSubject(entry.id) }, Modifier.animateItem().testTag("subjectRow-${entry.id}"))
+                }
+            }
+        }
     }
 }
 
+@Composable
+private fun AdjustedLabel(text: String, modifier: Modifier = Modifier) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+        GradeyIcon(HugeIcons.ViewOff, size = 13.dp, tint = secondary)
+        Text(text, style = GradeyType.caption, color = secondary)
+    }
+}
+
+/** 44×40 abbreviation badge, name, mark count with the latest mark, then the average and absence share. */
+@Composable
+private fun SubjectRow(entry: SubjectEntry, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val locale = LocalConfiguration.current.locales[0]
+    val average = remember(entry.average, locale) { GradeMath.formattedAverage(entry.average, locale) }
+    val count = entry.subject.marks.size
+    PlainRow(modifier, onClick = onClick) {
+        Box(
+            Modifier.size(width = 44.dp, height = 40.dp).clip(RoundedCornerShape(GradeyRadius.sm)).background(entry.band.softColor()),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                entry.abbreviation, style = GradeyType.subheadlineBold, color = entry.band.color(), maxLines = 1,
+                overflow = TextOverflow.Clip, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 2.dp),
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            Text(entry.name, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                Text(
+                    pluralStringResource(R.plurals.subjects_subject_mark_count, count, count),
+                    style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel, maxLines = 1,
+                )
+                entry.latestMarkText?.let { InlinePill(it, entry.latestMarkBand.color()) }
+            }
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            Text(average, style = GradeyType.title3.tabular(), color = entry.band.color(), maxLines = 1)
+            entry.absence?.let { row ->
+                Text(
+                    stringResource(R.string.subjects_marks_row_absence_percent, row.absencePercentage),
+                    style = GradeyType.captionSemibold.tabular(), color = MaterialTheme.gradeyColors.secondaryLabel, maxLines = 1,
+                )
+            }
+        }
+        DisclosureIcon()
+    }
+}
+
+// MARK: - Subject page
+
+/** One subject (iOS `SubjectDetailView`): average, marks, "Try a mark" and the average over time. */
 @Composable
 private fun SubjectDetail(
-    subject: Subject,
-    absence: AbsenceResponse,
+    entry: SubjectEntry?,
+    newMarkIDs: Set<String>,
+    hasAbsenceAdjustment: Boolean,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    predictSubjectAverage: (suspend (Subject, String, Int) -> Double?)? = null,
-    onAskAI: ((String) -> Unit)? = null,
-    insightState: com.bukovinafilip.gradey.domain.SchoolInsightState?,
-    plannerItems: List<com.bukovinafilip.gradey.model.PersonalPlannerItem>,
-    schoolScope: String?,
-    onAskTestAI: ((String, String) -> Unit)?,
+    onAskAI: (() -> Unit)?,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val preparedWeights = remember(subject) { GradeSimulation.prepare(subject).resolvedWeights }
-    var showSimulator by rememberSaveable(subject.id) { mutableStateOf(false) }
-    if (showSimulator) GradeSimulatorSheet(subject, onDismiss = { showSimulator = false })
+    val locale = LocalConfiguration.current.locales[0]
     val listState = rememberLazyListState()
-    val isScrolled by remember {
-        derivedStateOf { listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 60 }
-    }
-    val absenceRow = remember(subject.id, absence) {
-        AbsenceRiskSummary.make(absence, absence.absencesPerSubject).subjects
-            .firstOrNull { it.subjectName.subjectKey() == subject.displayName.subjectKey() }
-    }
-    var trialMark by rememberSaveable(subject.id) { mutableStateOf("") }
-    var trialWeight by rememberSaveable(subject.id) { mutableIntStateOf(1) }
-    val canPredict = !subject.pointsOnly && (subject.marks.isEmpty() || subject.marks.any {
-        !it.isPoints && it.type != "unsupported" && GradeMath.parseMarkValue(it.markText) != null
-    })
-    val trialValue = remember(trialMark, canPredict) { if (canPredict) GradeMath.parseMarkValue(trialMark) else null }
-    var predictionRequest by remember(subject.id) { mutableStateOf<SchoolPredictionRequest?>(null) }
-    var schoolAverage by remember(subject.id, trialMark, trialWeight) { mutableStateOf<Double?>(null) }
-    var isPredicting by remember(subject.id) { mutableStateOf(false) }
-    var predictionError by remember(subject.id, trialMark, trialWeight) { mutableStateOf<String?>(null) }
-    LaunchedEffect(subject, trialMark, trialWeight, predictionRequest) {
-        schoolAverage = null
-        predictionError = null
-        isPredicting = false
-        val requested = predictionRequest ?: return@LaunchedEffect
-        val predict = predictSubjectAverage ?: return@LaunchedEffect
-        if (requested.mark != trialMark || requested.weight != trialWeight || trialValue == null || !subject.markPredictionEnabled) return@LaunchedEffect
-        isPredicting = true
-        try {
-            schoolAverage = predict(subject, trialMark.trim(), trialWeight)?.takeIf { it.isFinite() && it in 1.0..5.7 }
-            if (schoolAverage == null) predictionError = strings.getString(R.string.subjects_the_school_did_not_return_a_prediction)
-        } catch (error: CancellationException) {
-            throw error
-        } catch (_: Exception) {
-            predictionError = strings.getString(R.string.subjects_school_prediction_unavailable_showing_a_local_estimate)
-        } finally {
-            isPredicting = false
+    val scrolled by remember { derivedStateOf { listState.isScrolled } }
+    val untitled = stringResource(R.string.subjects_mark_untitled)
+    Column(Modifier.fillMaxSize()) {
+        GradeyTopBar(
+            title = entry?.name ?: stringResource(R.string.subjects_subjects_title), scrolled = scrolled,
+            onBack = onBack, backDescription = stringResource(R.string.subjects_back),
+            actions = if (entry != null && onAskAI != null) ({ GradeyAIButton(onAskAI, stringResource(R.string.subjects_gradey_ai_title)) }) else null,
+        )
+        if (entry == null) {
+            EmptyState(stringResource(R.string.subjects_detail_intelligence_subject_unavailable), Modifier.weight(1f).padding(top = GradeySpacing.xxl), icon = HugeIcons.Book02)
+            return@Column
         }
-    }
-    val localAverage = remember(subject, trialValue, trialWeight) {
-        trialValue?.let {
-            GradeMath.theoreticalAverage(
-                existingMarks = subject.marks,
-                subjectAverageText = subject.averageText,
-                markValue = it,
-                weight = trialWeight,
-            )
-        } ?: GradeMath.subjectAverage(subject)
-    }
-
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(start = 16.dp, top = 104.dp, end = 16.dp, bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
+        val marks = remember(entry, locale, untitled) { markEntries(entry.subject, entry.prepared, locale, untitled, SchoolZone) }
+        val chart = remember(entry) { averageChartData(entry.prepared) }
+        val today = remember { LocalDate.now(SchoolZone) }
+        val shortDates = remember(locale) { DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "dM"), locale) }
+        val fullDates = remember(locale) { DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "dMy"), locale) }
+        GradeyLazyColumn(
+            Modifier.weight(1f).testTag("subjectDetail"), state = listState, maxWidth = GradeyMetrics.narrowContentMaxWidth, itemSpacing = 0.dp,
         ) {
-            item {
-                SubjectAverageHero(
-                    average = schoolAverage ?: localAverage,
-                    predicted = trialValue != null,
-                    predictionLabel = if (schoolAverage == null) strings.getString(R.string.subjects_estimated_average) else strings.getString(R.string.subjects_school_prediction),
-                    markCount = subject.marks.size,
-                    absencePercentage = absenceRow?.absencePercentage,
+            item(key = "hero", contentType = "hero") {
+                val count = entry.subject.marks.size
+                val summary = listOfNotNull(
+                    pluralStringResource(R.plurals.subjects_subject_mark_count, count, count),
+                    entry.absence?.let { stringResource(R.string.subjects_detail_absence_percent, it.absencePercentage) },
+                ).joinToString(" · ")
+                PlainHeader(
+                    label = stringResource(
+                        if (entry.prepared.officialAverage != null) R.string.subjects_detail_intelligence_school_average
+                        else R.string.subjects_detail_intelligence_calculated_average,
+                    ),
+                    value = remember(entry.average, locale) { GradeMath.formattedAverage(entry.average, locale) },
+                    valueColor = entry.band.color(), summary = summary,
+                    below = if (hasAbsenceAdjustment) ({
+                        AdjustedLabel(stringResource(R.string.subjects_absence_override_adjusted), Modifier.testTag("subjectAbsenceAdjusted"))
+                    }) else null,
                 )
             }
-            item { Spacer(Modifier.height(16.dp)) }
-            item {
-                com.bukovinafilip.gradey.ui.GradeyCard(onClick = { showSimulator = true }) {
-                    com.bukovinafilip.gradey.ui.InfoRow(HugeIcons.Calculator, strings.getString(R.string.subjects_grade_simulator), strings.getString(R.string.subjects_reach_a_target_or_try_multiple_new)) {
-                        com.bukovinafilip.gradey.ui.DisclosureIcon()
+            item(key = "marksTitle", contentType = "title") {
+                PlainSectionTitle(stringResource(R.string.subjects_marks_section), Modifier.padding(top = GradeySpacing.xl, bottom = GradeySpacing.sm))
+            }
+            items(marks, key = { it.key }, contentType = { "mark" }) { mark ->
+                MarkRow(
+                    mark, isNew = mark.key in newMarkIDs, untitled = untitled, today = today,
+                    dateText = remember(mark.date, today, shortDates) {
+                        mark.date?.let { (if (it.year == today.year) shortDates else fullDates).format(it) }
+                    },
+                    Modifier.testTag("markRow-${mark.key}"),
+                )
+            }
+            item(key = "calculator", contentType = "calculator") {
+                Column(Modifier.padding(top = GradeySpacing.xl), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                    PlainSectionTitle(stringResource(R.string.subjects_detail_calculator_section))
+                    TryAMark(entry.prepared, Modifier.padding(horizontal = GradeySpacing.xs))
+                }
+            }
+            if (chart != null) item(key = "chart", contentType = "chart") {
+                Column(Modifier.padding(top = GradeySpacing.xl).testTag("subjectGradeTrendSection"), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                    PlainSectionTitle(stringResource(R.string.subjects_detail_chart_title))
+                    AverageHistoryChart(chart, entry.band.color(), Modifier.fillMaxWidth().height(220.dp).padding(horizontal = GradeySpacing.xs))
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.xs),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+                    ) {
+                        GradeyIcon(HugeIcons.ChartLineData01, size = 13.dp, tint = MaterialTheme.gradeyColors.secondaryLabel)
+                        Text(
+                            stringResource(R.string.subjects_detail_chart_source_local), Modifier.weight(1f),
+                            style = GradeyType.caption, color = MaterialTheme.gradeyColors.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        chart.delta?.let { AverageDeltaChip(it) }
                     }
                 }
             }
-            item { Spacer(Modifier.height(16.dp)) }
-            item {
-                SubjectInsightsCard(subject, schoolScope, insightState, plannerItems, onAskAI, onAskTestAI)
-                Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+/**
+ * One mark (iOS `MarkRow`): caption, the topic when it adds something, date and type, weight chip and
+ * the mark badge. The row expands on tap only when its text is actually cut off.
+ */
+@Composable
+private fun MarkRow(mark: MarkEntry, isNew: Boolean, untitled: String, today: LocalDate, dateText: String?, modifier: Modifier = Modifier) {
+    var expanded by rememberSaveable(mark.key) { mutableStateOf(false) }
+    var captionCut by remember(mark.key) { mutableStateOf(false) }
+    var topicCut by remember(mark.key) { mutableStateOf(false) }
+    val canExpand = expanded || captionCut || topicCut
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    val daysAgo = mark.date?.let { ChronoUnit.DAYS.between(it, today).toInt() }
+    val rotation by animateFloatAsState(if (expanded) 180f else 0f, tween(250), label = "markChevron")
+    PlainRow(
+        modifier.animateContentSize(tween(250)), onClick = if (canExpand) ({ expanded = !expanded }) else null,
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    mark.caption ?: untitled, Modifier.weight(1f, fill = false), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = if (expanded) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { if (!expanded) captionCut = it.hasVisualOverflow },
+                )
+                if (isNew) {
+                    val label = stringResource(R.string.subjects_new_mark)
+                    Box(Modifier.size(7.dp).background(MaterialTheme.colorScheme.primary, CircleShape).clearAndSetSemantics { contentDescription = label })
+                }
             }
-            item { SectionHeading(strings.getString(R.string.subjects_average_over_time)) }
-            item { Spacer(Modifier.height(18.dp)) }
-            item { AverageChartCard(subject) }
-            item { Spacer(Modifier.height(10.dp)) }
-            item { SectionHeading(strings.getString(R.string.subjects_try_a_mark)) }
-            item { Spacer(Modifier.height(24.dp)) }
-            item {
-                TryMarkCard(
-                    value = trialMark,
-                    weight = trialWeight,
-                    enabled = canPredict,
-                    onValueChange = { trialMark = it.take(8) },
-                    onDecreaseWeight = { trialWeight = (trialWeight - 1).coerceAtLeast(1) },
-                    onIncreaseWeight = { trialWeight = (trialWeight + 1).coerceAtMost(10) },
+            mark.topic?.let { topic ->
+                Text(
+                    topic, style = GradeyType.subheadline, color = secondary,
+                    maxLines = if (expanded) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis,
+                    onTextLayout = { if (!expanded) topicCut = it.hasVisualOverflow },
                 )
             }
-            item {
-                Column(modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (daysAgo != null && daysAgo in 0..6) {
                     Text(
-                        text = when {
-                            !canPredict -> strings.getString(R.string.subjects_this_calculator_supports_grades_from_1_to)
-                            trialMark.isNotBlank() && trialValue == null -> strings.getString(R.string.subjects_enter_a_grade_from_1_to_5)
-                            predictionError != null -> predictionError.orEmpty()
-                            schoolAverage != null -> strings.getString(R.string.subjects_prediction_returned_by_your_school_this_does)
-                            else -> strings.getString(R.string.subjects_local_estimate_from_available_grades_and_known)
+                        when (daysAgo) {
+                            0 -> stringResource(R.string.subjects_today)
+                            1 -> stringResource(R.string.subjects_yesterday)
+                            else -> pluralStringResource(R.plurals.subjects_days_ago, daysAgo, daysAgo)
                         },
-                        color = if (predictionError != null || (trialMark.isNotBlank() && trialValue == null)) DangerRed else MutedText,
-                        fontSize = 13.sp,
+                        style = GradeyType.captionSemibold, color = MaterialTheme.colorScheme.primary, maxLines = 1,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (subject.markPredictionEnabled && predictSubjectAverage != null && trialValue != null) {
-                            Button(
-                                onClick = { predictionRequest = SchoolPredictionRequest(trialMark, trialWeight, (predictionRequest?.attempt ?: 0) + 1) },
-                                enabled = !isPredicting,
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                if (isPredicting) {
-                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                    Spacer(Modifier.width(8.dp))
-                                }
-                                Text(if (isPredicting) strings.getString(R.string.subjects_checking) else if (predictionError != null) strings.getString(R.string.subjects_retry_prediction) else strings.getString(R.string.subjects_check_school_prediction))
-                            }
-                        }
-                        if (trialMark.isNotBlank()) {
-                            TextButton(onClick = { trialMark = ""; predictionRequest = null }) { Text(strings.getString(R.string.subjects_clear)) }
-                        }
-                    }
+                    if (dateText != null) Separator()
+                }
+                if (dateText != null) Text(dateText, style = GradeyType.caption.tabular(), color = secondary, maxLines = 1)
+                mark.typeNote?.let { note ->
+                    Separator()
+                    Text(note, Modifier.weight(1f, fill = false), style = GradeyType.caption, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
-            item { Spacer(Modifier.height(8.dp)) }
-            item { SectionHeading(strings.getString(R.string.subjects_marks_2)) }
-            item { Spacer(Modifier.height(25.dp)) }
-            if (subject.marks.isEmpty()) {
-                item { EmptyMarksCard() }
-            } else {
-                items(
-                    items = subject.marks.sortedByDescending { parseMarkDate(it.markDate) },
-                    key = Mark::id,
-                ) { mark ->
-                    MarkCard(mark = mark, weight = preparedWeights[mark.id]?.value)
-                    Spacer(Modifier.height(12.dp))
-                }
+            when (val chip = mark.chip) {
+                is MarkChip.Points -> StatusChip(chip.text, Modifier.padding(top = 2.dp), color = MaterialTheme.gradeyColors.teal)
+                is MarkChip.Weight -> StatusChip(
+                    stringResource(if (chip.estimated) R.string.subjects_detail_weight_estimated_decimal else R.string.subjects_detail_weight_decimal, chip.formatted),
+                    Modifier.padding(top = 2.dp), color = MaterialTheme.colorScheme.secondary,
+                )
+                null -> Unit
             }
         }
-
-        SubjectDetailHeader(
-            title = subject.displayName,
-            isScrolled = isScrolled,
-            onBack = onBack,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-    }
-}
-
-@Composable
-private fun SubjectDetailHeader(
-    title: String,
-    isScrolled: Boolean,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(if (isScrolled) MaterialTheme.gradeyColors.groupedBackground.copy(alpha = 0.92f) else Color.Transparent)
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(56.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        com.bukovinafilip.gradey.ui.GradeyIconButton(
-            HugeIcons.ArrowLeft01, strings.getString(R.string.subjects_back), onBack,
-            modifier = Modifier.align(Alignment.CenterStart), size = 44.dp, iconSize = 18.dp, tint = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-            text = title,
-            modifier = Modifier.padding(horizontal = 56.dp),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = GradeyType.headline,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-@Composable
-private fun SubjectAverageHero(
-    average: Double?,
-    predicted: Boolean,
-    markCount: Int,
-    absencePercentage: Double?,
-    predictionLabel: String = androidx.compose.ui.res.stringResource(R.string.subjects_predicted_average),
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val band = GradeMath.band(average)
-    val base = if (band == GradeBand.NEUTRAL) MaterialTheme.colorScheme.primary else band.color()
-    val foreground = if (band == GradeBand.NEUTRAL) GradeyColors.OnAccent else Color.White
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(20.dp), ambientColor = base.copy(alpha = 0.22f), spotColor = base.copy(alpha = 0.22f))
-            .clip(RoundedCornerShape(20.dp))
-            .background(Brush.linearGradient(listOf(base, base.copy(alpha = 0.78f))))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            text = if (predicted) predictionLabel else strings.getString(R.string.subjects_average),
-            style = GradeyType.subheadline.copy(fontWeight = FontWeight.SemiBold),
-            color = foreground.copy(alpha = 0.85f),
-        )
-        Text(formatAverage(average), style = GradeyType.display(64), color = foreground, maxLines = 1)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            DetailChip(
-                icon = { HugeIcon(HugeIcons.CheckmarkBadge02, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                text = strings.getQuantityString(R.plurals.subjects_count_mark, markCount, markCount),
-                contentColor = foreground,
-            )
-            DetailChip(
-                icon = { HugeIcon(HugeIcons.Calendar03, contentDescription = null, modifier = Modifier.size(14.dp)) },
-                text = absencePercentage?.let { strings.getString(R.string.subjects_absence_1_s, formatOneDecimal(it)) } ?: strings.getString(R.string.subjects_absence),
-                contentColor = foreground,
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            GradeBadge(mark.markText, mark.band)
+            if (canExpand) GradeyIcon(
+                HugeIcons.ArrowDown01, Modifier.graphicsLayer { rotationZ = rotation }, size = 14.dp, tint = MaterialTheme.gradeyColors.tertiaryLabel,
             )
         }
     }
 }
 
 @Composable
-private fun DetailChip(
-    icon: @Composable () -> Unit,
-    text: String,
-    contentColor: Color,
-) {
-    Surface(
-        modifier = Modifier.heightIn(min = 28.dp),
-        shape = RoundedCornerShape(14.dp),
-        color = Color.White.copy(alpha = 0.22f),
-        contentColor = contentColor,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-        ) {
-            icon()
-            Text(
-                text = text,
-                color = contentColor,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
-                fontWeight = FontWeight.Medium,
-            )
-        }
-    }
-}
+private fun Separator() = Text("·", style = GradeyType.caption, color = MaterialTheme.gradeyColors.tertiaryLabel)
 
-private data class AveragePoint(
-    val date: LocalDate?,
-    val average: Double,
-)
-
+/** "Try a mark" (iOS `TheoreticalCalculatorView`): a mark and its weight give the new average at once. */
 @Composable
-private fun AverageChartCard(subject: Subject) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val chartGrid = MaterialTheme.colorScheme.outlineVariant
-    val chartPoint = MaterialTheme.colorScheme.surface
-    val points = remember(subject) { subject.averagePoints() }
-    if (points.isEmpty()) {
-        Surface(modifier = Modifier.fillMaxWidth().height(150.dp), shape = RoundedCornerShape(20.dp), color = CardWhite) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Text(strings.getString(R.string.subjects_no_grade_trend_yet), color = MutedText, fontSize = 16.sp)
-                Text(strings.getString(R.string.subjects_a_trend_appears_when_numeric_grades_are), color = MutedText, fontSize = 12.sp, modifier = Modifier.padding(12.dp))
-            }
-        }
+private fun TryAMark(prepared: PreparedGradeCalculation, modifier: Modifier = Modifier) {
+    val locale = LocalConfiguration.current.locales[0]
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    if (!prepared.canSimulate) {
+        Text(stringResource(R.string.subjects_detail_simulator_unavailable), modifier, style = GradeyType.subheadline, color = secondary)
         return
     }
-    val values = points.map(AveragePoint::average)
-    val topValue = ((values.minOrNull()!! * 10.0).roundToInt() - 1) / 10.0
-    val bottomValue = ((values.maxOrNull()!! * 10.0).roundToInt() + 1) / 10.0
-    val safeBottomValue = if (bottomValue <= topValue) topValue + 0.2 else bottomValue
-    val labels = if (points.size == 1) listOf(points.first().date?.shortDate() ?: strings.getString(R.string.subjects_date_unavailable))
-        else listOf(points.first(), points[points.size / 2], points.last()).map { it.date?.shortDate() ?: "—" }
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(237.dp)
-            .semantics {
-                contentDescription = strings.getString(R.string.subjects_average_over_time_1_d_data_points, points.size)
-            },
-        shape = RoundedCornerShape(20.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val xStart = 16.dp.toPx()
-                val xEnd = size.width - 36.dp.toPx()
-                val yTop = 51.dp.toPx()
-                val yBottom = 114.dp.toPx()
-                drawLine(chartGrid, Offset(xStart, yTop), Offset(xEnd, yTop), strokeWidth = 0.7.dp.toPx())
-                drawLine(chartGrid, Offset(xStart, yBottom), Offset(xEnd, yBottom), strokeWidth = 0.7.dp.toPx())
-
-                val drawablePoints = points
-                val offsets = drawablePoints.mapIndexed { index, point ->
-                    val x = if (drawablePoints.size == 1) {
-                        (xStart + xEnd) / 2f
-                    } else {
-                        xStart + (xEnd - xStart) * index.toFloat() / drawablePoints.lastIndex.toFloat()
-                    }
-                    val progress = ((point.average - topValue) / (safeBottomValue - topValue)).coerceIn(0.0, 1.0)
-                    val y = yTop + (yBottom - yTop) * progress.toFloat()
-                    Offset(x, y)
-                }
-                if (offsets.size > 1) {
-                    val path = Path().apply {
-                        moveTo(offsets.first().x, offsets.first().y)
-                        offsets.drop(1).forEach { lineTo(it.x, it.y) }
-                    }
-                    drawPath(
-                        path = path,
-                        color = Color(0xFF1396A0),
-                        style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-                    )
-                }
-                offsets.forEach { point ->
-                    drawCircle(chartPoint, radius = 6.dp.toPx(), center = point)
-                    drawCircle(Color(0xFF1396A0), radius = 4.5.dp.toPx(), center = point)
-                }
-            }
-
-            Text(
-                text = formatOneDecimal(topValue),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 44.dp, end = 16.dp),
-                color = MutedText,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
-            )
-            Text(
-                text = formatOneDecimal(safeBottomValue),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 107.dp, end = 16.dp),
-                color = MutedText,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
+    var text by rememberSaveable(prepared.subjectID) { mutableStateOf("") }
+    var weight by rememberSaveable(prepared.subjectID) { mutableIntStateOf(1) }
+    val result = remember(prepared, text, weight) {
+        GradeMath.parseMarkValue(text)?.let { value -> GradeSimulation.simulate(prepared, listOf(HypotheticalGrade(value = value, weight = weight))) }
+    }
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            BrandTextField(
+                value = text, onValueChange = { if (it.length <= 3) text = it }, modifier = Modifier.weight(1f).testTag("theoreticalMarkField"),
+                placeholder = stringResource(R.string.subjects_detail_calculator_mark_placeholder), keyboardType = KeyboardType.Ascii,
             )
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(y = 170.dp)
-                    .padding(start = 54.dp),
+                Modifier.clip(RoundedCornerShape(GradeyRadius.sm)).background(MaterialTheme.gradeyColors.tertiaryFill).padding(GradeySpacing.xs)
+                    .testTag("theoreticalWeightStepper"),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
             ) {
-                labels.forEach { label ->
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        Text(label, color = MutedText, fontSize = 13.sp, lineHeight = 17.sp)
-                    }
-                }
+                StepButton(HugeIcons.MinusSign, stringResource(R.string.subjects_detail_weight_decrease), enabled = weight > 1) { weight -= 1 }
+                Text(stringResource(R.string.subjects_detail_weight, weight), style = GradeyType.subheadlineSemibold.tabular(), color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                StepButton(HugeIcons.Add01, stringResource(R.string.subjects_detail_weight_increase), enabled = weight < 10) { weight += 1 }
             }
-            Text(
-                text = strings.getString(R.string.subjects_computed_from_marks),
-                modifier = Modifier.offset(x = 16.dp, y = 194.dp),
-                color = MutedText,
-                fontSize = 13.sp,
-                lineHeight = 17.sp,
-            )
         }
-    }
-}
-
-@Composable
-private fun TryMarkCard(
-    value: String,
-    weight: Int,
-    enabled: Boolean,
-    onValueChange: (String) -> Unit,
-    onDecreaseWeight: () -> Unit,
-    onIncreaseWeight: () -> Unit,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 138.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        Column(modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp)) {
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                enabled = enabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = strings.getString(R.string.subjects_trial_mark) }
-                    .height(46.dp)
-                    .background(SoftGray, RoundedCornerShape(13.dp))
-                    .padding(horizontal = 13.dp),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                cursorBrush = SolidColor(AccentTeal),
-                textStyle = TextStyle(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
-                ),
-                decorationBox = { field ->
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
-                        if (value.isEmpty()) {
-                            Text(
-                                text = if (enabled) strings.getString(R.string.subjects_mark_e_g_2) else strings.getString(R.string.subjects_prediction_unavailable),
-                                color = Color(0xFFC4C4C8),
-                                fontSize = 18.sp,
-                                lineHeight = 22.sp,
-                            )
-                        }
-                        field()
-                    }
-                },
-            )
-            Spacer(Modifier.height(14.dp))
+        if (result != null) {
+            val average = remember(result, locale) { GradeMath.formattedAverage(result.estimatedAverage, locale) }
+            val difference = result.difference
+            val differenceText = when {
+                difference == null -> null
+                difference < -0.01 -> stringResource(R.string.subjects_detail_calculator_better, -difference)
+                difference > 0.01 -> stringResource(R.string.subjects_detail_calculator_worse, difference)
+                else -> stringResource(R.string.subjects_detail_calculator_same)
+            }
+            val differenceColor = when {
+                difference == null -> secondary
+                difference < -0.01 -> GradeBand.EXCELLENT.color()
+                difference > 0.01 -> GradeyColors.Poor
+                else -> secondary
+            }
+            val spoken = listOfNotNull(stringResource(R.string.subjects_detail_simulator_result, result.estimatedAverage), differenceText).joinToString()
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-                    .background(SoftGray, RoundedCornerShape(13.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                Modifier.clearAndSetSemantics { contentDescription = spoken }.testTag("theoreticalResultPanel"),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
             ) {
-                StepperButton(
-                    enabled = enabled && weight > 1,
-                    onClick = onDecreaseWeight,
-                    contentDescription = strings.getString(R.string.subjects_decrease_weight),
-                    tint = Color(0xFFD1D1D6),
-                ) {
-                    HugeIcon(HugeIcons.MinusSign, contentDescription = null, modifier = Modifier.size(22.dp))
-                }
-                Text(
-                    text = strings.getString(R.string.subjects_weight_1_d, weight),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 17.sp,
-                    lineHeight = 21.sp,
-                    fontWeight = FontWeight.Bold,
-                )
-                StepperButton(
-                    enabled = enabled && weight < 10,
-                    onClick = onIncreaseWeight,
-                    contentDescription = strings.getString(R.string.subjects_increase_weight),
-                    tint = AccentTeal,
-                ) {
-                    HugeIcon(HugeIcons.Add01, contentDescription = null, modifier = Modifier.size(27.dp))
-                }
+                Text("→ $average", style = GradeyType.headline.tabular(), color = MaterialTheme.colorScheme.onSurface)
+                if (differenceText != null) Text(differenceText, style = GradeyType.subheadlineSemibold.tabular(), color = differenceColor)
             }
         }
+        calculationWarning(prepared.issues)?.let { Text(stringResource(it), style = GradeyType.caption, color = secondary) }
     }
 }
 
+/** The one caveat worth showing under the calculator, most serious first (iOS `calculationWarningKey`). */
+private fun calculationWarning(issues: Set<GradeCalculationIssue>): Int? = when {
+    GradeCalculationIssue.INCONSISTENT_OFFICIAL_AVERAGE in issues -> R.string.subjects_detail_intelligence_average_mismatch
+    GradeCalculationIssue.CONFLICTING_DUPLICATE_IDS in issues || GradeCalculationIssue.INVALID_WEIGHTS in issues ||
+        GradeCalculationIssue.EXCLUDED_MARKS in issues -> R.string.subjects_detail_intelligence_partial_grades
+    GradeCalculationIssue.MODIFIER_MAPPING in issues -> R.string.subjects_detail_intelligence_modifier_estimate
+    GradeCalculationIssue.MISSING_WEIGHTS in issues -> R.string.subjects_detail_intelligence_assumed_weights
+    GradeCalculationIssue.INFERRED_WEIGHTS in issues -> R.string.subjects_detail_intelligence_inferred_weights
+    else -> null
+}
+
 @Composable
-private fun StepperButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
-    contentDescription: String,
-    tint: Color,
-    content: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = Modifier
-            .width(36.dp)
-            .height(34.dp)
-            .semantics { this.contentDescription = contentDescription },
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(9.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = if (enabled) 0.96f else 0.64f),
-        contentColor = tint,
+private fun StepButton(icon: String, label: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.size(GradeyMetrics.minTouch).clip(RoundedCornerShape(GradeyRadius.xs)).background(MaterialTheme.gradeyColors.secondaryGroupedBackground)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
     ) {
-        Box(contentAlignment = Alignment.Center) { content() }
+        GradeyIcon(icon, size = 16.dp, tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.gradeyColors.tertiaryLabel)
     }
 }
-
-@Composable
-private fun MarkCard(mark: Mark, weight: Double?) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val displayLocale = LocalConfiguration.current.locales[0]
-    val date = parseMarkDate(mark.markDate)
-    val caption = mark.caption?.takeIf(String::isNotBlank) ?: mark.type?.takeIf(String::isNotBlank) ?: strings.getString(R.string.subjects_mark)
-    val detail = mark.theme?.takeIf(String::isNotBlank) ?: mark.typeNote?.takeIf(String::isNotBlank) ?: ""
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 112.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
-                Text(
-                    text = caption,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = detail,
-                    color = MutedText,
-                    fontSize = 17.sp,
-                    lineHeight = 20.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = relativeDate(date, strings),
-                        color = AccentTeal,
-                        fontSize = 13.sp,
-                        lineHeight = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = date?.fullDate().orEmpty(),
-                        color = MutedText,
-                        fontSize = 13.sp,
-                        lineHeight = 17.sp,
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TagPill(text = caption, color = SoftGray, textColor = MutedText)
-                    TagPill(
-                        text = weight?.let { strings.getString(R.string.subjects_weight_1_s, GradeMath.formattedWeight(it, displayLocale)) } ?: strings.getString(R.string.subjects_not_included_in_average),
-                        color = SoftMint,
-                        textColor = ExcellentGreen,
-                    )
-                }
-            }
-            GradePill(mark = mark, compact = false)
-        }
-    }
-}
-
-@Composable
-private fun EmptyMarksCard() {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp),
-        shape = RoundedCornerShape(20.dp),
-        color = CardWhite,
-        shadowElevation = 1.dp,
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(strings.getString(R.string.subjects_no_marks_yet), color = MutedText, fontSize = 15.sp)
-        }
-    }
-}
-
-@Composable
-private fun GradePill(mark: Mark, compact: Boolean) {
-    val (background, foreground) = mark.gradeColors()
-    Surface(
-        modifier = if (compact) Modifier.heightIn(min = 23.dp) else Modifier.width(76.dp).heightIn(min = 39.dp),
-        shape = RoundedCornerShape(if (compact) 12.dp else 16.dp),
-        color = background,
-    ) {
-        Box(
-            modifier = if (compact) Modifier.padding(horizontal = 10.dp) else Modifier,
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = mark.markText,
-                color = foreground,
-                fontSize = if (compact) 14.sp else 22.sp,
-                lineHeight = if (compact) 17.sp else 26.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun TagPill(text: String, color: Color, textColor: Color) {
-    Surface(
-        modifier = Modifier.heightIn(min = 23.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = color,
-    ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = text,
-                color = textColor,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionHeading(text: String) {
-    Text(
-        text = text,
-        color = MutedText,
-        fontSize = 14.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.7.sp,
-        fontWeight = FontWeight.Bold,
-    )
-}
-
-private fun Subject.averagePoints(): List<AveragePoint> {
-    val ordered = GradeSimulation.prepare(this).marks.sortedWith(compareBy({ it.date ?: LocalDate.MIN }, { it.id }))
-    var sum = 0.0
-    var weight = 0.0
-    return ordered.map { mark ->
-        sum += mark.value * mark.weight.value
-        weight += mark.weight.value
-        AveragePoint(mark.date, sum / weight)
-    }
-}
-
-@Composable
-private fun Mark.gradeColors(): Pair<Color, Color> = when (GradeMath.band(this)) {
-    GradeBand.EXCELLENT -> ExcellentGreen.copy(alpha = 0.14f) to ExcellentGreen
-    GradeBand.GOOD -> SoftTeal to GradeyColors.Good
-    GradeBand.AVERAGE -> WarningOrange.copy(alpha = 0.14f) to WarningOrange
-    GradeBand.POOR -> DangerRed.copy(alpha = 0.14f) to DangerRed
-    GradeBand.NEUTRAL -> SoftGray to MutedText
-}
-
-private fun parseMarkDate(raw: String?): LocalDate? {
-    val value = raw?.trim()?.takeIf(String::isNotEmpty) ?: return null
-    return runCatching { LocalDate.parse(value.substringBefore('T')) }.getOrNull()
-}
-
-private fun relativeDate(date: LocalDate?, strings: android.content.res.Resources): String {
-    date ?: return strings.getString(R.string.subjects_date_unavailable)
-    val days = ChronoUnit.DAYS.between(date, LocalDate.now(PragueZone)).coerceAtLeast(0)
-    return when {
-        days == 0L -> strings.getString(R.string.subjects_today)
-        days == 1L -> strings.getString(R.string.subjects_yesterday)
-        days < 7L -> strings.getQuantityString(R.plurals.subjects_days_ago, days.toInt(), days.toInt())
-        days < 30L -> strings.getQuantityString(R.plurals.subjects_weeks_ago, (days / 7).toInt(), (days / 7).toInt())
-        days < 60L -> strings.getString(R.string.subjects_1_month_ago)
-        days < 365L -> strings.getQuantityString(R.plurals.subjects_months_ago, (days / 30).toInt(), (days / 30).toInt())
-        else -> strings.getQuantityString(R.plurals.subjects_years_ago, (days / 365).toInt(), (days / 365).toInt())
-    }
-}
-
-private fun LocalDate.shortDate(): String = "$dayOfMonth. $monthValue."
-
-private fun LocalDate.fullDate(): String = "$dayOfMonth. $monthValue. $year"
-
-private fun String.subjectKey(): String = Normalizer.normalize(this, Normalizer.Form.NFD)
-    .replace(Regex("\\p{M}+"), "")
-    .lowercase(Locale.ROOT)
-    .replace(Regex("[^a-z0-9]+"), "")
-
-@Composable
-internal fun formatAverage(average: Double?): String =
-    GradeMath.formattedAverage(average, LocalConfiguration.current.locales[0])
-
-@Composable
-private fun formatOneDecimal(value: Double): String =
-    String.format(LocalConfiguration.current.locales[0], "%.1f", value)
-
-private fun plural(count: Int, singular: String, plural: String): String =
-    if (count == 1) singular else plural

@@ -53,4 +53,7 @@
     <string name="stravacz_price_1_s">Cena: %1$s</string>
     <string name="stravacz_allergens_1_s">Alergeny: %1$s</string>
     <string name="stravacz_allergen_alert_1_s">Upozornění na alergen: %1$s</string>
+    <string name="stravacz_gradey_ai_title">Gradey AI</string>
+    <string name="stravacz_settings_title">Nastavení</string>
+    <string name="stravacz_canteen">Jídelna</string>
 </resources>

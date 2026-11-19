@@ -85,9 +85,27 @@ internal class GradeyAIController(
             it.copy(selection = it.selection.copy(includeNotes = include), context = null)
         }
     }
-    fun selectAction(action: AIAction) = action {
+    /** Starts a new chat for [action]; what the user already typed stays in the composer. */
+    fun selectAction(action: AIAction, subjectID: String? = null, eventID: String? = null, includeNotes: Boolean = false) = action {
+        val draft = state.value.draft
         val monday = LocalDate.now(ZoneId.of("Europe/Prague")).let { it.minusDays((it.dayOfWeek.value - 1).toLong()) }
-        prepareSelection(AISelection(action, weekStart = if (action == AIAction.WEEK) monday.toString() else null))
+        try {
+            prepareSelection(AISelection(action, subjectID = subjectID, weekStart = if (action == AIAction.WEEK) monday.toString() else null,
+                eventID = eventID, includeNotes = includeNotes))
+        } finally {
+            mutableState.update { it.copy(draft = draft) }
+        }
+    }
+
+    /** Fills the subject and test menus from saved data. Nothing is shared and the selection stays as it is. */
+    fun loadChoices() {
+        viewModelScope.launch {
+            val session = optional { school.currentStoredSession() } ?: return@launch
+            val subjects = optional { school.loadCachedDashboard() }?.marksResponse?.subjects?.map { subject -> subject.id to subject.displayName }
+            val events = plannerItems?.let { AIPlannerContext.events(it, session.cacheScope) }
+                ?.filter { event -> event.isAssessment && event.expiresAt > System.currentTimeMillis() }?.take(30)
+            mutableState.update { it.copy(availableSubjects = subjects ?: it.availableSubjects, availableEvents = events ?: it.availableEvents) }
+        }
     }
 
     /** Entry arguments are a one-time navigation request, never a replacement for the user's next selection. */
@@ -190,7 +208,8 @@ internal class GradeyAIController(
 
     fun refreshContext() = action { ensureSchool(); loadContext() }
 
-    fun send(retry: Boolean = false) = action(sending = true) {
+    /** Sends the draft, or [prompt] when given. The first message of a new chat creates the chat. */
+    fun send(retry: Boolean = false, prompt: String? = null) = action(sending = true) {
         ensureSchool()
         val frozen = state.value.pending
         val recovery = state.value.recovery
@@ -202,11 +221,13 @@ internal class GradeyAIController(
         val value = state.value
         check(value.status?.canAfford(value.selection.action) == true) { "You don’t have enough Gradey Compute for this action. Refresh to check your balance." }
         check(value.purposeCompatible) { "Start a new conversation to use this school context." }
-        val chat = checkNotNull(value.currentChat)
-        val text = if (retry) checkNotNull(frozen).text else value.draft.trim()
+        val text = if (retry) checkNotNull(frozen).text else (prompt ?: value.draft).trim()
         require(text.isNotBlank() && text.codePointCount(0, text.length) <= 2_000) { "Enter a question of 2,000 characters or fewer." }
         check(value.selection.action != AIAction.SUBJECT || value.selection.subjectID != null) { "Choose a subject first." }
         check(value.selection.action != AIAction.TEST || value.selection.eventID != null) { "Choose a test first." }
+        val chat = value.currentChat ?: ai().create(checkNotNull(schoolScope), value.selection.id).also { created ->
+            mutableState.update { it.copy(currentChat = created, chats = listOf(created) + it.chats.filterNot { chat -> chat.id == created.id }) }
+        }
         val request = if (retry && frozen != null) {
             // Failed/cancelled attempts are immutable. Only an explicit retry gets a new ID.
             frozen.copy(id = if (recovered in setOf("failed", "cancelled")) UUID.randomUUID().toString() else frozen.id, catalogVersion = value.status?.compute?.catalogVersion)

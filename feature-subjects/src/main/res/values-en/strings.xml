@@ -26,7 +26,6 @@
     <string name="subjects_school_prediction">School prediction</string>
     <string name="subjects_average_over_time">AVERAGE OVER TIME</string>
     <string name="subjects_predicted_average">Predicted average</string>
-    <string name="subjects_average_improved">Average improved</string>
     <string name="subjects_retry_prediction">Retry prediction</string>
     <string name="subjects_date_unavailable">Date unavailable</string>
     <string name="subjects_overall_average">Overall average</string>
@@ -135,4 +134,56 @@
         <item quantity="one">%1$d year ago</item>
         <item quantity="other">%1$d years ago</item>
     </plurals>
+    <string name="subjects_average_worsened">Average worsened by %.2f</string>
+    <string name="subjects_marks_section">Marks</string>
+    <string name="subjects_average_improved">Average improved by %.2f</string>
+    <string name="subjects_absence_override_adjusted">Locally adjusted</string>
+    <string name="subjects_absence_title">Absence</string>
+    <string name="subjects_detail_absence_percent">Absence %.1f %%</string>
+    <string name="subjects_detail_calculator_better">%.2f better</string>
+    <string name="subjects_detail_calculator_mark_placeholder">Mark, e.g. 2+</string>
+    <string name="subjects_detail_calculator_same">unchanged</string>
+    <string name="subjects_detail_calculator_section">Try a mark</string>
+    <string name="subjects_detail_calculator_worse">%.2f worse</string>
+    <string name="subjects_detail_chart_source_local">Computed from marks</string>
+    <string name="subjects_detail_chart_title">Average over time</string>
+    <string name="subjects_detail_intelligence_assumed_weights">Unknown weights are counted as 1. The result is an estimate.</string>
+    <string name="subjects_detail_intelligence_average_mismatch">The average reported by your school differs from Gradey’s calculation. This simulation uses Gradey’s calculated average.</string>
+    <string name="subjects_detail_intelligence_calculated_average">Based on recorded marks</string>
+    <string name="subjects_detail_intelligence_inferred_weights">Some weights are estimated from the school’s recorded data.</string>
+    <string name="subjects_detail_intelligence_modifier_estimate">Gradey converts marks with plus and minus signs to numeric values. Your school may use a different conversion.</string>
+    <string name="subjects_detail_intelligence_partial_grades">Some records cannot be included reliably, so they are left out of the calculation.</string>
+    <string name="subjects_detail_intelligence_school_average">Average reported by school</string>
+    <string name="subjects_detail_intelligence_subject_unavailable">This subject is no longer available</string>
+    <string name="subjects_detail_simulator_result">Estimated average: %.2f</string>
+    <string name="subjects_detail_simulator_unavailable">A simulation needs recorded numeric marks. Points and unsupported grading scales are not converted.</string>
+    <string name="subjects_detail_weight">Weight %d</string>
+    <string name="subjects_detail_weight_decimal">Weight %s×</string>
+    <string name="subjects_detail_weight_decrease">Decrease mark weight</string>
+    <string name="subjects_detail_weight_estimated_decimal">Estimated weight %s×</string>
+    <string name="subjects_detail_weight_increase">Increase mark weight</string>
+    <string name="subjects_mark_untitled">Untitled</string>
+    <string name="subjects_marks_directory_title">Subjects</string>
+    <string name="subjects_marks_hero_average">Overall average</string>
+    <plurals name="subjects_marks_hero_subject_count">
+        <item quantity="one">%d subject</item>
+        <item quantity="other">%d subjects</item>
+    </plurals>
+    <string name="subjects_marks_row_absence_percent">%.0f%% absent</string>
+    <string name="subjects_marks_sort_average">Average</string>
+    <string name="subjects_marks_sort_focus">Priority</string>
+    <plurals name="subjects_subject_mark_count">
+        <item quantity="one">%d mark</item>
+        <item quantity="other">%d marks</item>
+    </plurals>
+    <string name="subjects_subjects_empty_message">Refresh to check for subjects and marks from your school.</string>
+    <string name="subjects_subjects_empty_title">No marks</string>
+    <string name="subjects_subjects_loading">Loading marks…</string>
+    <string name="subjects_subjects_title">Marks</string>
+    <string name="subjects_gradey_ai_title">Gradey AI</string>
+    <string name="subjects_action_refresh">Refresh</string>
+    <string name="subjects_settings_title">Settings</string>
+    <string name="subjects_action_retry">Try again</string>
+    <string name="subjects_error_title">Error</string>
+    <string name="subjects_new_mark">New mark</string>
 </resources>

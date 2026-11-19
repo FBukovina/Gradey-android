@@ -166,4 +166,10 @@
     <string name="ai_connect_school">Pro použití Gradey AI připoj školní účet.</string>
     <string name="ai_proof_needed">Pro ověření účtu AI se znovu přihlas přes Gradey ID.</string>
     <string name="ai_recovery_save_failed">Požadavek se nepodařilo uložit pro obnovení. Uvolni místo v zařízení a zkus to znovu.</string>
+    <string name="gradey_ai_done">Hotovo</string>
+    <string name="gradey_ai_history_open">Historie chatů</string>
+    <string name="gradey_ai_close">Zavřít</string>
+    <string name="gradey_ai_history_manage">Soukromí a data</string>
+    <string name="gradey_ai_message_copy">Kopírovat</string>
+    <string name="gradey_ai_message_copied">Zkopírováno</string>
 </resources>

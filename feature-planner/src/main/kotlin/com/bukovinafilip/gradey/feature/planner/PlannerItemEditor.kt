@@ -95,6 +95,7 @@ private val PlainRowInset = GradeySpacing.xs
  * New or existing planner item (iOS `PlannerItemEditorView`): details, school context, due date and
  * Calendar sections in a sheet, with Save as the one primary action and Delete below it.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PlannerItemEditor(
     item: PersonalPlannerItem,

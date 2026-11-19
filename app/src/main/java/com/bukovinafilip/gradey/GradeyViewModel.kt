@@ -176,6 +176,16 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         mutableState.update { it.copy(tab = AppTab.AI, aiEntry = request, backStack = nextBackStack(it, AppTab.AI)) }
     }
 
+    /** Opens Gradey AI on a new chat, without a requested action. */
+    fun openAI() {
+        mutableState.update { it.copy(tab = AppTab.AI, aiEntry = null, backStack = nextBackStack(it, AppTab.AI)) }
+    }
+
+    /** Marks consumed the request to open one subject, so returning to Marks shows the list. */
+    fun subjectHandled() {
+        mutableState.update { it.copy(focusedSubjectID = null) }
+    }
+
     fun openSubject(subjectID: String) {
         mutableState.update { it.copy(tab = AppTab.SUBJECTS, focusedSubjectID = subjectID, backStack = emptyList()) }
     }

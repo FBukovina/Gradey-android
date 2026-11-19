@@ -177,10 +177,10 @@ fun TimetableScreen(
     val selectedIsToday = !isPermanent && selectedLocalDate == today
     // The clock ticks every 30 s; only a change of the current lesson recomposes the list.
     val currentLessonIDs by remember(lessons, selectedIsToday) {
-        derivedStateOf {
+        derivedStateOf<Set<String>> {
             if (!selectedIsToday) emptySet() else {
                 val now = schoolTime.value.toLocalTime()
-                lessons.filter { it.isCurrentAt(now) }.mapTo(HashSet()) { it.id }
+                lessons.filter { it.isCurrentAt(now) }.mapTo(HashSet<String>()) { it.id }
             }
         }
     }

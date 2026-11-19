@@ -29,6 +29,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import com.bukovinafilip.gradey.ui.GradeyRadius
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.GradeyIcon
 import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.gradeyColors
@@ -185,236 +192,231 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
         showHelp = false
         showWatchAccess = false
     }
-    androidx.activity.compose.BackHandler(enabled = (state.isGuest && state.phase == AppPhase.SIGNED_OUT) || state.tab == AppTab.UPDATES || (state.phase == AppPhase.SIGNED_IN && state.tab != AppTab.TODAY)) {
-        if (state.isGuest && state.phase == AppPhase.SIGNED_OUT) model.continueAsGuest()
-        else if (state.tab == AppTab.UPDATES) model.select(AppTab.TODAY) else model.back()
+    androidx.activity.compose.BackHandler(
+        enabled = (state.isGuest && state.phase == AppPhase.SIGNED_OUT) || state.tab == AppTab.UPDATES ||
+            (state.phase == AppPhase.SIGNED_IN && (state.tab != AppTab.TODAY || state.backStack.isNotEmpty())),
+    ) {
+        if (state.isGuest && state.phase == AppPhase.SIGNED_OUT) model.continueAsGuest() else model.back()
     }
-    val timetableTabState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
-    val standard = Modifier.fillMaxSize().statusBarsPadding().padding(bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding())
-    com.bukovinafilip.gradey.ui.AuroraBackground(Modifier.fillMaxSize()) {
-    Box(Modifier.widthIn(max = 840.dp).fillMaxSize().align(Alignment.TopCenter)) {
-        if (state.tab == AppTab.UPDATES) {
-            com.bukovinafilip.gradey.updates.UpdateScreen(
-                state = updateState, onCheck = { scope.launch { updates.checkForUpdates() } },
-                onDownload = { scope.launch { updates.downloadNow() } },
-                onInstall = { scope.launch { updates.install(context) } },
-                onCancelDownload = { scope.launch { updates.cancelDownload() } },
-                onAutoCheckChange = { scope.launch { updates.setAutomaticChecks(it) } },
-                onAutoDownloadChange = { scope.launch { updates.setAutomaticDownloads(it) } },
-                onWifiOnlyChange = { scope.launch { updates.setWifiOnly(it) } },
-                onBack = { model.select(AppTab.TODAY) }, onOpenStore = { updates.openStore(context) },
-                modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding(),
-            )
-        } else if (!isValidAgeAttestation(ageAttestation)) {
-            WelcomeScreen(onComplete = ::acceptPrivacy)
-        } else if (!hasCompletedWelcome || reviewPrivacyChanges) {
-            PrivacyUpdateScreen(onAccept = { acceptPrivacy(requireNotNull(ageAttestation)) },
-                onClose = if (hasCompletedWelcome) ({ reviewPrivacyChanges = false }) else null)
-        } else when (state.phase) {
-            AppPhase.CHECKING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { androidx.compose.material3.CircularProgressIndicator() }
-            AppPhase.SIGNED_OUT -> GradeyIdLoginScreen(
-                onOpenHelp = { showHelp = true },
-                onContinueWithoutAccount = model::continueAsGuest,
-                appleSignInAvailable = state.appleSignInAvailable,
-                onAppleSignIn = {
-                    scope.launch {
-                        googleLoading = true
-                        try { launchAppleSignIn(context, model.beginAppleSignIn()) }
-                        catch (error: kotlinx.coroutines.CancellationException) { throw error }
-                        catch (error: Exception) {
-                            model.cancelAppleSignIn()
-                            model.showError(safeError(error, context))
-                        } finally { googleLoading = false }
+    val openAI = { model.openAI() }
+    val openSettings = { model.select(AppTab.ACCOUNT) }
+    val updateScreen: @Composable () -> Unit = {
+        com.bukovinafilip.gradey.updates.UpdateScreen(
+            state = updateState, onCheck = { scope.launch { updates.checkForUpdates() } },
+            onDownload = { scope.launch { updates.downloadNow() } },
+            onInstall = { scope.launch { updates.install(context) } },
+            onCancelDownload = { scope.launch { updates.cancelDownload() } },
+            onAutoCheckChange = { scope.launch { updates.setAutomaticChecks(it) } },
+            onAutoDownloadChange = { scope.launch { updates.setAutomaticDownloads(it) } },
+            onWifiOnlyChange = { scope.launch { updates.setWifiOnly(it) } },
+            onBack = model::back, onOpenStore = { updates.openStore(context) },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
+    val signedIn = state.phase == AppPhase.SIGNED_IN && hasCompletedWelcome && !reviewPrivacyChanges
+    val updateReady = updateState.phase == com.bukovinafilip.gradey.updates.UpdatePhase.READY && state.tab != AppTab.UPDATES
+    Box(Modifier.fillMaxSize()) {
+        if (signedIn) com.bukovinafilip.gradey.ui.AuroraBackground(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    DestinationHost(state.shellDestination(), scopeKey = "${state.account?.id}:${state.school?.cacheScope}") { tab ->
+                        when (tab) {
+                            AppTab.TODAY -> TodayScreen(
+                                dashboard = state.dashboard, timetable = state.currentTimetable,
+                                isRefreshing = state.loading, onRefresh = model::refresh, onOpenAI = openAI, onOpenSettings = openSettings,
+                                onOpenMarks = { model.select(AppTab.SUBJECTS) }, onOpenTimetable = { model.select(AppTab.TIMETABLE) },
+                                onOpenSubject = model::openSubject,
+                                mealMenu = state.mealMenu, hasMealAccount = state.hasMealAccount && showMealsTab, onOpenMeals = { model.select(AppTab.STRAVACZ) },
+                                linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID, onReconnectAccount = model::reconnectAccount,
+                                insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
+                                onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = { model.openPlanner(itemID = it) },
+                            )
+                            AppTab.SUBJECTS -> SubjectsScreen(
+                                subjects = state.dashboard.marksResponse.subjects, absence = state.absence,
+                                isRefreshing = state.loading, onRefresh = model::refresh, onOpenAI = openAI, onOpenSettings = openSettings,
+                                onAskAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.SUBJECT, subjectID = it)) },
+                                initialSubjectID = state.focusedSubjectID, onInitialSubjectHandled = model::subjectHandled,
+                                insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
+                                absenceOverrides = state.absenceOverrides, errorMessage = state.error,
+                            )
+                            AppTab.ABSENCE -> AbsenceScreen(
+                                response = state.absence, isRefreshing = state.loading, onRefresh = model::refresh, onOpenAI = openAI, onOpenSettings = openSettings,
+                                onPlanAbsence = { model.select(AppTab.PLANNER) },
+                                rawResponse = state.rawAbsence, overrideScope = state.absenceOverrideScope, overrides = state.absenceOverrides,
+                                availableSubjects = state.dashboard.marksResponse.subjects, correctionTimetable = state.correctionTimetable,
+                                correctionError = state.correctionError, onSaveOverride = model::saveAbsenceOverride,
+                                onRestoreOverride = model::restoreAbsenceOverride, onResetOverrides = model::resetAbsenceOverrides,
+                                onLoadCorrectionWeek = model::loadCorrectionWeek,
+                            )
+                            AppTab.TIMETABLE -> {
+                                val permanent = state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT
+                                TimetableScreen(
+                                    week = if (permanent) state.permanentTimetable else state.timetable,
+                                    isRefreshing = if (permanent) state.permanentTimetableLoading else state.loading,
+                                    onRefresh = { if (permanent) model.refreshPermanentTimetable() else model.changeWeek(state.viewedWeek) },
+                                    onChangeWeek = { model.changeWeek(it) }, onOpenAI = openAI, onOpenSettings = openSettings,
+                                    requestedWeek = state.viewedWeek, onOpenPlanner = { model.openPlanner() },
+                                    onPlanLesson = { lesson, day -> state.school?.cacheScope?.let { model.openPlanner(item = com.bukovinafilip.gradey.domain.PersonalPlanner.linked(lesson, day, it)) } },
+                                    kind = state.timetableKind,
+                                    onChangeKind = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) model::changeTimetableKind else null,
+                                    errorMessage = if (permanent) state.permanentTimetableError else null,
+                                    plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
+                                    onOpenPlannerItem = { model.openPlanner(itemID = it) },
+                                )
+                            }
+                            AppTab.STRAVACZ -> com.bukovinafilip.gradey.feature.stravacz.StravaCZRoute(
+                                model.graph.stravaCZRepository, onOpenAI = openAI, onOpenSettings = openSettings, isDemo = state.isDemo,
+                            )
+                            AppTab.PLANNER -> com.bukovinafilip.gradey.feature.absence.AbsencePlannerScreen(
+                                response = state.absence, timetable = state.timetable, plans = state.plans,
+                                isRefreshing = state.loading, onRefresh = { model.changeWeek(state.viewedWeek) },
+                                onClose = model::back, onWeekChange = { model.changeWeek(it.toString()) },
+                                onSavePlan = model::savePlan, onRemovePlan = model::removePlan, requestedWeek = state.viewedWeek,
+                            )
+                            AppTab.PERSONAL_PLANNER -> com.bukovinafilip.gradey.feature.planner.PlannerRoute(
+                                repository = model.plannerRepository, onBack = model::back,
+                                subjects = state.school?.cacheScope?.let { schoolScope -> state.dashboard.marksResponse.subjects.map {
+                                    com.bukovinafilip.gradey.model.PlannerSubjectReference(schoolScope, it.subjectInfo.id, it.subjectInfo.name, it.subjectInfo.abbrev)
+                                } }.orEmpty(),
+                                initialItem = state.plannerDraft, initialItemID = state.plannerItemID, focusedDay = state.plannerDay,
+                                onFindNextLesson = model::findNextPlannerLesson, onItemsChanged = model::plannerChanged,
+                                onAskTestAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.TEST, eventID = it)) },
+                                calendarMirror = if (state.isDemo) null else (context.applicationContext as GradeyApplication).plannerCalendarMirror,
+                                onInitialItemHandled = model::plannerEntryHandled,
+                            )
+                            AppTab.REPORT_CARD, AppTab.RECAP_LIST, AppTab.RECAP_STORY -> LaunchedEffect(tab) { model.back() }
+                            AppTab.ACCOUNT -> AccountScreen(
+                                onOpenWatch = { showWatchAccess = true },
+                                ageAttestation = ageAttestation, onOpenPrivacyChanges = { reviewPrivacyChanges = true },
+                                canteenAccounts = state.canteenAccounts, canteenSession = state.canteenSession,
+                                currentCanteenLinkID = state.currentCanteenLinkID, onLinkCanteen = model::linkCanteen,
+                                onUnlinkCanteen = model::unlinkCanteen, onOpenMeals = { model.select(AppTab.STRAVACZ) },
+                                isGuest = state.isGuest, onGuestSignIn = model::requestGradeySignIn,
+                                localSchoolName = state.school?.linkedAccountSchoolName ?: state.dashboard.user?.schoolName ?: state.school?.provider?.displayName,
+                                account = state.account, linkedAccounts = state.linkedAccounts, onSignOut = { model.signOut() },
+                                preferences = state.preferences, onPreferencesChange = { model.preferences(it) },
+                                onClose = model::back, onOpenSupport = { model.select(AppTab.SUPPORT) },
+                                students = state.school?.eduPage?.linkedStudents.orEmpty(), activeStudentID = state.school?.eduPage?.activeStudent?.id,
+                                onSelectStudent = { model.switchStudent(it) },
+                                activeAccountID = state.school?.linkedAccountID, onActivateAccount = { model.activateAccount(it.id) },
+                                onUnlinkAccount = { model.unlinkAccount(it.id) }, onAddAccount = model::addAccount,
+                                isLoading = state.loading, errorMessage = state.error, onRetry = { model.refresh() }, isDemo = state.isDemo,
+                                liveSignInAvailable = liveSignInAvailable || state.appleSignInAvailable,
+                                versionName = BuildConfig.VERSION_NAME, versionCode = BuildConfig.VERSION_CODE,
+                                onOpenUpdates = { model.select(AppTab.UPDATES) },
+                                onExportData = if (state.isDemo) null else ({ exportLauncher.launch("gradey-account-data.json") }),
+                                onDeleteAccount = if (state.isDemo) null else ({ model.deleteAccount() }),
+                                plannerRemindersEnabled = plannerRemindersEnabled,
+                                onPlannerRemindersChange = { enabled ->
+                                    appPreferences.edit().putBoolean("plannerReminders", enabled).apply()
+                                    plannerRemindersEnabled = enabled
+                                    if (enabled && android.os.Build.VERSION.SDK_INT >= 33 && !canNotify(context)) notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                },
+                                onUpdateProfile = model::updateProfile, onReconnectAccount = model::reconnectAccount,
+                                onAccountNotificationsChange = model::accountNotifications,
+                                showMealsTab = showMealsTab,
+                                onShowMealsTabChange = { showMealsTab = it; appPreferences.edit().putBoolean("showMealsTab", it).apply() },
+                                appLanguage = appLanguage,
+                                onLanguageChange = { AppLanguages.select(context as MainActivity, it) },
+                                onOpenPrivacy = { uriHandler.openUri(PrivacyUrl) }, onOpenTerms = { uriHandler.openUri(TermsUrl) },
+                                onOpenHelp = { showHelp = true },
+                                onNotificationSettings = {
+                                    if (android.os.Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                                        notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    } else context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName))
+                                },
+                            )
+                            AppTab.SUPPORT -> SupportScreen(state.account?.id, state.isDemo, onBack = model::back)
+                            AppTab.AI -> if (state.isGuest) GuestCloudGate(model::requestGradeySignIn, onClose = model::back)
+                            else com.bukovinafilip.gradey.feature.ai.GradeyAIRoute(
+                                model.graph.schoolRepository, onClose = model::back, gradeyAccountID = state.account?.id, isDemo = state.isDemo,
+                                historyRepository = model.graph.historyRepository, schoolAccountKey = state.school?.cacheScope,
+                                gradeyAuthRepository = model.graph.gradeyAuthRepository, plannerItems = state.personalPlannerItems,
+                                insightStore = model.graph.schoolInsightStore,
+                                initialAction = state.aiEntry?.action, initialSubjectID = state.aiEntry?.subjectID,
+                                initialEventID = state.aiEntry?.eventID, initialWeek = state.aiEntry?.week, initialRequestKey = state.aiEntry?.key,
+                                onUpgrade = { model.select(AppTab.SUPPORT) },
+                            )
+                            AppTab.UPDATES -> updateScreen()
+                        }
                     }
-                },
-                isLoading = state.loading || googleLoading,
-                onGoogleSignIn = {
-                    scope.launch {
-                        googleLoading = true
-                        try { val identity = googleIdentity(context); model.signIn(identity.idToken, identity.displayName) }
-                        catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                        catch (_: androidx.credentials.exceptions.GetCredentialCancellationException) { }
-                        catch (e: Exception) { model.showError(safeError(e, context)) }
-                        finally { googleLoading = false }
-                    }
-                },
-                onTestingBypass = { model.demo() },
-                onOpenUpdates = { model.select(AppTab.UPDATES) },
-                isConfigured = liveSignInAvailable,
-                errorMessage = state.error,
-                modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()),
-            )
-            AppPhase.NEEDS_SCHOOL -> if (state.loginStep != null) com.bukovinafilip.gradey.feature.login.SchoolVerificationScreen(
-                onOpenHelp = { showHelp = true },
-                step = state.loginStep!!, isLoading = state.loading, errorMessage = state.error,
-                onSubmitCode = { model.submitCode(it) }, onCheckApproval = { model.checkApproval() },
-                onResend = { model.resendApproval() }, onSelectStudent = { model.selectStudent(it) }, onBack = model::cancelVerification,
-                modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()),
-            ) else SchoolLoginScreen(
-                onOpenHelp = { showHelp = true },
-                isLoading = state.loading, onLogin = model::login,
-                modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()),
-                availableProviders = com.bukovinafilip.gradey.model.SchoolProvider.entries,
-                initialProvider = state.reconnectingAccount?.provider,
-                initialSchoolURL = state.reconnectingAccount?.baseURL,
-                isReconnecting = state.reconnectingAccount != null,
-                directorySchools = state.directorySchools, directoryLoading = state.directoryLoading,
-                directoryError = state.directoryError, onLoadDirectory = model::loadSchoolDirectory,
-                accountPicker = { if (state.reconnectingAccount == null) SchoolAccountSwitcher(state, model::activateAccount, model::reconnectAccount) },
-                errorMessage = state.error, onBack = if (state.school != null) model::back else ({ model.signOut() }),
-            )
-            AppPhase.SIGNED_IN -> {
-                when (state.tab) {
-                    AppTab.TODAY -> TodayScreen(
-                        onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = { model.openPlanner(itemID = it) },
-                        onStudyPrioritiesAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.PRIORITIES)) },
-                        onWeekSummaryAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.WEEK, week = state.currentTimetable?.weekStart)) },
-                        insightState = state.insightState, plannerItems = state.personalPlannerItems,
-                        schoolScope = state.school?.cacheScope, onOpenAttention = model::openAttention,
-                        dashboard = state.dashboard, absence = state.absence, timetable = state.currentTimetable,
-                        isRefreshing = state.loading, onRefresh = { model.refresh() },
-                        onOpenAccount = { model.select(AppTab.ACCOUNT) }, onOpenGradeyTools = { model.select(AppTab.TOOLS) },
-                        onOpenMarks = { model.select(AppTab.SUBJECTS) }, onOpenSubject = model::openSubject, onOpenAbsence = { model.select(AppTab.ABSENCE) },
-                        onOpenTimetable = { model.select(AppTab.TIMETABLE) }, modifier = Modifier.fillMaxSize(),
-                        mealMenu = state.mealMenu, hasMealAccount = state.hasMealAccount && showMealsTab,
-                        onOpenMeals = { model.select(AppTab.STRAVACZ) },
-                        linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID,
-                        onSelectAccount = { account -> if (account.status == "active") model.activateAccount(account.id) else model.reconnectAccount(account) },
-                        hasLocalAbsenceAdjustments = state.absenceOverrides.isNotEmpty(),
-                    )
-                    AppTab.SUBJECTS -> SubjectsScreen(
-                        insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
-                        onAskTestAI = { subjectID, eventID -> model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.TEST, subjectID = subjectID, eventID = eventID)) },
-                        initialSubjectID = state.focusedSubjectID,
-                        onAskAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.SUBJECT, subjectID = it)) },
-                        subjects = state.dashboard.marksResponse.subjects, absence = state.absence, gradeTrends = state.history,
-                        predictSubjectAverage = model.graph.schoolRepository::predictSubjectAverage,
-                        isRefreshing = state.loading, onRefresh = { model.refresh() },
-                        onOpenAccount = { model.select(AppTab.ACCOUNT) }, onOpenGradeyTools = { model.select(AppTab.TOOLS) },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    AppTab.ABSENCE -> AbsenceScreen(
-                        rawResponse = state.rawAbsence, overrideScope = state.absenceOverrideScope, overrides = state.absenceOverrides,
-                        availableSubjects = state.dashboard.marksResponse.subjects, correctionTimetable = state.correctionTimetable,
-                        correctionError = state.correctionError, onSaveOverride = model::saveAbsenceOverride,
-                        onRestoreOverride = model::restoreAbsenceOverride, onResetOverrides = model::resetAbsenceOverrides,
-                        onLoadCorrectionWeek = model::loadCorrectionWeek,
-                        response = state.absence, studentName = state.dashboard.user?.fullName ?: stringResource(R.string.app_student),
-                        isRefreshing = state.loading, onRefresh = { model.refresh() },
-                        onOpenAccount = { model.select(AppTab.ACCOUNT) }, onOpenGradeyTools = { model.select(AppTab.TOOLS) },
-                        modifier = Modifier.fillMaxSize(), onPlanAbsence = { model.select(AppTab.PLANNER) },
-                    )
-                    AppTab.TIMETABLE -> timetableTabState.SaveableStateProvider(
-                        "timetable:${state.account?.id}:${state.school?.cacheScope}:${state.viewedWeek}:${state.timetableKind}",
+                    Column(
+                        Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                            .then(if (state.tab.kind == DestinationKind.FULL_SCREEN) Modifier.navigationBarsPadding() else Modifier)
+                            .padding(horizontal = GradeySpacing.md, vertical = GradeySpacing.sm),
+                        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
                     ) {
-                        TimetableScreen(
-                            plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
-                            onOpenPlannerItem = { model.openPlanner(itemID = it) },
-                            errorMessage = if (state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT) state.permanentTimetableError else null,
-                            kind = state.timetableKind,
-                            onChangeKind = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) model::changeTimetableKind else null,
-                            onAskWeekAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.WEEK, week = it)) },
-                            onOpenPlanner = { model.openPlanner() },
-                            onPlanDay = { model.openPlanner(day = it.date?.take(10)) },
-                            onPlanLesson = { lesson, day -> state.school?.cacheScope?.let { model.openPlanner(item = com.bukovinafilip.gradey.domain.PersonalPlanner.linked(lesson, day, it)) } },
-                            week = if (state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT) state.permanentTimetable else state.timetable,
-                            isRefreshing = if (state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT) state.permanentTimetableLoading else state.loading,
-                            requestedWeek = state.viewedWeek,
-                            onRefresh = { if (state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT) model.refreshPermanentTimetable() else model.changeWeek(state.viewedWeek) },
-                            onChangeWeek = { model.changeWeek(it) },
-                            onOpenAccount = { model.select(AppTab.ACCOUNT) }, onOpenGradeyTools = { model.select(AppTab.TOOLS) },
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        if (updateReady && state.tab.kind != DestinationKind.FULL_SCREEN) UpdateReadyBanner(updateState.release?.versionName.orEmpty()) { model.select(AppTab.UPDATES) }
+                        if (state.tab != AppTab.ACCOUNT && state.tab != AppTab.UPDATES) androidx.compose.material3.SnackbarHost(snackbar) { data -> GradeySnackbar(data) }
                     }
-                    AppTab.PLANNER -> com.bukovinafilip.gradey.feature.absence.AbsencePlannerScreen(
-                        response = state.absence, timetable = state.timetable, plans = state.plans,
-                        isRefreshing = state.loading, onRefresh = { model.changeWeek(state.viewedWeek) },
-                        onClose = { model.select(AppTab.TODAY) }, onWeekChange = { model.changeWeek(it.toString()) },
-                        onSavePlan = model::savePlan, onRemovePlan = model::removePlan, modifier = Modifier.fillMaxSize(), requestedWeek = state.viewedWeek,
-                    )
-                    AppTab.STRAVACZ -> com.bukovinafilip.gradey.feature.stravacz.StravaCZRoute(model.graph.stravaCZRepository, standard, isDemo = state.isDemo)
-                    AppTab.ACCOUNT -> AccountScreen(
-                        onOpenWatch = { showWatchAccess = true },
-                        ageAttestation = ageAttestation, onOpenPrivacyChanges = { reviewPrivacyChanges = true },
-                        canteenAccounts = state.canteenAccounts, canteenSession = state.canteenSession,
-                        currentCanteenLinkID = state.currentCanteenLinkID, onLinkCanteen = model::linkCanteen,
-                        onUnlinkCanteen = model::unlinkCanteen, onOpenMeals = { model.select(AppTab.STRAVACZ) },
-                        isGuest = state.isGuest, onGuestSignIn = model::requestGradeySignIn,
-                        localSchoolName = state.school?.linkedAccountSchoolName ?: state.dashboard.user?.schoolName ?: state.school?.provider?.displayName,
-                        account = state.account, linkedAccounts = state.linkedAccounts, onSignOut = { model.signOut() },
-                        modifier = Modifier.fillMaxSize(), preferences = state.preferences, onPreferencesChange = { model.preferences(it) },
-                        onClose = model::back, onOpenSupport = { model.select(AppTab.SUPPORT) },
-                        students = state.school?.eduPage?.linkedStudents.orEmpty(), activeStudentID = state.school?.eduPage?.activeStudent?.id,
-                        onSelectStudent = { model.switchStudent(it) },
-                        activeAccountID = state.school?.linkedAccountID, onActivateAccount = { model.activateAccount(it.id) },
-                        onUnlinkAccount = { model.unlinkAccount(it.id) }, onAddAccount = model::addAccount,
-                        isLoading = state.loading, errorMessage = state.error, onRetry = { model.refresh() }, isDemo = state.isDemo,
-                        liveSignInAvailable = liveSignInAvailable || state.appleSignInAvailable,
-                        versionName = BuildConfig.VERSION_NAME,
-                        onOpenUpdates = { model.select(AppTab.UPDATES) },
-                        onExportData = if (state.isDemo) null else ({ exportLauncher.launch("gradey-account-data.json") }),
-                        onDeleteAccount = if (state.isDemo) null else ({ model.deleteAccount() }),
-                        plannerRemindersEnabled = plannerRemindersEnabled,
-                        onPlannerRemindersChange = { enabled ->
-                            appPreferences.edit().putBoolean("plannerReminders", enabled).apply()
-                            plannerRemindersEnabled = enabled
-                            if (enabled && android.os.Build.VERSION.SDK_INT >= 33 && !canNotify(context)) notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                        },
-                        onUpdateProfile = model::updateProfile, onReconnectAccount = model::reconnectAccount,
-                        onAccountNotificationsChange = model::accountNotifications,
-                        showMealsTab = showMealsTab,
-                        onShowMealsTabChange = { showMealsTab = it; appPreferences.edit().putBoolean("showMealsTab", it).apply() },
-                        appLanguage = appLanguage,
-                        onLanguageChange = { AppLanguages.select(context as MainActivity, it) },
-                        onOpenPrivacy = { uriHandler.openUri(PrivacyUrl) }, onOpenTerms = { uriHandler.openUri(TermsUrl) },
-                        onOpenHelp = { showHelp = true },
-                        onNotificationSettings = {
-                            if (android.os.Build.VERSION.SDK_INT >= 33 && androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                                notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                            } else context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName))
-                        },
-                    )
-                    AppTab.PERSONAL_PLANNER -> com.bukovinafilip.gradey.feature.planner.PlannerRoute(
-                        calendarMirror = if (state.isDemo) null else (context.applicationContext as GradeyApplication).plannerCalendarMirror,
-                        onAskTestAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.TEST, eventID = it)) },
-                        repository = model.plannerRepository,
-                        subjects = state.school?.cacheScope?.let { schoolScope -> state.dashboard.marksResponse.subjects.map {
-                            com.bukovinafilip.gradey.model.PlannerSubjectReference(schoolScope, it.subjectInfo.id, it.subjectInfo.name, it.subjectInfo.abbrev)
-                        } }.orEmpty(),
-                        initialItem = state.plannerDraft, initialItemID = state.plannerItemID, focusedDay = state.plannerDay,
-                        onInitialItemHandled = model::plannerEntryHandled,
-                        onFindNextLesson = model::findNextPlannerLesson, onItemsChanged = model::plannerChanged,
-                        onBack = { model.select(AppTab.TIMETABLE) }, modifier = standard,
-                    )
-                    AppTab.HISTORY -> HistoryScreen(state, { model.select(AppTab.TOOLS) }, standard)
-                    AppTab.SUPPORT -> SupportScreen(state.account?.id, state.isDemo, standard)
-                    AppTab.AI -> if (state.isGuest) GuestCloudGate(model::requestGradeySignIn, standard)
-                    else com.bukovinafilip.gradey.feature.ai.GradeyAIRoute(
-                        model.graph.schoolRepository, standard, gradeyAccountID = state.account?.id, isDemo = state.isDemo,
-                        historyRepository = model.graph.historyRepository, schoolAccountKey = state.school?.cacheScope,
-                        gradeyAuthRepository = model.graph.gradeyAuthRepository, plannerItems = state.personalPlannerItems,
-                        insightStore = model.graph.schoolInsightStore,
-                        initialAction = state.aiEntry?.action, initialSubjectID = state.aiEntry?.subjectID,
-                        initialEventID = state.aiEntry?.eventID, initialWeek = state.aiEntry?.week, initialRequestKey = state.aiEntry?.key,
-                    )
-                    AppTab.TOOLS -> ToolsScreen(state.isDemo, model::select, standard)
-                    AppTab.UPDATES -> Unit // Available above, including before sign-in.
                 }
-                if (state.tab != AppTab.PLANNER && state.tab != AppTab.ACCOUNT) GradeyBottomNavigation(state.tab, model::select, Modifier.align(Alignment.BottomCenter), showMealsTab)
+                BottomBarVisibility(visible = state.tab.kind != DestinationKind.FULL_SCREEN) {
+                    GradeyNavigationBar(state.rootTab, showMealsTab, model::select)
+                }
             }
-        }
-        if (updateState.phase == com.bukovinafilip.gradey.updates.UpdatePhase.READY && state.tab != AppTab.UPDATES) {
-            Surface(
-                onClick = { model.select(AppTab.UPDATES) }, shape = RoundedCornerShape(16.dp),
-                color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 16.dp, end = 16.dp,
-                    bottom = if (state.phase == AppPhase.SIGNED_IN) 112.dp else 32.dp),
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    GradeyIcon(HugeIcons.Download04, size = 20.dp, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary)
-                    Text(stringResource(R.string.app_update_banner, updateState.release?.versionName.orEmpty()), modifier = Modifier.weight(1f), style = com.bukovinafilip.gradey.ui.GradeyType.subheadlineBold)
-                }
+        } else com.bukovinafilip.gradey.ui.SettingsBackground(Modifier.fillMaxSize()) {
+            when {
+                state.tab == AppTab.UPDATES -> updateScreen()
+                !isValidAgeAttestation(ageAttestation) -> WelcomeScreen(onComplete = ::acceptPrivacy)
+                !hasCompletedWelcome || reviewPrivacyChanges -> PrivacyUpdateScreen(
+                    onAccept = { acceptPrivacy(requireNotNull(ageAttestation)) },
+                    onClose = if (hasCompletedWelcome) ({ reviewPrivacyChanges = false }) else null,
+                )
+                state.phase == AppPhase.SIGNED_OUT -> GradeyIdLoginScreen(
+                    onOpenHelp = { showHelp = true },
+                    onContinueWithoutAccount = model::continueAsGuest,
+                    appleSignInAvailable = state.appleSignInAvailable,
+                    onAppleSignIn = {
+                        scope.launch {
+                            googleLoading = true
+                            try { launchAppleSignIn(context, model.beginAppleSignIn()) }
+                            catch (error: kotlinx.coroutines.CancellationException) { throw error }
+                            catch (error: Exception) {
+                                model.cancelAppleSignIn()
+                                model.showError(safeError(error, context))
+                            } finally { googleLoading = false }
+                        }
+                    },
+                    isLoading = state.loading || googleLoading,
+                    onGoogleSignIn = {
+                        scope.launch {
+                            googleLoading = true
+                            try { val identity = googleIdentity(context); model.signIn(identity.idToken, identity.displayName) }
+                            catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                            catch (_: androidx.credentials.exceptions.GetCredentialCancellationException) { }
+                            catch (e: Exception) { model.showError(safeError(e, context)) }
+                            finally { googleLoading = false }
+                        }
+                    },
+                    onTestingBypass = { model.demo() },
+                    onOpenUpdates = { model.select(AppTab.UPDATES) },
+                    isConfigured = liveSignInAvailable,
+                    errorMessage = state.error,
+                    modifier = Modifier.fillMaxSize(),
+                )
+                state.phase == AppPhase.NEEDS_SCHOOL -> if (state.loginStep != null) com.bukovinafilip.gradey.feature.login.SchoolVerificationScreen(
+                    onOpenHelp = { showHelp = true },
+                    step = state.loginStep!!, isLoading = state.loading, errorMessage = state.error,
+                    onSubmitCode = { model.submitCode(it) }, onCheckApproval = { model.checkApproval() },
+                    onResend = { model.resendApproval() }, onSelectStudent = { model.selectStudent(it) }, onBack = model::cancelVerification,
+                    modifier = Modifier.fillMaxSize(),
+                ) else SchoolLoginScreen(
+                    onOpenHelp = { showHelp = true },
+                    isLoading = state.loading, onLogin = model::login,
+                    modifier = Modifier.fillMaxSize(),
+                    availableProviders = com.bukovinafilip.gradey.model.SchoolProvider.entries,
+                    initialProvider = state.reconnectingAccount?.provider,
+                    initialSchoolURL = state.reconnectingAccount?.baseURL,
+                    isReconnecting = state.reconnectingAccount != null,
+                    directorySchools = state.directorySchools, directoryLoading = state.directoryLoading,
+                    directoryError = state.directoryError, onLoadDirectory = model::loadSchoolDirectory,
+                    accountPicker = { if (state.reconnectingAccount == null) SchoolAccountSwitcher(state, model::activateAccount, model::reconnectAccount) },
+                    errorMessage = state.error, onBack = if (state.school != null) model::back else ({ model.signOut() }),
+                )
+                else -> com.bukovinafilip.gradey.ui.LoadingState(Modifier.align(Alignment.Center))
+            }
+            if (updateReady) Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(GradeySpacing.md)) {
+                UpdateReadyBanner(updateState.release?.versionName.orEmpty()) { model.select(AppTab.UPDATES) }
             }
         }
         if (showHelp) com.bukovinafilip.gradey.feature.support.SupportHelpDialog(
@@ -426,148 +428,42 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
             onDismiss = { showWatchAccess = false }, isDemo = state.isDemo,
             onAccessChanged = model::refreshCompanionVisibility,
         )
-        if (hasCompletedWelcome && !reviewPrivacyChanges && state.phase == AppPhase.SIGNED_IN && state.tab !in listOf(AppTab.ACCOUNT, AppTab.UPDATES)) androidx.compose.material3.SnackbarHost(
-            snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 104.dp, start = 12.dp, end = 12.dp),
-        )
-    }
     }
 }
 
+/** Tappable notice that a downloaded update is ready to install. */
 @Composable
-private fun ToolsScreen(isDemo: Boolean, onSelect: (AppTab) -> Unit, modifier: Modifier) {
-    com.bukovinafilip.gradey.ui.GradeyScreen(modifier.verticalScroll(rememberScrollState())) {
-        com.bukovinafilip.gradey.ui.GradeyHero(stringResource(R.string.app_tools), if (isDemo) stringResource(R.string.app_tools_demo) else stringResource(R.string.app_tools_subtitle))
-        com.bukovinafilip.gradey.ui.GradeyCard(padding = androidx.compose.foundation.layout.PaddingValues(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            val entries = listOf(
-                Triple(AppTab.AI, stringResource(R.string.app_tools_ai), HugeIcons.Sparkles),
-                Triple(AppTab.PERSONAL_PLANNER, stringResource(R.string.app_tools_planner), HugeIcons.CheckList),
-                Triple(AppTab.PLANNER, stringResource(R.string.app_tools_absence), HugeIcons.CalendarRemove02),
-                Triple(AppTab.HISTORY, stringResource(R.string.app_tools_history), HugeIcons.ChartLineData01),
-                Triple(AppTab.STRAVACZ, stringResource(R.string.app_tools_meals), HugeIcons.Restaurant02),
-                Triple(AppTab.ACCOUNT, stringResource(R.string.app_tools_account), HugeIcons.Settings01),
-                Triple(AppTab.SUPPORT, stringResource(R.string.app_tools_support), HugeIcons.Favourite),
-                Triple(AppTab.UPDATES, stringResource(R.string.app_tools_updates), HugeIcons.Download04),
-            )
-            entries.forEachIndexed { index, (tab, detail, icon) ->
-                if (index > 0) com.bukovinafilip.gradey.ui.SettingsRowDivider(leadingInset = 16.dp + 34.dp + 12.dp)
-                com.bukovinafilip.gradey.ui.NavigationRow(icon, stringResource(tab.labelRes), detail, onClick = { onSelect(tab) }, modifier = Modifier.padding(horizontal = 16.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryScreen(state: GradeyState, onBack: () -> Unit, modifier: Modifier) {
-    com.bukovinafilip.gradey.ui.GradeyScreen(modifier.verticalScroll(rememberScrollState())) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            com.bukovinafilip.gradey.ui.GradeyIconButton(HugeIcons.ArrowLeft01, stringResource(R.string.app_back_tools), onBack, size = 44.dp, iconSize = 18.dp, tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface)
-            com.bukovinafilip.gradey.ui.GradeyHero(stringResource(R.string.app_history), stringResource(R.string.app_history_subtitle), Modifier.weight(1f))
-        }
-        if (state.loading) androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth())
-        if (state.history.isEmpty() && !state.loading) com.bukovinafilip.gradey.ui.GradeyCard {
-            com.bukovinafilip.gradey.ui.InfoRow(HugeIcons.ChartLineData01, stringResource(R.string.app_history), stringResource(R.string.app_history_empty), tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        state.history.forEach { trend ->
-            com.bukovinafilip.gradey.ui.GradeyCard {
-                Text(trend.subjectName, style = com.bukovinafilip.gradey.ui.GradeyType.headline)
-                com.bukovinafilip.gradey.ui.MetadataRow(stringResource(R.string.app_average_change, ""), String.format(androidx.compose.ui.platform.LocalConfiguration.current.locales[0], "%+.2f", trend.averageDelta))
-                Text(when {
-                    trend.markCountDelta > 0 -> stringResource(R.string.app_marks_added, trend.markCountDelta)
-                    trend.markCountDelta < 0 -> stringResource(R.string.app_marks_removed, kotlin.math.abs(trend.markCountDelta))
-                    else -> stringResource(R.string.app_marks_unchanged)
-                }, style = com.bukovinafilip.gradey.ui.GradeyType.footnote, color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-private val CoreTabs = listOf(AppTab.TODAY, AppTab.SUBJECTS, AppTab.ABSENCE, AppTab.TIMETABLE)
-private val MarksTabs = CoreTabs + AppTab.STRAVACZ
-
-/** Tab glyphs match the iOS asset catalog: sun, checkmark badge, calendar-remove, calendar, restaurant. */
-private fun AppTab.icon(): String = when (this) {
-    AppTab.TODAY -> HugeIcons.Sun03
-    AppTab.SUBJECTS -> HugeIcons.CheckmarkBadge02
-    AppTab.ABSENCE -> HugeIcons.CalendarRemove02
-    AppTab.TIMETABLE -> HugeIcons.Calendar03
-    AppTab.STRAVACZ -> HugeIcons.Restaurant02
-    AppTab.ACCOUNT -> HugeIcons.Settings01
-    AppTab.PLANNER -> HugeIcons.CalendarRemove02
-    AppTab.PERSONAL_PLANNER -> HugeIcons.CheckList
-    AppTab.HISTORY -> HugeIcons.ChartLineData01
-    AppTab.TOOLS, AppTab.AI -> HugeIcons.Sparkles
-    AppTab.SUPPORT -> HugeIcons.Favourite
-    AppTab.UPDATES -> HugeIcons.Download04
-}
-
-@Composable
-private fun GradeyBottomNavigation(
-    selectedTab: AppTab,
-    onSelect: (AppTab) -> Unit,
-    modifier: Modifier = Modifier,
-    showMealsTab: Boolean = true,
-) {
-    val visibleTabs = if (showMealsTab) MarksTabs else CoreTabs
-    val barHeight = com.bukovinafilip.gradey.ui.floatingNavigationBarHeight()
+private fun UpdateReadyBanner(versionName: String, onClick: () -> Unit) {
     val colors = androidx.compose.material3.MaterialTheme.colorScheme
-    Box(
-        modifier = modifier
-            .widthIn(max = 640.dp)
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = com.bukovinafilip.gradey.ui.FloatingNavigationBottomMargin),
+    val shape = RoundedCornerShape(GradeyRadius.md)
+    Row(
+        Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(shape).background(androidx.compose.material3.MaterialTheme.gradeyColors.secondaryGroupedBackground)
+            .border(1.dp, colors.primary.copy(alpha = 0.3f), shape).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .padding(GradeySpacing.lg),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth().height(barHeight),
-            shape = RoundedCornerShape(barHeight / 2),
-            color = colors.surface.copy(alpha = 0.96f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, colors.onSurface.copy(alpha = 0.08f)),
-            shadowElevation = 12.dp,
-        ) {
-            Row(
-                modifier = Modifier.padding(6.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                visibleTabs.forEach { tab ->
-                    BottomNavigationItem(tab = tab, selected = selectedTab == tab, onClick = { onSelect(tab) })
-                }
-            }
-        }
+        GradeyIcon(HugeIcons.Download04, size = 20.dp, tint = colors.primary)
+        Text(stringResource(R.string.app_update_banner, versionName), Modifier.weight(1f), style = GradeyType.subheadlineBold, color = colors.onSurface)
+        GradeyIcon(HugeIcons.ArrowRight01, size = 13.dp, tint = androidx.compose.material3.MaterialTheme.gradeyColors.secondaryLabel)
     }
 }
 
+/** Snackbar in Gradey type on the inverse surface, with a text action. */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.BottomNavigationItem(
-    tab: AppTab,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun GradeySnackbar(data: androidx.compose.material3.SnackbarData) {
     val colors = androidx.compose.material3.MaterialTheme.colorScheme
-    val foreground = if (selected) colors.primary else colors.onSurface
-    val isDark = androidx.compose.material3.MaterialTheme.gradeyColors.isDark
-    Surface(
-        modifier = Modifier.weight(1f).fillMaxHeight().semantics { this.selected = selected; role = androidx.compose.ui.semantics.Role.Tab },
-        onClick = onClick,
-        shape = RoundedCornerShape(100),
-        color = if (!selected) Color.Transparent else if (isDark) Color.Black.copy(alpha = 0.55f) else colors.primary.copy(alpha = 0.12f),
+    Row(
+        Modifier.widthIn(max = 520.dp).fillMaxWidth().clip(RoundedCornerShape(GradeyRadius.md)).background(colors.inverseSurface)
+            .padding(start = GradeySpacing.lg, end = GradeySpacing.sm, top = GradeySpacing.sm, bottom = GradeySpacing.sm),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            GradeyIcon(tab.icon(), size = 22.dp, tint = foreground, contentDescription = stringResource(tab.labelRes))
+        Text(data.visuals.message, Modifier.weight(1f).padding(vertical = GradeySpacing.sm), style = GradeyType.subheadline, color = colors.inverseOnSurface)
+        data.visuals.actionLabel?.let { label ->
             Text(
-                text = stringResource(tab.labelRes).replace("Timetable", "Time\u00adtable").replace("Absence", "Ab\u00adsence").replace("Docházka", "Do\u00adcház\u00adka").replace("Rozvrh", "Roz\u00advrh"),
-                color = foreground,
-                fontSize = 11.sp,
-                lineHeight = 13.sp,
-                style = androidx.compose.ui.text.TextStyle(hyphens = androidx.compose.ui.text.style.Hyphens.Auto),
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 3, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.padding(top = 3.dp),
+                label,
+                Modifier.clip(RoundedCornerShape(GradeyRadius.xs)).clickable(role = androidx.compose.ui.semantics.Role.Button) { data.dismiss() }
+                    .padding(horizontal = GradeySpacing.md, vertical = GradeySpacing.md),
+                style = GradeyType.subheadlineBold, color = colors.inversePrimary,
             )
         }
     }

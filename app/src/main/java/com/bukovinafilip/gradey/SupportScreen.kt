@@ -10,12 +10,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -28,8 +24,38 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalConfiguration
-import com.bukovinafilip.gradey.ui.GradeyHero
-import com.bukovinafilip.gradey.ui.GradeySectionCard
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.bukovinafilip.gradey.ui.EmptyState
+import com.bukovinafilip.gradey.ui.GradeyMetrics
+import com.bukovinafilip.gradey.ui.GradeyTonalButton
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.Hairline
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.InlineNotice
+import com.bukovinafilip.gradey.ui.LoadingState
+import com.bukovinafilip.gradey.ui.ModalHeader
+import com.bukovinafilip.gradey.ui.PlainLink
+import com.bukovinafilip.gradey.ui.SettingsActionRow
+import com.bukovinafilip.gradey.ui.SettingsBackground
+import com.bukovinafilip.gradey.ui.SettingsGroup
+import com.bukovinafilip.gradey.ui.SettingsIcon
+import com.bukovinafilip.gradey.ui.SettingsRowDivider
+import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.tabular
 import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.Offerings
@@ -71,8 +97,12 @@ private class SupportRequestOwner(var active: Boolean = true, var job: Job? = nu
 private class PurchaseCancelled : Exception()
 private class PurchasePending : Exception()
 
+/**
+ * Support Gradey: plans and one-off tips through Google Play, the active plan, and restoring
+ * purchases. A full-screen surface with its own background; [onBack] leaves it.
+ */
 @Composable
-internal fun SupportScreen(accountID: String?, isDemo: Boolean, modifier: Modifier = Modifier) {
+internal fun SupportScreen(accountID: String?, isDemo: Boolean, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val configuration = LocalConfiguration.current
@@ -136,84 +166,119 @@ internal fun SupportScreen(accountID: String?, isDemo: Boolean, modifier: Modifi
     }
 
     LaunchedEffect(owner, configured) { load() }
-    LazyColumn(modifier, verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg), contentPadding = PaddingValues(GradeySpacing.lg)) {
-        item { GradeyHero(resources.getString(R.string.app_support_title), resources.getString(R.string.app_support_subtitle)) }
-        if (!configured) item {
-            GradeySectionCard { Text(when {
-                isDemo -> resources.getString(R.string.app_support_demo)
-                accountID.isNullOrBlank() -> resources.getString(R.string.app_support_signin)
-                else -> resources.getString(R.string.app_support_unconfigured)
-            }) }
+    val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    fun purchase(item: com.revenuecat.purchases.Package) = action {
+        val info = suspendCoroutine<CustomerInfo> { continuation ->
+            Purchases.sharedInstance.purchaseWith(PurchaseParams.Builder(checkNotNull(activity), item).build(),
+                onError = { failure, cancelled -> continuation.resumeWithException(when {
+                    cancelled -> PurchaseCancelled()
+                    failure.code == PurchasesErrorCode.PaymentPendingError -> PurchasePending()
+                    else -> IllegalStateException(resources.getString(R.string.app_purchase_failed))
+                }) },
+                onSuccess = { _, info -> continuation.resume(info) })
         }
-        if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        error?.let { message -> item { GradeySectionCard {
-            Text(message, color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = ::load, enabled = !busy) { Text(resources.getString(R.string.app_retry)) }
-        } } }
-        message?.let { text -> item { Text(text) } }
-        entitlement?.let { active -> item {
-            GradeySectionCard(title = if (active.identifier == "support_plus") resources.getString(R.string.app_support_plus_active) else resources.getString(R.string.app_support_active)) {
-                active.expirationDate?.let { date ->
-                    Text(resources.getString(if (active.willRenew) R.string.app_renews else R.string.app_active_until, DateFormat.getDateInstance(DateFormat.MEDIUM, configuration.locales[0]).format(date)))
-                }
-                if (active.billingIssueDetectedAt != null) Text(resources.getString(R.string.app_billing_issue), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = ::manageSubscriptions, enabled = !busy) { Text(resources.getString(R.string.app_manage_subscription)) }
+        currentCoroutineContext().ensureActive()
+        if (owner.active) { customerInfo = info; message = resources.getString(R.string.app_purchase_thanks) }
+    }
+    fun restore() = action {
+        val info = revenueCatResult<CustomerInfo> { success, failure ->
+            Purchases.sharedInstance.restorePurchasesWith(onError = { failure(resources.getString(R.string.app_restore_error)) }, onSuccess = success)
+        }
+        currentCoroutineContext().ensureActive()
+        if (owner.active) {
+            customerInfo = info
+            message = if (info.entitlements.active.keys.any { it == "support" || it == "support_plus" }) resources.getString(R.string.app_restore_success)
+                else resources.getString(R.string.app_restore_empty)
+        }
+    }
+    SettingsBackground(modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.align(Alignment.TopCenter).widthIn(max = GradeyMetrics.contentMaxWidth).fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).testTag("supportTipsScreen"),
+            verticalArrangement = Arrangement.spacedBy(GradeySpacing.xl),
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = GradeySpacing.lg, bottom = GradeySpacing.xxl + bottomInset),
+        ) {
+            item(key = "header", contentType = "header") {
+                ModalHeader(stringResource(R.string.app_support_title), onBack, closeDescription = stringResource(R.string.app_dismiss))
             }
-        } }
-        if (configured && packages.isEmpty() && !busy && error == null) item {
-            Text(resources.getString(R.string.app_support_empty))
-        }
-        items(packages, key = { it.identifier }) { item ->
-            val subscription = item.product.type == ProductType.SUBS
-            GradeySectionCard(title = supportPackages[item.identifier]?.let(resources::getString) ?: item.product.title) {
-                Text(item.product.description)
+            item(key = "intro", contentType = "intro") {
+                Row(Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.xs), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                    SettingsIcon(HugeIcons.Favourite)
+                    Text(stringResource(R.string.app_support_subtitle), Modifier.weight(1f), style = GradeyType.subheadline, color = secondary)
+                }
+            }
+            if (!configured) item(key = "unavailable", contentType = "notice") {
+                InlineNotice(
+                    stringResource(when {
+                        isDemo -> R.string.app_support_demo
+                        accountID.isNullOrBlank() -> R.string.app_support_signin
+                        else -> R.string.app_support_unconfigured
+                    }),
+                    color = secondary, icon = HugeIcons.InformationCircle,
+                )
+            }
+            if (busy) item(key = "busy", contentType = "state") { LoadingState() }
+            error?.let { text -> item(key = "error", contentType = "notice") {
+                InlineNotice(text) { PlainLink(stringResource(R.string.app_retry), ::load, enabled = !busy, showsArrow = false) }
+            } }
+            message?.let { text -> item(key = "message", contentType = "notice") {
+                InlineNotice(text, color = MaterialTheme.colorScheme.primary, icon = HugeIcons.CheckmarkCircle02)
+            } }
+            entitlement?.let { active -> item(key = "entitlement", contentType = "group") {
+                SettingsGroup(title = stringResource(if (active.identifier == "support_plus") R.string.app_support_plus_active else R.string.app_support_active)) {
+                    Column(Modifier.padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.md), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                        active.expirationDate?.let { date ->
+                            Text(
+                                stringResource(if (active.willRenew) R.string.app_renews else R.string.app_active_until, DateFormat.getDateInstance(DateFormat.MEDIUM, configuration.locales[0]).format(date)),
+                                style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        if (active.billingIssueDetectedAt != null) InlineNotice(stringResource(R.string.app_billing_issue))
+                        PlainLink(stringResource(R.string.app_manage_subscription), ::manageSubscriptions, enabled = !busy)
+                    }
+                }
+            } }
+            if (configured && packages.isEmpty() && !busy && error == null) item(key = "empty", contentType = "state") {
+                EmptyState(stringResource(R.string.app_support_empty), icon = HugeIcons.Favourite)
+            }
+            items(packages, key = { it.identifier }, contentType = { "package" }) { item ->
+                val subscription = item.product.type == ProductType.SUBS
                 val period = item.product.period
                 val billing = if (subscription && period != null) {
                     val unit = period.unit.name.lowercase()
-                    resources.getQuantityString(when (unit) { "day" -> R.plurals.app_price_days; "week" -> R.plurals.app_price_weeks; "month" -> R.plurals.app_price_months; "year" -> R.plurals.app_price_years; else -> R.plurals.app_price_periods }, period.value, period.value, item.product.price.formatted)
+                    pluralStringResource(
+                        when (unit) { "day" -> R.plurals.app_price_days; "week" -> R.plurals.app_price_weeks; "month" -> R.plurals.app_price_months; "year" -> R.plurals.app_price_years; else -> R.plurals.app_price_periods },
+                        period.value, period.value, item.product.price.formatted,
+                    )
                 } else item.product.price.formatted
-                Text(billing)
-                Text(if (subscription) resources.getString(R.string.app_subscription_terms) else resources.getString(R.string.app_tip_terms),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (subscription && entitlement != null) {
-                    TextButton(onClick = ::manageSubscriptions, enabled = !busy) { Text(resources.getString(R.string.app_manage_plan)) }
-                } else {
-                    Button(enabled = !busy && activity != null && configured, onClick = {
-                        action {
-                            val info = suspendCoroutine<CustomerInfo> { continuation ->
-                                Purchases.sharedInstance.purchaseWith(PurchaseParams.Builder(checkNotNull(activity), item).build(),
-                                    onError = { failure, cancelled -> continuation.resumeWithException(when {
-                                        cancelled -> PurchaseCancelled()
-                                        failure.code == PurchasesErrorCode.PaymentPendingError -> PurchasePending()
-                                        else -> IllegalStateException(resources.getString(R.string.app_purchase_failed))
-                                    }) },
-                                    onSuccess = { _, info -> continuation.resume(info) })
-                            }
-                            currentCoroutineContext().ensureActive()
-                            if (owner.active) { customerInfo = info; message = resources.getString(R.string.app_purchase_thanks) }
+                Column(Modifier.fillMaxWidth()) {
+                    Hairline(Modifier.padding(horizontal = GradeySpacing.xs))
+                    Column(Modifier.padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.md), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                            Text(
+                                supportPackages[item.identifier]?.let { stringResource(it) } ?: item.product.title, Modifier.weight(1f),
+                                style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(billing, style = GradeyType.subheadlineBold.tabular(), color = MaterialTheme.colorScheme.primary)
                         }
-                    }) { Text(if (subscription) resources.getString(R.string.app_continue_play) else resources.getString(R.string.app_tip_play)) }
+                        if (item.product.description.isNotBlank()) Text(item.product.description, style = GradeyType.subheadline, color = secondary)
+                        Text(stringResource(if (subscription) R.string.app_subscription_terms else R.string.app_tip_terms), style = GradeyType.caption, color = secondary)
+                        if (subscription && entitlement != null) PlainLink(stringResource(R.string.app_manage_plan), ::manageSubscriptions, enabled = !busy)
+                        else GradeyTonalButton(
+                            stringResource(if (subscription) R.string.app_continue_play else R.string.app_tip_play), { purchase(item) },
+                            Modifier.fillMaxWidth(), enabled = !busy && activity != null && configured,
+                        )
+                    }
                 }
             }
-        }
-        if (configured) item {
-            GradeySectionCard(title = resources.getString(R.string.app_purchases)) {
-                Text(resources.getString(R.string.app_purchase_disclosure))
-                OutlinedButton(enabled = !busy, onClick = {
-                    action {
-                        val info = revenueCatResult<CustomerInfo> { success, failure ->
-                            Purchases.sharedInstance.restorePurchasesWith(onError = { failure(resources.getString(R.string.app_restore_error)) }, onSuccess = success)
-                        }
-                        currentCoroutineContext().ensureActive()
-                        if (owner.active) {
-                            customerInfo = info
-                            message = if (info.entitlements.active.keys.any { it == "support" || it == "support_plus" }) resources.getString(R.string.app_restore_success)
-                                else resources.getString(R.string.app_restore_empty)
-                        }
-                    }
-                }) { Text(resources.getString(R.string.app_restore)) }
-                TextButton(onClick = ::load, enabled = !busy) { Text(resources.getString(R.string.app_purchase_refresh)) }
-                TextButton(onClick = ::manageSubscriptions, enabled = !busy) { Text(resources.getString(R.string.app_manage_subscriptions)) }
+            if (configured) item(key = "purchases", contentType = "group") {
+                SettingsGroup(title = stringResource(R.string.app_purchases), footer = stringResource(R.string.app_purchase_disclosure)) {
+                    SettingsActionRow(HugeIcons.Reload, stringResource(R.string.app_restore), ::restore, enabled = !busy)
+                    SettingsRowDivider()
+                    SettingsActionRow(HugeIcons.Refresh04, stringResource(R.string.app_purchase_refresh), ::load, enabled = !busy)
+                    SettingsRowDivider()
+                    SettingsActionRow(HugeIcons.CreditCard, stringResource(R.string.app_manage_subscriptions), ::manageSubscriptions, enabled = !busy)
+                }
             }
         }
     }

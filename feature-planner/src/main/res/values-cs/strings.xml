@@ -81,4 +81,16 @@
     <string name="planner_calendar_choose">Vybrat kalendář</string>
     <string name="planner_calendar_pending">Plánovač je uložený. Některé změny kalendáře čekají na dokončení. Zkuste to znovu, až bude kalendář dostupný.</string>
     <string name="planner_calendar_retry">Zkusit změny kalendáře znovu</string>
+    <string name="planner_day">Den</string>
+    <string name="planner_done">Hotovo</string>
+    <string name="planner_due">Termín</string>
+    <string name="planner_empty_completed_message">Tady najdeš položky označené jako hotové.</string>
+    <string name="planner_empty_completed_title">Žádné dokončené položky</string>
+    <string name="planner_empty_message">Přidej úkol, test nebo poznámku tady nebo přímo u hodiny v rozvrhu. Nedokončené položky tu zůstanou i po termínu.</string>
+    <string name="planner_empty_title">Plánovač je prázdný</string>
+    <string name="planner_lesson">Hodina</string>
+    <string name="planner_lesson_permanent">Tato hodina je ze stálého rozvrhu. Nastav termín, pokud chceš položce přiřadit konkrétní datum.</string>
+    <string name="planner_next_lesson">Příští hodina</string>
+    <string name="planner_subject">Předmět</string>
+    <string name="planner_try_again">Zkusit znovu</string>
 </resources>
