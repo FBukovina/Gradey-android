@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +60,14 @@ import com.bukovinafilip.gradey.feature.absence.AbsenceScreen
 import com.bukovinafilip.gradey.feature.account.AccountScreen
 import com.bukovinafilip.gradey.feature.auth.GradeyIdLoginScreen
 import com.bukovinafilip.gradey.feature.login.SchoolLoginScreen
+import com.bukovinafilip.gradey.domain.RecapCalendar
+import com.bukovinafilip.gradey.feature.recap.MarksRecapTile
+import com.bukovinafilip.gradey.feature.recap.RecapListScreen
+import com.bukovinafilip.gradey.feature.recap.RecapOverview
+import com.bukovinafilip.gradey.feature.recap.RecapSource
+import com.bukovinafilip.gradey.feature.recap.RecapStore
+import com.bukovinafilip.gradey.feature.recap.RecapStoryScreen
+import com.bukovinafilip.gradey.feature.recap.TodayRecapTile
 import com.bukovinafilip.gradey.feature.subjects.MarksReportCardRow
 import com.bukovinafilip.gradey.feature.subjects.ReportCardScreen
 import com.bukovinafilip.gradey.feature.subjects.SubjectsScreen
@@ -136,6 +145,17 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     val scope = rememberCoroutineScope()
     val appPreferences = remember { context.getSharedPreferences("gradey-app-preferences", 0) }
     var ageAttestation by rememberSaveable { mutableStateOf(appPreferences.getString("ageAttestation", null)) }
+    // Gradey Recap: worked out from what is on screen plus the archive, off the main thread.
+    val recapStore = remember(model.graph) { RecapStore(model.graph.schoolRepository, appPreferences) }
+    val recapHidden by recapStore.hiddenIDs.collectAsStateWithLifecycle()
+    val recapSource = remember(state.dashboard.marksResponse.subjects, state.absence, state.school?.provider) {
+        // Report cards exist only in Bakaláři (iOS `supportsReportCards`).
+        RecapSource(state.dashboard.marksResponse.subjects, state.absence, state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI)
+    }
+    val recapSignedIn = state.phase == AppPhase.SIGNED_IN
+    val recapOverview by produceState(RecapOverview(), recapStore, recapSource, state.school?.cacheScope, recapSignedIn, RecapCalendar.today()) {
+        value = if (recapSignedIn) recapStore.overview(recapSource) else RecapOverview()
+    }
     var acceptedPrivacyRevision by remember { mutableStateOf(appPreferences.getInt("privacyRevision", 0)) }
     val hasCompletedWelcome = acceptedPrivacyRevision >= PrivacyRevision && isValidAgeAttestation(ageAttestation)
     var reviewPrivacyChanges by rememberSaveable { mutableStateOf(false) }
@@ -232,6 +252,9 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID, onReconnectAccount = model::reconnectAccount,
                                 insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
                                 onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = { model.openPlanner(itemID = it) },
+                                recapTile = recapOverview.featured(recapHidden)?.let { recap ->
+                                    { TodayRecapTile(recap, onOpen = { model.openRecapStory(recap.period.id) }, onHide = { recapStore.hide(recap.period.id) }) }
+                                },
                             )
                             AppTab.SUBJECTS -> SubjectsScreen(
                                 subjects = state.dashboard.marksResponse.subjects, absence = state.absence,
@@ -244,6 +267,7 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 reportCardRow = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) {
                                     { MarksReportCardRow(state.dashboard.marksResponse.subjects, onClick = model::openReportCard) }
                                 } else null,
+                                recapTile = recapOverview.latest?.let { recap -> { MarksRecapTile(recap, onClick = model::openRecapList) } },
                             )
                             AppTab.ABSENCE -> AbsenceScreen(
                                 response = state.absence, isRefreshing = state.loading, onRefresh = model::refresh, onOpenAI = openAI, onOpenSettings = openSettings,
@@ -295,7 +319,10 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 loadCached = model.graph.schoolRepository::loadCachedReportCards,
                                 load = model.graph.schoolRepository::loadReportCards, onBack = model::back,
                             )
-                            AppTab.RECAP_LIST, AppTab.RECAP_STORY -> LaunchedEffect(tab) { model.back() }
+                            AppTab.RECAP_LIST -> RecapListScreen(recapOverview, onOpen = model::openRecapStory, onBack = model::back)
+                            AppTab.RECAP_STORY -> RecapStoryScreen(
+                                store = recapStore, periodID = state.recapPeriodID, source = recapSource, onClose = model::back,
+                            )
                             AppTab.ACCOUNT -> AccountScreen(
                                 onOpenWatch = { showWatchAccess = true },
                                 ageAttestation = ageAttestation, onOpenPrivacyChanges = { reviewPrivacyChanges = true },

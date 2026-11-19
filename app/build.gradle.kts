@@ -93,6 +93,7 @@ dependencies {
     implementation(project(":feature-stravacz"))
     implementation(project(":feature-account"))
     implementation(project(":feature-ai"))
+    implementation(project(":feature-recap"))
     implementation(project(":feature-planner"))
     implementation(project(":feature-support"))
     implementation(project(":glance-widgets"))

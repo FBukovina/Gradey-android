@@ -262,7 +262,10 @@ class RecapTest {
     @Test fun demoDataFollowsTheClockAndFillsARecap() {
         val now = ZonedDateTime.of(2026, 11, 12, 16, 0, 0, 0, ZoneId.of("Europe/Prague"))
         val archive = RecapDemoData.archive(now)
-        assertThat(archive.marks.keys).containsExactly("2026/27-1")
+        // The semester before is there too, so demo mode has a recap to open even in early September.
+        assertThat(archive.marks.keys).containsExactly("2025/26-2", "2026/27-1")
+        assertThat(archive.absence.keys).containsExactly("2025/26-2", "2026/27-1")
+        assertThat(RecapDemoData.fixture(now).archive).isEqualTo(RecapArchive())
         val marks = archive.marks.getValue("2026/27-1").subjects.flatMap { it.marks }
         assertThat(marks.map { it.id }).containsNoDuplicates()
         marks.forEach { mark ->
@@ -280,6 +283,11 @@ class RecapTest {
         assertThat(quarter.moments).isNotEmpty()
         assertThat(quarter.personality).isNotNull()
         assertThat(quarter.absence!!.counts.total).isGreaterThan(0)
+
+        val early = RecapDemoData.archive(ZonedDateTime.of(2026, 9, 3, 9, 0, 0, 0, ZoneId.of("Europe/Prague")))
+        val earlySemesters = early.marks.map { (key, response) -> RecapSemester(RecapArchives.period(key)!!, response.subjects, early.absence[key]) }
+        assertThat(RecapCalendar.listed(LocalDate.of(2026, 9, 3)).map { RecapBuilder.build(it, RecapInput(earlySemesters, today = LocalDate.of(2026, 9, 3))) }.count { it.hasContent })
+            .isAtLeast(5)
 
         // In spring the autumn semester is there too, the way a device that had the app since September would have it.
         val spring = RecapDemoData.archive(ZonedDateTime.of(2027, 4, 12, 16, 0, 0, 0, ZoneId.of("Europe/Prague")))

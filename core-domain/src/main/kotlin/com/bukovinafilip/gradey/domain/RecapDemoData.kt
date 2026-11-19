@@ -42,11 +42,22 @@ object RecapDemoData {
         return Fixture(marks(start, end, seed = 3), absence(start, end, seed = 3), archive)
     }
 
-    /** Everything demo mode has for Recap: the current semester and, in spring, the autumn before it. */
+    /**
+     * Everything demo mode has for Recap: the current semester and the one before it, so there is a
+     * recap to open on any day of the year, even in the first weeks of September.
+     */
     fun archive(now: ZonedDateTime): RecapArchive {
         val fixture = fixture(now)
-        val key = RecapArchives.key(ReportCardPeriod.containing(now.withZoneSameInstant(RecapZone).toLocalDate()))
-        return RecapArchive(marks = fixture.archive.marks + (key to fixture.marks), absence = fixture.archive.absence + (key to fixture.absence))
+        val current = ReportCardPeriod.containing(now.withZoneSameInstant(RecapZone).toLocalDate())
+        var marks = fixture.archive.marks + (RecapArchives.key(current) to fixture.marks)
+        var absence = fixture.archive.absence + (RecapArchives.key(current) to fixture.absence)
+        if (current.semester == 1) {
+            val lastSpring = ReportCardPeriod(current.startYear - 1, 2)
+            val (start, end) = bounds(lastSpring)
+            marks = marks + (RecapArchives.key(lastSpring) to marks(start, end, seed = 5))
+            absence = absence + (RecapArchives.key(lastSpring) to absence(start, end, seed = 5))
+        }
+        return RecapArchive(marks, absence)
     }
 
     /** @param early,late mark texts the generator cycles through; a later half lets one subject come back. */

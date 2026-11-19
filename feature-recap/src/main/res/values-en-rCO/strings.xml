@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recap_absence_kicker">absence</string>
+    <plurals name="recap_absence_noun">
+        <item quantity="one">%d hour missed</item>
+        <item quantity="other">%d hours missed</item>
+    </plurals>
+    <string name="recap_absence_top_subject">most in %1$s (%2$s)</string>
+    <string name="recap_absence_zero_detail">100 % attendance. aura +1000</string>
+    <string name="recap_absence_zero_title">zero hours missed</string>
+    <string name="recap_average_band_average">mid, but there\'s room to grow</string>
+    <string name="recap_average_band_excellent">top form fr</string>
+    <string name="recap_average_band_good">solid. no panic needed</string>
+    <string name="recap_average_band_poor">rough stretch ngl. next one\'s yours</string>
+    <string name="recap_average_delta_better">%s better, W</string>
+    <string name="recap_average_delta_worse">%s worse</string>
+    <string name="recap_average_kicker">average</string>
+    <string name="recap_average_previous_month">last month %s</string>
+    <string name="recap_average_previous_report_card">last report card %s</string>
+    <string name="recap_close">close</string>
+    <string name="recap_hours">%s h</string>
+    <string name="recap_hub_empty">your first recap drops at the end of the month</string>
+    <string name="recap_intro_month">your %s recap</string>
+    <string name="recap_intro_ongoing">so far. it\'s not over yet</string>
+    <string name="recap_intro_quarter_1">your first quarter, recapped</string>
+    <string name="recap_intro_quarter_3">your third quarter, recapped</string>
+    <string name="recap_intro_semester_1">your first semester era</string>
+    <string name="recap_intro_semester_2">your second semester era</string>
+    <string name="recap_intro_spring_from_report_card">spring comes from your report card</string>
+    <string name="recap_intro_year">your %s in school</string>
+    <string name="recap_last_year_absence">%s absence</string>
+    <string name="recap_last_year_kicker">then vs. now</string>
+    <string name="recap_last_year_now">this semester so far</string>
+    <string name="recap_loading">cooking your recap…</string>
+    <plurals name="recap_marks_count">
+        <item quantity="one">%d mark</item>
+        <item quantity="other">%d marks</item>
+    </plurals>
+    <string name="recap_marks_headline">you racked up</string>
+    <string name="recap_marks_kicker">marks</string>
+    <plurals name="recap_marks_noun">
+        <item quantity="one">%d mark</item>
+        <item quantity="other">%d marks</item>
+    </plurals>
+    <string name="recap_marks_other">other marks %s</string>
+    <string name="recap_moment_busiest_title">most chaotic day</string>
+    <string name="recap_moment_comeback_title">comeback</string>
+    <string name="recap_moment_heaviest_title">heaviest mark</string>
+    <string name="recap_moment_heaviest_weight">weight %s</string>
+    <string name="recap_moment_streak_title">1s streak</string>
+    <plurals name="recap_moment_streak_value">
+        <item quantity="one">%d in a row</item>
+        <item quantity="other">%d in a row</item>
+    </plurals>
+    <string name="recap_moments_kicker">moments</string>
+    <string name="recap_next">next</string>
+    <string name="recap_ongoing">so far</string>
+    <string name="recap_pause">pause</string>
+    <string name="recap_period_quarter_1">q1 %s</string>
+    <string name="recap_period_quarter_3">q3 %s</string>
+    <string name="recap_period_year">year %s</string>
+    <string name="recap_personality_comeback_detail">slow start, strong finish. main character arc</string>
+    <string name="recap_personality_comeback_title">comeback</string>
+    <string name="recap_personality_kicker">your school personality</string>
+    <string name="recap_personality_last_minute_detail">most of it happened right at the end. classic</string>
+    <string name="recap_personality_last_minute_title">last-minute mode</string>
+    <string name="recap_personality_rollercoaster_detail">up, down, never boring</string>
+    <string name="recap_personality_rollercoaster_title">rollercoaster</string>
+    <string name="recap_personality_specialty_detail">this one\'s your thing. the rest is still loading</string>
+    <string name="recap_personality_specialty_title">specialty: %s</string>
+    <string name="recap_personality_steady_detail">no big swings. chill</string>
+    <string name="recap_personality_steady_title">steady</string>
+    <string name="recap_personality_straight_as_detail">the 1s just kept coming. you ate</string>
+    <string name="recap_personality_straight_as_title">1s machine</string>
+    <string name="recap_play">resume</string>
+    <string name="recap_previous">previous</string>
+    <string name="recap_progress">slide %1$d of %2$d</string>
+    <string name="recap_report_card_estimate">estimate if it closed today</string>
+    <string name="recap_report_card_final">from your report card</string>
+    <plurals name="recap_report_card_ones">
+        <item quantity="one">%d one</item>
+        <item quantity="other">%d ones</item>
+    </plurals>
+    <string name="recap_row_average">average %s</string>
+    <string name="recap_share">share</string>
+    <string name="recap_subject_detail">average %1$s · %2$s</string>
+    <string name="recap_summary_canceled">canceled lessons</string>
+    <string name="recap_summary_personality">personality</string>
+    <plurals name="recap_timetable_canceled_noun">
+        <item quantity="one">%d lesson canceled</item>
+        <item quantity="other">%d lessons canceled, W</item>
+    </plurals>
+    <string name="recap_timetable_kicker">timetable</string>
+    <string name="recap_timetable_lessons">lessons %s</string>
+    <string name="recap_timetable_substitutions">substitutions %s</string>
+    <string name="recap_timetable_top_canceled">most canceled: %s</string>
+    <string name="recap_timetable_zero">nothing got canceled. sad</string>
+    <string name="recap_today_hide">hide</string>
+    <string name="recap_today_title">%s just dropped</string>
+    <string name="recap_top_kicker">top subject</string>
+    <string name="recap_toughest_kicker">the final boss</string>
+    <string name="recap_toughest_note">everyone has a boss level</string>
+    <string name="recap_term">semester %1$s, %2$s</string>
+    <string name="recap_report_card_title">report card</string>
+    <plurals name="recap_report_card_borderline_count">
+        <item quantity="one">%d on the edge</item>
+        <item quantity="other">%d on the edge</item>
+    </plurals>
+    <string name="recap_absence_short_ok">excused</string>
+    <string name="recap_absence_short_unsolved">unresolved</string>
+    <string name="recap_absence_short_missed">unexcused</string>
+    <string name="recap_absence_short_late">late</string>
+    <string name="recap_back">back</string>
+</resources>

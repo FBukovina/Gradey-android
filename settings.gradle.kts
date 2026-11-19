@@ -74,6 +74,7 @@ include(
     ":feature-stravacz",
     ":feature-account",
     ":feature-ai",
+    ":feature-recap",
     ":glance-widgets",
     ":wear",
 )

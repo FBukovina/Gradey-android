@@ -4,6 +4,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performScrollToNode
 
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -231,6 +232,37 @@ class DemoAppFlowTest {
         androidx.test.espresso.Espresso.pressBack()
         compose.onNodeWithTag("reportCard").assertExists()
         assertEquals(AppTab.REPORT_CARD, state().tab)
+        androidx.test.espresso.Espresso.pressBack()
+        compose.waitUntil(5_000) { state().tab == AppTab.SUBJECTS }
+        compose.onNodeWithTag("subjectsList").assertExists()
+    }
+
+    @Test fun recapOpensFromMarksAsAStoryAndReturnsToTheList() {
+        // Demo mode carries sample semesters that follow the clock, so a recap is out on any day.
+        compose.onNodeWithTag("tab-subjects").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("marksRecapRow").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("subjectsList").performScrollToNode(hasTestTag("marksRecapRow"))
+        compose.onNodeWithTag("marksRecapRow").performClick()
+        compose.waitUntil(5_000) { state().tab == AppTab.RECAP_LIST }
+        compose.onNodeWithTag("recapHub").assertExists()
+        compose.onNodeWithTag("tab-subjects").assertIsSelected()
+
+        val recapRow = SemanticsMatcher("is a recap tile") { node ->
+            node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("recapRow-") == true
+        }
+        compose.onAllNodes(recapRow)[0].performClick()
+        compose.waitUntil(5_000) { state().tab == AppTab.RECAP_STORY }
+        val periodID = requireNotNull(state().recapPeriodID)
+        compose.onNodeWithTag("recapStory").assertExists()
+        compose.onNodeWithTag("recapCloseButton").assertExists()
+        // The story takes the whole screen: no bottom bar under it.
+        compose.onAllNodesWithTag("tab-subjects").assertCountEquals(0)
+        // Opening a recap marks it as seen, so Today stops offering it.
+        assertTrue(periodID in compose.activity.getSharedPreferences("gradey-app-preferences", 0).getStringSet("gradey.recap.hidden.v1", emptySet())!!)
+
+        compose.onNodeWithTag("recapCloseButton").performClick()
+        compose.waitUntil(5_000) { state().tab == AppTab.RECAP_LIST }
+        compose.onNodeWithTag("recapHub").assertExists()
         androidx.test.espresso.Espresso.pressBack()
         compose.waitUntil(5_000) { state().tab == AppTab.SUBJECTS }
         compose.onNodeWithTag("subjectsList").assertExists()
@@ -468,6 +500,8 @@ class DemoAppFlowTest {
                 restored.applyInitialDestination(requireNotNull(gradeyDestination(saved.getString("gradey.pendingLaunchLink"))))
             }
             compose.waitUntil(15_000) { restored.state.value.phase == AppPhase.SIGNED_IN && !restored.state.value.loading }
+            // The pending route is applied right after loading ends; this thread can read the state in between.
+            compose.waitUntil(5_000) { restored.state.value.plannerDraft != null }
             assertEquals(title, restored.state.value.plannerDraft?.title)
             assertEquals(com.bukovinafilip.gradey.model.PlannerItemType.TEST, restored.state.value.plannerDraft?.type)
             assertEquals("2026-10-06", restored.state.value.plannerDraft?.dueDate)
