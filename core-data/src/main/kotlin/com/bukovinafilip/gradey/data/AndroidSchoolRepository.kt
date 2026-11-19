@@ -4,6 +4,7 @@ import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.EduPageClient
 import com.bukovinafilip.gradey.domain.EduPageURLNormalizer
 import com.bukovinafilip.gradey.domain.GradeMath
+import com.bukovinafilip.gradey.domain.ReportCardTerm
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.SchoolRepository
 import com.bukovinafilip.gradey.domain.SchoolURLNormalizer
@@ -13,6 +14,7 @@ import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.BakalariCredentials
 import com.bukovinafilip.gradey.model.DashboardData
 import com.bukovinafilip.gradey.model.EduPageSessionData
+import com.bukovinafilip.gradey.model.FinalMarksResponse
 import com.bukovinafilip.gradey.model.SchoolProvider
 import com.bukovinafilip.gradey.model.StoredSession
 import com.bukovinafilip.gradey.model.Subject
@@ -182,6 +184,22 @@ class AndroidSchoolRepository(
         cache.saveTimetable(session.cacheScope, "permanent", week)
         return week
     }
+
+    override suspend fun loadCachedReportCards(): List<ReportCardTerm> {
+        val session = sessionStore.load()?.takeIf { it.provider == SchoolProvider.BAKALARI } ?: return emptyList()
+        return cache.loadReportCards(session.cacheScope)?.let(::reportCardTerms).orEmpty()
+    }
+
+    override suspend fun loadReportCards(): List<ReportCardTerm> {
+        val session = validSession()
+        if (session.provider != SchoolProvider.BAKALARI) return emptyList()
+        val response = withBakalariRetry(session) { bakalariClient.fetchFinalMarks(it.baseURL, it.accessToken) }
+        cache.saveReportCards(session.cacheScope, response)
+        return reportCardTerms(response)
+    }
+
+    private fun reportCardTerms(response: FinalMarksResponse): List<ReportCardTerm> =
+        ReportCardTerm.sorted(response.terms.map(ReportCardTerm::from))
 
     override suspend fun predictSubjectAverage(subject: Subject, markText: String, weight: Int): Double? {
         val session = validSession()

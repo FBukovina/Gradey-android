@@ -2,6 +2,7 @@ package com.bukovinafilip.gradey.data
 
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.DashboardData
+import com.bukovinafilip.gradey.model.FinalMarksResponse
 import com.bukovinafilip.gradey.model.MarksResponse
 import com.bukovinafilip.gradey.model.NextLessonWidgetSnapshot
 import com.bukovinafilip.gradey.model.StravaCZMenu
@@ -24,6 +25,9 @@ class RoomGradeyCache(
 
     suspend fun loadAbsence(scope: String): AbsenceResponse? = load(key("absence-v2", scope), AbsenceResponse.serializer())
     suspend fun saveAbsence(scope: String, data: AbsenceResponse) = save(key("absence-v2", scope), data, AbsenceResponse.serializer())
+
+    suspend fun loadReportCards(scope: String): FinalMarksResponse? = load(key(FinalMarksResponse.CachePrefix, scope), FinalMarksResponse.serializer())
+    suspend fun saveReportCards(scope: String, data: FinalMarksResponse) = save(key(FinalMarksResponse.CachePrefix, scope), data, FinalMarksResponse.serializer())
 
     suspend fun loadTimetable(scope: String, weekStart: String): TimetableWeek? =
         load(key("timetable-week", "$scope-$weekStart"), TimetableWeek.serializer())
@@ -56,6 +60,7 @@ class RoomGradeyCache(
         dao.clear("marks:$scope")
         dao.clear("absence:$scope")
         dao.clear("absence-v2:$scope")
+        dao.clear("${FinalMarksResponse.CachePrefix}:$scope")
         dao.clearPrefix("timetable-week:$scope-")
         dao.clearPrefix("timetable-raw:$scope-")
     }

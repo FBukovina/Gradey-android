@@ -4,6 +4,7 @@ import com.bukovinafilip.gradey.domain.AccountFailureReason
 import com.bukovinafilip.gradey.domain.UserFacingFailure
 import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.GradeMath
+import com.bukovinafilip.gradey.model.FinalMarksResponse
 import com.bukovinafilip.gradey.model.LoginResponse
 import com.bukovinafilip.gradey.model.Mark
 import com.bukovinafilip.gradey.model.MarksResponse
@@ -69,6 +70,9 @@ class BakalariNetworkClient(
 
     override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): TimetableResponse =
         get(baseURL, "api/3/timetable/permanent", accessToken = accessToken)
+
+    override suspend fun fetchFinalMarks(baseURL: String, accessToken: String): FinalMarksResponse =
+        get(baseURL, "api/3/marks/final", accessToken = accessToken)
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         postJson(
@@ -219,6 +223,10 @@ class DemoAwareBakalariClient(
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.fetchTimetable(baseURL, accessToken, date)
         else liveClient.fetchTimetable(baseURL, accessToken, date)
 
+    override suspend fun fetchFinalMarks(baseURL: String, accessToken: String): FinalMarksResponse =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.fetchFinalMarks(baseURL, accessToken)
+        else liveClient.fetchFinalMarks(baseURL, accessToken)
+
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.predictSubject(baseURL, accessToken, subject, markText, weight)
         else liveClient.predictSubject(baseURL, accessToken, subject, markText, weight)
@@ -258,6 +266,9 @@ class DemoBakalariClient : BakalariClient {
 
     override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): TimetableResponse =
         com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse()
+
+    override suspend fun fetchFinalMarks(baseURL: String, accessToken: String): FinalMarksResponse =
+        com.bukovinafilip.gradey.domain.DemoData.finalMarksResponse
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject {
         val value = GradeMath.parseMarkValue(markText) ?: return subject

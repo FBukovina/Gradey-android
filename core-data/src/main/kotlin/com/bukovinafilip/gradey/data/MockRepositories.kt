@@ -51,6 +51,12 @@ class MockSchoolRepository : SchoolRepository {
     override suspend fun loadCachedDashboard(): DashboardData = com.bukovinafilip.gradey.domain.DemoData.fixture.dashboard
     override suspend fun loadDashboard(forceRefresh: Boolean): DashboardData = com.bukovinafilip.gradey.domain.DemoData.fixture.dashboard
     override suspend fun loadAbsence(forceRefresh: Boolean): AbsenceResponse = com.bukovinafilip.gradey.domain.DemoData.absenceResponse
+    override suspend fun loadCachedReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> = loadReportCards()
+    override suspend fun loadReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> =
+        if (session?.provider == SchoolProvider.EDU_PAGE) emptyList()
+        else com.bukovinafilip.gradey.domain.ReportCardTerm.sorted(
+            com.bukovinafilip.gradey.domain.DemoData.finalMarksResponse.terms.map(com.bukovinafilip.gradey.domain.ReportCardTerm::from),
+        )
     override suspend fun loadCachedTimetable(weekContaining: String): TimetableWeek =
         com.bukovinafilip.gradey.domain.DemoData.timetableFor(weekContaining)
     override suspend fun loadTimetable(weekContaining: String): TimetableWeek =

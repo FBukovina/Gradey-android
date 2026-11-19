@@ -37,6 +37,9 @@ interface BakalariClient {
     suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String): com.bukovinafilip.gradey.model.TimetableResponse
     suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String): com.bukovinafilip.gradey.model.TimetableResponse =
         throw UnsupportedOperationException("The permanent timetable is not available for this school account.")
+    /** Every report card the school has issued (`api/3/marks/final`). */
+    suspend fun fetchFinalMarks(baseURL: String, accessToken: String): com.bukovinafilip.gradey.model.FinalMarksResponse =
+        throw UnsupportedOperationException("Report cards are not available for this school account.")
     suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject
 }
 
@@ -76,6 +79,10 @@ interface SchoolRepository {
     suspend fun loadPermanentTimetable(): TimetableWeek =
         throw UnsupportedOperationException("The permanent timetable is not available for this school account.")
     suspend fun predictSubjectAverage(subject: Subject, markText: String, weight: Int): Double?
+    /** Saved report cards, newest first; empty when none are saved or the school has none. */
+    suspend fun loadCachedReportCards(): List<ReportCardTerm> = emptyList()
+    /** Report cards from the school, newest first. Bakaláři only; other providers return nothing. */
+    suspend fun loadReportCards(): List<ReportCardTerm> = emptyList()
 }
 
 class GradeySessionExpiredException(cause: Throwable? = null) : IllegalStateException(AccountFailureReason.SESSION_EXPIRED.defaultMessage, cause), UserFacingFailure {
