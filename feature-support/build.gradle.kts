@@ -23,6 +23,7 @@ dependencies {
     // Keep Intercom's declared AndroidX requirements: do not force older host versions.
     // SDK base deliberately omits Intercom FCM registration and push handling.
     implementation("io.intercom.android:intercom-sdk-base:18.9.5")
+    implementation(project(":core-ui"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material3)

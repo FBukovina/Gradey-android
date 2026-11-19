@@ -21,7 +21,7 @@ check() {
 check "colour literals (use GradeyColors / gradeyColors tokens)" 'Color\(0x'
 check "raw text sizes (use GradeyType)" 'fontSize *='
 check "hand-typed corner radii (use GradeyRadius or CircleShape)" 'RoundedCornerShape\([0-9]'
-check "legacy components (see core-ui LegacyComponents.kt)" '\b(GradeyCard|GradeyHero|GradeySectionCard|GradeyScreen|GradeyPageHeader|SettingsSurface|SettingsRow|SettingsHeader|SettingsCloseButton|LinkPill|NavigationRow|AbsenceRiskRing|GradeyIconButton|bleedHorizontally|MetadataRow|SectionHeaderRow|floatingNavigationContentPadding|floatingNavigationBarHeight)\b'
+check "components removed in 0.5 (use the core-ui replacements)" '\b(GradeyCard|GradeyHero|GradeySectionCard|GradeyScreen|GradeyPageHeader|SettingsSurface|SettingsRow|SettingsHeader|SettingsCloseButton|LinkPill|NavigationRow|AbsenceRiskRing|GradeyIconButton|bleedHorizontally|MetadataRow|SectionHeaderRow|floatingNavigationContentPadding|floatingNavigationBarHeight)\b'
 check "raw Material controls (use core-ui buttons, fields, dialogs and sheets)" '(^|[^A-Za-z.])(Button|TextButton|OutlinedButton|FilledTonalButton|IconButton|FilterChip|AssistChip|Card|ElevatedCard|OutlinedTextField|TextField|AlertDialog|ModalBottomSheet|Checkbox|LinearProgressIndicator|HorizontalDivider)\('
 check "shadows and blur outside core-ui" '\.(shadow|blur)\('
 

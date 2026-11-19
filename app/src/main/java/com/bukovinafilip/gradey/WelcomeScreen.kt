@@ -1,32 +1,101 @@
 package com.bukovinafilip.gradey
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
-import androidx.compose.ui.res.stringResource
-import com.bukovinafilip.gradey.R
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.bukovinafilip.gradey.ui.*
+import com.bukovinafilip.gradey.ui.DisclosureIcon
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyPrimaryButton
+import com.bukovinafilip.gradey.ui.GradeyRadius
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.ModalCloseButton
+import com.bukovinafilip.gradey.ui.PlainLink
+import com.bukovinafilip.gradey.ui.PlainRow
+import com.bukovinafilip.gradey.ui.gradeyColors
 
 internal const val PrivacyRevision = 2
 internal const val PrivacyUrl = "https://help.bukovinafilip.com/en/articles/10-privacy-policy"
 internal const val TermsUrl = "https://help.bukovinafilip.com/en/articles/11-terms-and-conditions"
 internal const val HelpUrl = "https://help.bukovinafilip.com/en"
+
+/** Width of every onboarding column (iOS onboarding content, 520 pt). */
+private val OnboardingMaxWidth = 520.dp
+
+/** Column of an onboarding step: centred, capped in width, inside the system bars. */
+@Composable
+private fun OnboardingColumn(modifier: Modifier = Modifier, scroll: ScrollState? = rememberScrollState(), content: @Composable ColumnScope.() -> Unit) {
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars), contentAlignment = Alignment.TopCenter) {
+        Column(
+            modifier.widthIn(max = OnboardingMaxWidth).fillMaxSize().then(if (scroll != null) Modifier.verticalScroll(scroll) else Modifier)
+                .padding(horizontal = 20.dp, vertical = GradeySpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg), content = content,
+        )
+    }
+}
+
+/** 4 dp capsule that fills with the brand colour; [fraction] is read while drawing. */
+@Composable
+private fun StepProgress(fraction: () -> Float, modifier: Modifier = Modifier) {
+    val track = MaterialTheme.gradeyColors.tertiaryFill
+    val fill = MaterialTheme.colorScheme.primary
+    Box(
+        modifier.fillMaxWidth().height(4.dp).clearAndSetSemantics { }.drawBehind {
+            val radius = CornerRadius(size.height / 2f)
+            drawRoundRect(track, cornerRadius = radius)
+            val value = fraction().coerceIn(0f, 1f)
+            if (value > 0f) drawRoundRect(fill, size = size.copy(width = (size.width * value).coerceAtLeast(size.height)), cornerRadius = radius)
+        },
+    )
+}
 
 /** Mirrors the iOS self-attestation. No birth date or age is sent to a server. */
 @Composable
@@ -35,68 +104,83 @@ internal fun WelcomeScreen(onComplete: (String) -> Unit) {
     var parentConfirmed by rememberSaveable { mutableStateOf(false) }
     var privacyAccepted by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
-    BackHandler(enabled = age != null) { age = null; parentConfirmed = false; privacyAccepted = false }
-    GradeyScreen(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState())) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    val reset = { age = null; parentConfirmed = false; privacyAccepted = false }
+    BackHandler(enabled = age != null, onBack = reset)
+    OnboardingColumn(Modifier.testTag("welcomeScreen")) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Gradey", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Text(if (age == null) stringResource(R.string.app_step_one) else stringResource(R.string.app_step_two), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.app_name), Modifier.weight(1f), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(if (age == null) R.string.app_step_one else R.string.app_step_two), style = GradeyType.caption, color = secondary)
         }
-        LinearProgressIndicator(progress = { if (age == null) .5f else 1f }, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(12.dp))
-        HugeIcon(if (age == null) HugeIcons.University else HugeIcons.SecurityLock, null, Modifier.size(52.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(if (age == null) stringResource(R.string.app_welcome_title) else stringResource(R.string.app_privacy_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text(if (age == null) stringResource(R.string.app_welcome_body) else stringResource(R.string.app_privacy_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        StepProgress({ if (age == null) 0.5f else 1f })
+        Column(Modifier.padding(top = GradeySpacing.md), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            Text(
+                stringResource(if (age == null) R.string.app_welcome_title else R.string.app_privacy_title), Modifier.semantics { heading() },
+                style = GradeyType.display(32), color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(stringResource(if (age == null) R.string.app_welcome_body else R.string.app_privacy_body), style = GradeyType.callout, color = secondary)
+        }
         if (age == null) {
-            listOf(
-                Triple("sixteenOrOlder", stringResource(R.string.app_age_adult), stringResource(R.string.app_own_consent)),
-                Triple("thirteenToFifteenWithParent", stringResource(R.string.app_age_teen), stringResource(R.string.app_parent_consent)),
-                Triple("underThirteen", stringResource(R.string.app_age_child), stringResource(R.string.app_parent_consent)),
-            ).forEach { (value, title, subtitle) ->
-                Surface(onClick = { age = value }, shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
-                    Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(title, style = MaterialTheme.typography.titleMedium)
-                            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Column {
+                listOf(
+                    Triple("sixteenOrOlder", R.string.app_age_adult, R.string.app_own_consent),
+                    Triple("thirteenToFifteenWithParent", R.string.app_age_teen, R.string.app_parent_consent),
+                    Triple("underThirteen", R.string.app_age_child, R.string.app_parent_consent),
+                ).forEach { (value, title, subtitle) ->
+                    PlainRow(Modifier.testTag("welcomeAge-$value"), onClick = { age = value }) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(stringResource(title), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(subtitle), style = GradeyType.subheadline, color = secondary)
                         }
-                        HugeIcon(HugeIcons.ArrowRight01, null)
+                        DisclosureIcon()
                     }
                 }
             }
-            Text(stringResource(R.string.app_age_local), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.app_age_local), style = GradeyType.caption, color = secondary)
         } else {
-            GradeySectionCard {
+            Column {
                 WelcomeDetail(stringResource(R.string.app_school_accounts), stringResource(R.string.app_school_data_body))
-                HorizontalDivider()
-                WelcomeDetail("Gradey ID", stringResource(R.string.app_id_data_body))
-                HorizontalDivider()
-                WelcomeDetail("Gradey AI", stringResource(R.string.app_ai_data_body))
-                HorizontalDivider()
+                WelcomeDetail(stringResource(R.string.app_gradey_id), stringResource(R.string.app_id_data_body))
+                WelcomeDetail(stringResource(R.string.app_ai), stringResource(R.string.app_ai_data_body))
                 WelcomeDetail(stringResource(R.string.app_control_title), stringResource(R.string.app_control_body))
             }
-            if (age != "sixteenOrOlder") ConsentRow(stringResource(R.string.app_parent_confirm), parentConfirmed) { parentConfirmed = it }
-            ConsentRow(stringResource(R.string.app_privacy_confirm), privacyAccepted) { privacyAccepted = it }
-            Button(onClick = { onComplete(requireNotNull(age)) }, enabled = privacyAccepted && (age == "sixteenOrOlder" || parentConfirmed), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.app_continue)) }
-            TextButton(onClick = { age = null; parentConfirmed = false; privacyAccepted = false }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.app_change_age)) }
+            Column {
+                if (age != "sixteenOrOlder") ConsentRow(stringResource(R.string.app_parent_confirm), parentConfirmed, "welcomeParentConsent") { parentConfirmed = it }
+                ConsentRow(stringResource(R.string.app_privacy_confirm), privacyAccepted, "welcomePrivacyConsent") { privacyAccepted = it }
+            }
+            GradeyPrimaryButton(
+                stringResource(R.string.app_continue), { onComplete(requireNotNull(age)) },
+                Modifier.testTag("welcomeContinue"), enabled = privacyAccepted && (age == "sixteenOrOlder" || parentConfirmed),
+            )
+            PlainLink(stringResource(R.string.app_change_age), reset, showsArrow = false, fillWidth = true)
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            TextButton(onClick = { uriHandler.openUri(PrivacyUrl) }) { Text(stringResource(R.string.app_privacy)) }
-            TextButton(onClick = { uriHandler.openUri(TermsUrl) }) { Text(stringResource(R.string.app_terms)) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.lg, Alignment.CenterHorizontally)) {
+            PlainLink(stringResource(R.string.app_privacy), { uriHandler.openUri(PrivacyUrl) }, showsArrow = false)
+            PlainLink(stringResource(R.string.app_terms), { uriHandler.openUri(TermsUrl) }, showsArrow = false)
         }
     }
 }
 
-@Composable private fun WelcomeDetail(title: String, body: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
-        Text(body, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+@Composable
+private fun WelcomeDetail(title: String, body: String) {
+    PlainRow {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = GradeyType.subheadlineBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(body, style = GradeyType.footnote, color = MaterialTheme.gradeyColors.secondaryLabel)
+        }
     }
 }
 
-@Composable private fun ConsentRow(text: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().toggleable(checked, role = Role.Checkbox, onValueChange = onChange).padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Checkbox(checked, onCheckedChange = null)
-        Spacer(Modifier.width(12.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium)
+@Composable
+private fun ConsentRow(text: String, checked: Boolean, tag: String, onChange: (Boolean) -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(GradeyRadius.xs)
+    PlainRow(Modifier.toggleable(checked, role = Role.Checkbox, onValueChange = onChange).testTag(tag)) {
+        Box(
+            Modifier.size(24.dp).then(if (checked) Modifier.background(primary, shape) else Modifier.border(1.5.dp, MaterialTheme.gradeyColors.tertiaryLabel, shape)),
+            contentAlignment = Alignment.Center,
+        ) { if (checked) GradeyIcon(HugeIcons.Tick02, size = 14.dp, tint = GradeyColors.OnAccent) }
+        Text(text, Modifier.weight(1f), style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -107,12 +191,9 @@ internal fun isValidAgeAttestation(value: String?): Boolean = value in setOf("si
 internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = null) {
     val uriHandler = LocalUriHandler.current
     val scroll = rememberScrollState()
-    var laidOut by remember { mutableStateOf(false) }
-    var viewportBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
-    var finalTextBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     var readToEnd by rememberSaveable(PrivacyRevision) { mutableStateOf(false) }
     var expanded by rememberSaveable { mutableStateOf<Int?>(null) }
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val accessibility = remember(context) { context.getSystemService(android.view.accessibility.AccessibilityManager::class.java) }
     var accessibleReading by remember(accessibility) { mutableStateOf(accessibility?.isTouchExplorationEnabled == true) }
     DisposableEffect(accessibility) {
@@ -121,36 +202,26 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
         onDispose { accessibility?.removeTouchExplorationStateChangeListener(listener) }
     }
     val review = onClose != null
-    LaunchedEffect(laidOut, scroll.maxValue, scroll.value, viewportBounds, finalTextBounds) {
-        // Reaching the actual last text is sufficient; invisible button padding is not reading.
-        val viewport = viewportBounds
-        val last = finalTextBounds
-        if (laidOut && ((!scroll.canScrollForward && scroll.maxValue != Int.MAX_VALUE) ||
-                (viewport != null && last != null && last.top >= viewport.top && last.bottom <= viewport.bottom))) readToEnd = true
-    }
+    // The end counts once the list has been measured and cannot scroll further.
+    val atEnd by remember { derivedStateOf { scroll.maxValue != Int.MAX_VALUE && scroll.value >= scroll.maxValue } }
+    LaunchedEffect(atEnd) { if (atEnd) readToEnd = true }
     BackHandler { onClose?.invoke() }
-    Surface(Modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
-        Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 20.dp)) {
-            if (!review) {
-                LinearProgressIndicator(progress = { if (readToEnd || accessibleReading) 1f else
-                    (scroll.value.toFloat() / scroll.maxValue.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
-                if (!readToEnd && !accessibleReading) Text(stringResource(R.string.privacy_update_scroll),
-                    modifier = Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    OnboardingColumn(Modifier.testTag("privacyUpdateScreen"), scroll = null) {
+        if (!review) {
+            StepProgress({ if (readToEnd || accessibleReading) 1f else scroll.value.toFloat() / scroll.maxValue.coerceAtLeast(1) })
+            if (!readToEnd && !accessibleReading) Text(stringResource(R.string.privacy_update_scroll), style = GradeyType.caption, color = secondary)
+        }
+        Column(Modifier.weight(1f).verticalScroll(scroll), verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                Text(
+                    stringResource(R.string.privacy_update_title), Modifier.weight(1f).semantics { heading() },
+                    style = GradeyType.display(32), color = MaterialTheme.colorScheme.onSurface,
+                )
+                onClose?.let { close -> ModalCloseButton(close, contentDescription = stringResource(R.string.privacy_update_done), size = 44.dp) }
             }
-            Box(Modifier.weight(1f).onGloballyPositioned { coordinates ->
-                val position = coordinates.positionInWindow()
-                viewportBounds = androidx.compose.ui.geometry.Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
-                laidOut = true
-            }) {
-            Column(Modifier.verticalScroll(scroll).padding(vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    HugeIcon(HugeIcons.SecurityLock, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.weight(1f))
-                    onClose?.let { close -> TextButton(onClick = close) { Text(stringResource(R.string.privacy_update_done)) } }
-                }
-                Text(stringResource(R.string.privacy_update_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.privacy_update_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.privacy_update_subtitle), style = GradeyType.callout, color = secondary)
+            Column {
                 listOf(
                     Triple(R.string.privacy_update_password_title, R.string.privacy_update_password_summary, R.string.privacy_update_password_detail),
                     Triple(R.string.privacy_update_tokens_title, R.string.privacy_update_tokens_summary, R.string.privacy_update_tokens_detail),
@@ -158,30 +229,28 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
                     Triple(R.string.privacy_update_planner_title, R.string.privacy_update_planner_summary, R.string.privacy_update_planner_detail),
                     Triple(R.string.privacy_update_watch_title, R.string.privacy_update_watch_summary, R.string.privacy_update_watch_detail),
                 ).forEachIndexed { index, (title, summary, detail) ->
-                    Surface(onClick = { expanded = if (expanded == index) null else index }, shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(stringResource(title), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                                HugeIcon(if (expanded == index) HugeIcons.ArrowUp01 else HugeIcons.ArrowDown01,
-                                    contentDescription = stringResource(if (expanded == index) R.string.privacy_update_collapse else R.string.privacy_update_expand))
-                            }
-                            Text(stringResource(summary), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (expanded == index) Text(stringResource(detail), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val open = expanded == index
+                    PlainRow(
+                        Modifier.animateContentSize(tween(250)), onClick = { expanded = if (open) null else index }, verticalAlignment = Alignment.Top,
+                        onClickLabel = stringResource(if (open) R.string.privacy_update_collapse else R.string.privacy_update_expand),
+                    ) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                            Text(stringResource(title), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(summary), style = GradeyType.subheadline, color = secondary)
+                            if (open) Text(stringResource(detail), style = GradeyType.footnote, color = secondary)
                         }
+                        GradeyIcon(
+                            HugeIcons.ArrowDown01, Modifier.padding(top = GradeySpacing.xs).graphicsLayer { rotationZ = if (open) 180f else 0f },
+                            size = 14.dp, tint = MaterialTheme.gradeyColors.tertiaryLabel,
+                        )
                     }
                 }
-                Text(stringResource(R.string.privacy_update_footer), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { uriHandler.openUri(PrivacyUrl) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.privacy_update_full_policy), Modifier.onGloballyPositioned { coordinates ->
-                        val position = coordinates.positionInWindow()
-                        finalTextBounds = androidx.compose.ui.geometry.Rect(position.x, position.y, position.x + coordinates.size.width, position.y + coordinates.size.height)
-                    })
-                }
             }
-            }
-            if (!review) Button(onClick = onAccept, enabled = readToEnd || accessibleReading,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).heightIn(min = 52.dp)) { Text(stringResource(R.string.privacy_update_accept)) }
+            Text(stringResource(R.string.privacy_update_footer), style = GradeyType.caption, color = secondary)
+            PlainLink(stringResource(R.string.privacy_update_full_policy), { uriHandler.openUri(PrivacyUrl) })
         }
+        if (!review) GradeyPrimaryButton(
+            stringResource(R.string.privacy_update_accept), onAccept, Modifier.testTag("privacyUpdateAccept"), enabled = readToEnd || accessibleReading,
+        )
     }
 }

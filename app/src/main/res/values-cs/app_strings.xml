@@ -170,4 +170,5 @@
     </plurals>
     <string name="app_report_card">Vysvědčení</string>
     <string name="app_recap">Gradey Recap</string>
+    <string name="app_gradey_id">Gradey ID</string>
 </resources>

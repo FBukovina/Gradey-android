@@ -1,32 +1,52 @@
 package com.bukovinafilip.gradey
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import com.bukovinafilip.gradey.model.WearSchoolNodeGrant
 import com.bukovinafilip.gradey.model.WearSchoolScope
-import com.bukovinafilip.gradey.ui.GradeySectionCard
-import java.text.DateFormat
-import java.util.Date
+import com.bukovinafilip.gradey.ui.DestructiveLink
+import com.bukovinafilip.gradey.ui.EmptyState
+import com.bukovinafilip.gradey.ui.GradeyDialog
+import com.bukovinafilip.gradey.ui.GradeySheet
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.Hairline
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.InlineNotice
+import com.bukovinafilip.gradey.ui.ModalCloseButton
+import com.bukovinafilip.gradey.ui.PlainLink
+import com.bukovinafilip.gradey.ui.SettingsIcon
+import com.bukovinafilip.gradey.ui.ToolbarIconButton
+import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.tabular
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import java.text.DateFormat
+import java.util.Date
 
 private data class WatchAccessReview(val nodeID: String, val displayName: String, val scope: WearSchoolScope)
 private enum class WatchAccessNotice { ENABLED, REVOKED }
@@ -54,7 +74,6 @@ private fun WatchAccessDialogContent(
     onAccessChanged: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
     val onChanged by rememberUpdatedState(onAccessChanged)
     var state by remember { mutableStateOf<WatchSchoolAccessState?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -99,102 +118,74 @@ private fun WatchAccessDialogContent(
     fun deviceName(id: String): String = (nearby[id]?.displayName ?: current?.nodeNames?.get(id))
         ?.filterNot(Char::isISOControl)?.trim()?.take(80)?.takeIf(String::isNotEmpty) ?: genericName
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Surface(
-            Modifier.padding(horizontal = 16.dp).widthIn(max = 560.dp).fillMaxWidth()
-                .heightIn(max = configuration.screenHeightDp.dp * .9f),
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 6.dp,
-        ) {
-            Column {
-                Column(Modifier.padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer) {
-                            HugeIcon(HugeIcons.Watch01, null, Modifier.padding(12.dp).size(28.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-                        }
-                        Text(stringResource(R.string.watch_access_title), style = MaterialTheme.typography.headlineSmall)
-                    }
-                    Text(stringResource(R.string.watch_access_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    GradeySheet(onDismiss = onDismiss) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            Text(
+                stringResource(R.string.watch_access_title), Modifier.weight(1f).semantics { heading() },
+                style = GradeyType.title2, color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (!isDemo) ToolbarIconButton(HugeIcons.Refresh04, stringResource(R.string.watch_access_refresh), { if (!busy) scope.launch { load() } }, loading = busy)
+            ModalCloseButton(onDismiss, contentDescription = stringResource(R.string.watch_access_done))
+        }
+        Text(stringResource(R.string.watch_access_subtitle), style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel)
+        LazyColumn(Modifier.fillMaxWidth().weight(1f, fill = false).testTag("watchAccessDevices"), verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            if (isDemo) item(key = "demo", contentType = "notice") {
+                InlineNotice(stringResource(R.string.watch_access_demo), color = MaterialTheme.gradeyColors.secondaryLabel, icon = HugeIcons.InformationCircle)
+            } else {
+                if (failed) item(key = "failed", contentType = "notice") { InlineNotice(stringResource(R.string.watch_access_error)) }
+                notice?.let { result -> item(key = "notice", contentType = "notice") {
+                    InlineNotice(
+                        stringResource(if (result == WatchAccessNotice.ENABLED) R.string.watch_access_enabled_notice else R.string.watch_access_revoked_notice),
+                        color = MaterialTheme.colorScheme.primary, icon = HugeIcons.CheckmarkCircle02,
+                    )
+                } }
+                if (current != null && !current.available) item(key = "unavailable", contentType = "notice") {
+                    InlineNotice(stringResource(R.string.watch_access_unavailable), color = MaterialTheme.gradeyColors.orange)
                 }
-                if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
-                LazyColumn(
-                    Modifier.weight(1f, fill = false).testTag("watchAccessDevices"),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    if (isDemo) item {
-                        GradeySectionCard { Text(stringResource(R.string.watch_access_demo)) }
-                    } else {
-                        if (failed) item {
-                            Text(stringResource(R.string.watch_access_error), color = MaterialTheme.colorScheme.error)
-                        }
-                        notice?.let { result -> item {
-                            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium) {
-                                Text(stringResource(if (result == WatchAccessNotice.ENABLED) R.string.watch_access_enabled_notice else R.string.watch_access_revoked_notice),
-                                    Modifier.padding(16.dp), color = MaterialTheme.colorScheme.onSecondaryContainer)
-                            }
-                        } }
-                        if (current != null && !current.available) item {
-                            GradeySectionCard { Text(stringResource(R.string.watch_access_unavailable)) }
-                        }
-                        if (current?.available == true && deviceIDs.isEmpty()) item {
-                            GradeySectionCard(title = stringResource(R.string.watch_access_no_watch)) {
-                                Text(stringResource(R.string.watch_access_find_watch), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        items(deviceIDs, key = { it }) { nodeID ->
-                            val grant = grants.firstOrNull { it.nodeID == nodeID }
-                            val isNearby = nodeID in nearby
-                            val name = deviceName(nodeID)
-                            WatchAccessDeviceCard(name, isNearby, grant, busy,
-                                canEnable = current?.available == true && current.scope != null,
-                                onReview = { current?.scope?.let { review = WatchAccessReview(nodeID, name, it) } },
-                                onRevoke = { current?.scope?.let { expected -> change(WatchAccessNotice.REVOKED) { manager.revoke(nodeID, expected) } } },
-                            )
-                        }
-                        item {
-                            Text(stringResource(R.string.watch_access_expiry_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
+                if (current?.available == true && deviceIDs.isEmpty()) item(key = "empty", contentType = "state") {
+                    EmptyState(stringResource(R.string.watch_access_no_watch), message = stringResource(R.string.watch_access_find_watch), icon = HugeIcons.Watch01)
                 }
-                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (!isDemo) TextButton(onClick = { if (!busy) scope.launch { load() } }, enabled = !busy) {
-                        Text(stringResource(R.string.watch_access_refresh))
-                    }
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.watch_access_done)) }
+                items(deviceIDs, key = { it }, contentType = { "device" }) { nodeID ->
+                    val grant = grants.firstOrNull { it.nodeID == nodeID }
+                    val isNearby = nodeID in nearby
+                    val name = deviceName(nodeID)
+                    WatchAccessDeviceRow(name, isNearby, grant, busy,
+                        canEnable = current?.available == true && current.scope != null,
+                        onReview = { current?.scope?.let { review = WatchAccessReview(nodeID, name, it) } },
+                        onRevoke = { current?.scope?.let { expected -> change(WatchAccessNotice.REVOKED) { manager.revoke(nodeID, expected) } } },
+                    )
+                }
+                item(key = "expiry", contentType = "note") {
+                    Text(stringResource(R.string.watch_access_expiry_note), style = GradeyType.caption, color = MaterialTheme.gradeyColors.secondaryLabel)
                 }
             }
         }
     }
-    review?.let { selected -> AlertDialog(
-        onDismissRequest = { review = null },
-        icon = { HugeIcon(HugeIcons.Watch01, null) },
-        title = { Text(stringResource(R.string.watch_access_review_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(selected.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text(stringResource(R.string.watch_access_review_credentials))
-                Text(stringResource(R.string.watch_access_review_expiry))
-                Text(stringResource(R.string.watch_access_review_revoke), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
+    review?.let { selected ->
+        GradeyDialog(
+            title = stringResource(R.string.watch_access_review_title), onDismiss = { review = null },
+            confirmLabel = stringResource(R.string.watch_access_confirm), confirmEnabled = !busy,
+            onConfirm = {
                 review = null
                 change(WatchAccessNotice.ENABLED) {
                     manager.enable(selected.nodeID, selected.scope).also { updated ->
                         check(updated.scope == selected.scope && updated.grants.any { it.nodeID == selected.nodeID })
                     }
                 }
-            }, enabled = !busy) { Text(stringResource(R.string.watch_access_confirm)) }
-        },
-        dismissButton = { TextButton(onClick = { review = null }) { Text(stringResource(R.string.watch_access_not_now)) } },
-    ) }
+            },
+            dismissLabel = stringResource(R.string.watch_access_not_now),
+        ) {
+            Text(selected.displayName, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.watch_access_review_credentials), style = GradeyType.subheadline)
+            Text(stringResource(R.string.watch_access_review_expiry), style = GradeyType.subheadline)
+            Text(stringResource(R.string.watch_access_review_revoke), style = GradeyType.caption)
+        }
+    }
 }
 
+/** One watch: its name, whether it is nearby, the access state and the actions that apply. */
 @Composable
-private fun WatchAccessDeviceCard(
+private fun WatchAccessDeviceRow(
     name: String,
     nearby: Boolean,
     grant: WearSchoolNodeGrant?,
@@ -204,23 +195,25 @@ private fun WatchAccessDeviceCard(
     onRevoke: () -> Unit,
 ) {
     val locale = LocalConfiguration.current.locales[0]
-    GradeySectionCard {
-        Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text(stringResource(if (nearby) R.string.watch_access_nearby else R.string.watch_access_not_nearby),
-            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (grant == null) Text(stringResource(R.string.watch_access_off), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        else Text(stringResource(R.string.watch_access_until,
-            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).format(Date(grant.expiresAtEpochMillis))),
-            color = MaterialTheme.colorScheme.primary)
-        if (nearby) OutlinedButton(onClick = onReview, enabled = canEnable && !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(if (grant == null) R.string.watch_access_review else R.string.watch_access_renew))
-        }
-        if (grant != null) {
-            TextButton(onClick = onRevoke, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.watch_access_turn_off), color = MaterialTheme.colorScheme.error)
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Column(Modifier.fillMaxWidth()) {
+        Hairline()
+        Row(Modifier.fillMaxWidth().padding(top = GradeySpacing.md), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            SettingsIcon(HugeIcons.Watch01)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                Text(name, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(if (nearby) R.string.watch_access_nearby else R.string.watch_access_not_nearby), style = GradeyType.caption, color = secondary)
+                if (grant == null) Text(stringResource(R.string.watch_access_off), style = GradeyType.subheadline, color = secondary)
+                else Text(
+                    stringResource(R.string.watch_access_until, DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).format(Date(grant.expiresAtEpochMillis))),
+                    style = GradeyType.subheadline.tabular(), color = MaterialTheme.colorScheme.primary,
+                )
+                if (nearby) PlainLink(stringResource(if (grant == null) R.string.watch_access_review else R.string.watch_access_renew), onReview, enabled = canEnable && !busy)
+                if (grant != null) {
+                    DestructiveLink(stringResource(R.string.watch_access_turn_off), onRevoke, enabled = !busy)
+                    if (!nearby) Text(stringResource(R.string.watch_access_offline_note), style = GradeyType.caption, color = secondary)
+                }
             }
-            if (!nearby) Text(stringResource(R.string.watch_access_offline_note),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

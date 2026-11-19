@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name" translatable="false">Gradey</string>
+    <string name="app_gradey_id">Gradey ID</string>
 </resources>

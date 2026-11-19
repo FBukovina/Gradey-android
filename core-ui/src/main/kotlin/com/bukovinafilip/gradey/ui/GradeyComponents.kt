@@ -1011,10 +1011,17 @@ fun ReconnectNotice(title: String, message: String, actionLabel: String, onActio
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun GradeySheet(onDismiss: () -> Unit, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    GradeySheet(onDismiss, rememberModalBottomSheetState(skipPartiallyExpanded = true), modifier, content)
+}
+
+/** [GradeySheet] for callers that drive the sheet themselves, for example to animate it closed. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun GradeySheet(
     onDismiss: () -> Unit,
+    sheetState: SheetState,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val tokens = MaterialTheme.gradeyColors
