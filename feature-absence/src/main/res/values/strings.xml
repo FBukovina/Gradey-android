@@ -80,7 +80,7 @@
     <string name="absence_review_e29a7">Review</string>
     <string name="absence_save_correction_c66c5">Save correction</string>
     <string name="absence_save_plan_842dc">Save plan</string>
-    <string name="absence_saved_plans_e2882">SAVED PLANS</string>
+    <string name="absence_saved_plans_e2882">Saved plans</string>
     <string name="absence_school_events_4b8bc">School events</string>
     <string name="absence_school_limit_unavailable_0c832">School limit unavailable</string>
     <string name="absence_school_limit_value">School limit: %1$s %%</string>
