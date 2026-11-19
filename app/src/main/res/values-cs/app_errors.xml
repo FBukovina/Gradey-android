@@ -13,8 +13,6 @@
     <string name="app_error_school_first">Nejprve připoj školu.</string>
     <string name="app_error_students_edupage">Profily studentů jsou dostupné pro účty EduPage.</string>
     <string name="app_error_student_missing">Tento profil studenta už není dostupný. Znovu připoj školu.</string>
-    <string name="app_error_history_parent">Cloudová historie známek není dostupná pro rodičovské účty EduPage. Známky vybraného studenta obnovíš na kartě Známky.</string>
-    <string name="app_error_history_link">Pro zobrazení cloudové historie známek nejprve propoj tuto školu s Gradey.</string>
     <string name="app_error_delete_demo">V ukázkovém režimu není smazání účtu dostupné.</string>
     <string name="app_error_cleanup">Některá uložená data se nepodařilo odebrat. Než zařízení někomu předáš, vymaž úložiště aplikace Gradey.</string>
     <string name="app_error_bakalari">Bakaláři nemohli požadavek dokončit. Zkus to znovu.</string>

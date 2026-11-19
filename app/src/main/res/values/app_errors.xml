@@ -13,8 +13,6 @@
     <string name="app_error_school_first">Connect your school first.</string>
     <string name="app_error_students_edupage">Student profiles are available for EduPage accounts.</string>
     <string name="app_error_student_missing">This student profile is no longer available. Reconnect your school.</string>
-    <string name="app_error_history_parent">Cloud grade history is unavailable for EduPage parent accounts. Open Marks to refresh the selected student’s grades.</string>
-    <string name="app_error_history_link">Link this school to Gradey before viewing its cloud grade history.</string>
     <string name="app_error_delete_demo">Account deletion is unavailable in demo mode.</string>
     <string name="app_error_cleanup">Some saved data could not be removed. Clear Gradey’s app storage before sharing this device.</string>
     <string name="app_error_bakalari">Bakaláři could not complete this request. Try again.</string>

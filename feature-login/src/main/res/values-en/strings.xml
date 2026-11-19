@@ -12,7 +12,6 @@
     <string name="login_password_8be3c">Password</string>
     <string name="login_reconnect_school_14a5a">Reconnect school</string>
     <string name="login_resend_approval_request_03ff9">Resend approval request</string>
-    <string name="login_school_address_a2e60">School address</string>
     <string name="login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df">School search is unavailable. You can still enter the address below.</string>
     <string name="login_show_password_044b8">Show password</string>
     <string name="login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d">Sign in to the same school account to restore its connection and keep your history.</string>
