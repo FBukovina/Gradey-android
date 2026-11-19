@@ -83,6 +83,8 @@ interface SchoolRepository {
     suspend fun loadCachedReportCards(): List<ReportCardTerm> = emptyList()
     /** Report cards from the school, newest first. Bakaláři only; other providers return nothing. */
     suspend fun loadReportCards(): List<ReportCardTerm> = emptyList()
+    /** Every semester of marks and absence this device has seen for the account, for Gradey Recap. */
+    suspend fun loadRecapArchive(): com.bukovinafilip.gradey.model.RecapArchive = com.bukovinafilip.gradey.model.RecapArchive()
 }
 
 class GradeySessionExpiredException(cause: Throwable? = null) : IllegalStateException(AccountFailureReason.SESSION_EXPIRED.defaultMessage, cause), UserFacingFailure {

@@ -51,6 +51,8 @@ class MockSchoolRepository : SchoolRepository {
     override suspend fun loadCachedDashboard(): DashboardData = com.bukovinafilip.gradey.domain.DemoData.fixture.dashboard
     override suspend fun loadDashboard(forceRefresh: Boolean): DashboardData = com.bukovinafilip.gradey.domain.DemoData.fixture.dashboard
     override suspend fun loadAbsence(forceRefresh: Boolean): AbsenceResponse = com.bukovinafilip.gradey.domain.DemoData.absenceResponse
+    override suspend fun loadRecapArchive(): com.bukovinafilip.gradey.model.RecapArchive =
+        com.bukovinafilip.gradey.domain.RecapDemoData.archive(java.time.ZonedDateTime.now())
     override suspend fun loadCachedReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> = loadReportCards()
     override suspend fun loadReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> =
         if (session?.provider == SchoolProvider.EDU_PAGE) emptyList()

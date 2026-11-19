@@ -173,7 +173,7 @@ object DemoData {
                     dayOfWeek = index + 1,
                     date = monday.plusDays(index.toLong()).toString(),
                     dayDescription = dayNames[index],
-                    dayType = if (index in 1..3) "notice" else "",
+                    dayType = "WorkDay",
                 )
             },
             subjects = timetableSubjects,

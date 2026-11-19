@@ -4,6 +4,7 @@ import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.EduPageClient
 import com.bukovinafilip.gradey.domain.EduPageURLNormalizer
 import com.bukovinafilip.gradey.domain.GradeMath
+import com.bukovinafilip.gradey.domain.RecapArchives
 import com.bukovinafilip.gradey.domain.ReportCardTerm
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.SchoolRepository
@@ -15,6 +16,7 @@ import com.bukovinafilip.gradey.model.BakalariCredentials
 import com.bukovinafilip.gradey.model.DashboardData
 import com.bukovinafilip.gradey.model.EduPageSessionData
 import com.bukovinafilip.gradey.model.FinalMarksResponse
+import com.bukovinafilip.gradey.model.RecapArchive
 import com.bukovinafilip.gradey.model.SchoolProvider
 import com.bukovinafilip.gradey.model.StoredSession
 import com.bukovinafilip.gradey.model.Subject
@@ -39,6 +41,7 @@ class AndroidSchoolRepository(
     private val dateProvider: () -> LocalDate = LocalDate::now,
 ) : SchoolRepository {
     private val refreshMutex = Mutex()
+    private val archiveMutex = Mutex()
     private var pendingEduPageBaseURL: String? = null
 
     override suspend fun bootstrapSession(): StoredSession? {
@@ -132,10 +135,14 @@ class AndroidSchoolRepository(
         val previous = cache.loadDashboard(session.cacheScope)
         val marks = fetchMarks(session)
         cache.saveMarks(session.cacheScope, marks)
+        archiveForRecap(session.cacheScope) { RecapArchives.adding(it, marks, dateProvider()) }
         val absence = async { optionalResponse { fetchAbsence(session) } }
         val user = async { optionalResponse { fetchUser(session) } }
         val absenceResult = absence.await()
-        if (absenceResult != null) cache.saveAbsence(session.cacheScope, absenceResult)
+        if (absenceResult != null) {
+            cache.saveAbsence(session.cacheScope, absenceResult)
+            archiveForRecap(session.cacheScope) { RecapArchives.adding(it, absenceResult, dateProvider()) }
+        }
         val data = DashboardData(
             marksResponse = marks,
             absencesPerSubject = absenceResult?.absencesPerSubject ?: previous?.absencesPerSubject.orEmpty(),
@@ -150,7 +157,23 @@ class AndroidSchoolRepository(
         if (!forceRefresh) cache.loadAbsence(session.cacheScope)?.let { return it }
         val response = fetchAbsence(session)
         cache.saveAbsence(session.cacheScope, response)
+        archiveForRecap(session.cacheScope) { RecapArchives.adding(it, response, dateProvider()) }
         return response
+    }
+
+    override suspend fun loadRecapArchive(): RecapArchive =
+        sessionStore.load()?.let { cache.loadRecapArchive(it.cacheScope) } ?: RecapArchive()
+
+    /** The school only returns the current semester, so each one seen is kept for Recap. Never fails the load it follows. */
+    private suspend fun archiveForRecap(scope: String, update: (RecapArchive) -> RecapArchive) = archiveMutex.withLock {
+        try {
+            val current = cache.loadRecapArchive(scope) ?: RecapArchive()
+            val updated = update(current)
+            if (updated != current) cache.saveRecapArchive(scope, updated)
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+        }
     }
 
     override suspend fun loadCachedTimetable(weekContaining: String): TimetableWeek? {

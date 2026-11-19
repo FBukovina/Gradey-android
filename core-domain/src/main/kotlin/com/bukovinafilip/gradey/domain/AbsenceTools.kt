@@ -134,7 +134,7 @@ fun Absence.toCounts(): AbsenceCounts = AbsenceCounts(
     missed = missed,
 )
 
-private fun Iterable<AbsenceCounts>.sumCounts(): AbsenceCounts = fold(AbsenceCounts()) { sum, row ->
+internal fun Iterable<AbsenceCounts>.sumCounts(): AbsenceCounts = fold(AbsenceCounts()) { sum, row ->
     AbsenceCounts(
         ok = sum.ok + row.ok,
         late = sum.late + row.late,

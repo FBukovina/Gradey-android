@@ -127,6 +127,51 @@ class AndroidSchoolRepositoryTest {
         assertTrue(repository.loadCachedReportCards().isEmpty())
     }
 
+    @Test fun everySemesterSeenIsArchivedForRecapPerAccountAndClearedWithTheSchool() = runBlocking {
+        fun marks(id: String, date: String) = MarksResponse(subjects = listOf(Subject(
+            marks = listOf(Mark(markDate = date, markText = "1", subjectID = "m", id = id)), subjectInfo = SubjectInfo("m", "M", "Matematika"),
+        )))
+        val store = SchoolSessionStore(MemoryJsonStore())
+        val first = session("first")
+        store.save(first)
+        val cache = RoomGradeyCache(MemoryCacheDao(), GradeyJson)
+        var today = java.time.LocalDate.parse("2026-11-12")
+        val client = FakeBakalariClient().apply {
+            marks = { marks("autumn", "2026-10-05T08:00:00+02:00") }
+            absences = { AbsenceResponse(absences = listOf(Absence(date = "2026-10-06T00:00:00+02:00", ok = 2))) }
+        }
+        val repository = AndroidSchoolRepository(client, OkHttpEduPageClient(), store, cache) { today }
+        assertEquals(RecapArchive(), repository.loadRecapArchive())
+
+        repository.loadDashboard(true)
+        assertEquals(setOf("2026/27-1"), repository.loadRecapArchive().marks.keys)
+        assertEquals(setOf("2026/27-1"), repository.loadRecapArchive().absence.keys)
+
+        // Bakaláři moves on to the next semester; the autumn stays on the device.
+        today = java.time.LocalDate.parse("2027-03-01")
+        client.marks = { marks("spring", "2027-02-20T08:00:00+01:00") }
+        client.absences = { AbsenceResponse(absences = listOf(Absence(date = "2027-02-22T00:00:00+01:00", late = 1))) }
+        repository.loadDashboard(true)
+        repository.loadAbsence(true)
+        val archive = repository.loadRecapArchive()
+        assertEquals(setOf("2026/27-1", "2026/27-2"), archive.marks.keys)
+        assertEquals("autumn", archive.marks.getValue("2026/27-1").subjects.single().marks.single().id)
+        assertEquals(setOf("2026/27-1", "2026/27-2"), archive.absence.keys)
+
+        // A semester with no marks yet replaces nothing, and a failed load changes nothing.
+        client.marks = { MarksResponse() }
+        repository.loadDashboard(true)
+        client.marks = { throw IOException("offline") }
+        try { repository.loadDashboard(true); fail("Expected offline failure") } catch (_: IOException) { }
+        assertEquals(archive, repository.loadRecapArchive())
+
+        store.save(session("second"))
+        assertEquals(RecapArchive(), repository.loadRecapArchive())
+        store.save(first)
+        cache.clearSchool(first.cacheScope)
+        assertEquals(RecapArchive(), repository.loadRecapArchive())
+    }
+
     private class FakeBakalariClient : BakalariClient {
         var marks: (String) -> MarksResponse = { MarksResponse() }
         var refreshCount = 0
@@ -138,7 +183,8 @@ class AndroidSchoolRepositoryTest {
             return LoginResponse("renewed-$refreshToken", "renewed-refresh", "Bearer", 3600)
         }
         override suspend fun fetchMarks(baseURL: String, accessToken: String) = marks(accessToken)
-        override suspend fun fetchAbsences(baseURL: String, accessToken: String) = AbsenceResponse()
+        var absences: () -> AbsenceResponse = { AbsenceResponse() }
+        override suspend fun fetchAbsences(baseURL: String, accessToken: String) = absences()
         override suspend fun fetchUser(baseURL: String, accessToken: String) = UserResponse("Student")
         override suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String) = TimetableResponse()
         override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String) = com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse()
