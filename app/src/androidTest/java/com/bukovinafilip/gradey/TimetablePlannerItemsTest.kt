@@ -55,20 +55,20 @@ class TimetablePlannerItemsTest {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
                     Box(Modifier.requiredWidth(320.dp).fillMaxHeight()) {
                         TimetableScreen(TimetableWeek(monday, listOf(day), emptyList()), false,
-                            onRefresh = {}, onChangeWeek = {}, onOpenAccount = {}, onOpenGradeyTools = {}, requestedWeek = monday,
+                            onRefresh = {}, onChangeWeek = {}, onOpenAI = {}, onOpenSettings = {}, requestedWeek = monday,
                             plannerItems = records, schoolScope = school, onOpenPlannerItem = { opened = it })
                     }
                 }
             }
         }
         openLesson()
-        compose.onNodeWithText("Planner items for this lesson").assertExists()
+        compose.onNodeWithText("PLANNER").assertExists()
         compose.onNodeWithTag("timetable-planner-item-homework").assertExists()
         compose.onNodeWithTag("timetable-planner-item-test").assertExists()
         rejected.forEach { compose.onNodeWithText(it.title).assertDoesNotExist() }
         compose.onNodeWithTag("timetable-planner-item-test").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(second.id, opened) }
-        compose.onNodeWithText("Planner items for this lesson").assertDoesNotExist()
+        compose.onNodeWithText("PLANNER").assertDoesNotExist()
         compose.onNodeWithText("Homework +1").assertExists()
         compose.runOnIdle { records = records.map { if (it.id in setOf(first.id, second.id)) it.copy(isCompleted = true) else it } }
         compose.onNodeWithTag("timetable-planner-badge").assertDoesNotExist()
@@ -84,7 +84,7 @@ class TimetablePlannerItemsTest {
         compose.setContent {
             GradeyTheme {
                 TimetableScreen(TimetableWeek(monday, listOf(permanentDay), emptyList(), TimetableKind.PERMANENT), false,
-                    onRefresh = {}, onChangeWeek = {}, onOpenAccount = {}, onOpenGradeyTools = {}, requestedWeek = monday,
+                    onRefresh = {}, onChangeWeek = {}, onOpenAI = {}, onOpenSettings = {}, requestedWeek = monday,
                     kind = TimetableKind.PERMANENT, plannerItems = listOf(weekly, otherPermanentDay, permanent), schoolScope = school,
                     onOpenPlannerItem = { selected = it })
             }

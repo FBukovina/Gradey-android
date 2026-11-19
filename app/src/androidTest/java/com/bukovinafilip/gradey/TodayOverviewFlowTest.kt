@@ -22,10 +22,8 @@ import org.junit.runner.RunWith
 class TodayOverviewFlowTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
-    @Test fun largeTextPlannerAndAIActionsOpenTheirExplicitDestinations() {
+    @Test fun largeTextLessonAndPlannerRowsOpenTheirDestinations() {
         var selectedPlanner: String? = null
-        var priorities = 0
-        var weeks = 0
         var timetables = 0
         val date = LocalDate.now(ZoneId.of("Europe/Prague")).toString()
         val cancelled = ScheduledLesson("cancelled", TimetableHour("1", "1", "08:00", "08:45"), "Math", "M",
@@ -34,23 +32,16 @@ class TodayOverviewFlowTest {
         compose.setContent {
             GradeyTheme {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1.5f)) {
-                    TodayScreen(DashboardData(MarksResponse()), AbsenceResponse(), timetable, false,
-                        onRefresh = {}, onOpenAccount = {}, onOpenGradeyTools = {}, onOpenMarks = {}, onOpenAbsence = {},
+                    TodayScreen(DashboardData(MarksResponse()), timetable, false,
+                        onRefresh = {}, onOpenAI = {}, onOpenSettings = {}, onOpenMarks = {},
                         onOpenTimetable = { timetables++ }, plannerItems = listOf(PersonalPlannerItem(id = "personal", title = "Read the next chapter")),
-                        onOpenPlanner = {}, onOpenPlannerItem = { selectedPlanner = it },
-                        onStudyPrioritiesAI = { priorities++ }, onWeekSummaryAI = { weeks++ })
+                        onOpenPlanner = {}, onOpenPlannerItem = { selectedPlanner = it })
                 }
             }
         }
         compose.onNodeWithTag("todayScroll").performScrollToNode(hasTestTag("today-lesson-strip"))
         compose.onNodeWithTag("today-lesson-cancelled").performClick()
         assertEquals(1, timetables)
-        compose.onNodeWithTag("todayScroll").performScrollToNode(hasTestTag("today-study-priorities"))
-        compose.onNodeWithTag("today-study-priorities").performClick()
-        compose.onNodeWithTag("todayScroll").performScrollToNode(hasTestTag("today-week-summary"))
-        compose.onNodeWithTag("today-week-summary").performClick()
-        assertEquals(1, priorities)
-        assertEquals(1, weeks)
         compose.onNodeWithTag("todayScroll").performScrollToNode(hasTestTag("today-planner-personal"))
         compose.onNodeWithText("Read the next chapter").assertIsDisplayed()
         compose.onNodeWithTag("today-planner-personal").performClick()

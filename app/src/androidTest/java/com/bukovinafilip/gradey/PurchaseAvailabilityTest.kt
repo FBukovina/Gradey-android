@@ -23,7 +23,7 @@ class PurchaseAvailabilityTest {
         var stage by mutableStateOf(0)
         compose.setContent {
             GradeyTheme {
-                SupportScreen(accountID = if (stage == 1) null else "local-purchase-fixture", isDemo = stage == 0)
+                SupportScreen(accountID = if (stage == 1) null else "local-purchase-fixture", isDemo = stage == 0, onBack = {})
             }
         }
         val explanations = listOf(R.string.app_support_demo, R.string.app_support_signin, R.string.app_support_unconfigured)

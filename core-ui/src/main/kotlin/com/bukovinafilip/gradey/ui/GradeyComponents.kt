@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -76,6 +77,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -175,16 +178,15 @@ fun GradeyLazyColumn(
     itemSpacing: Dp = GradeyMetrics.sectionSpacing,
     content: LazyListScope.() -> Unit,
 ) {
-    BoxWithConstraints(modifier.fillMaxSize()) {
-        val side = max(GradeyMetrics.screenPadding, (this.maxWidth - maxWidth) / 2)
-        LazyColumn(
-            state = state,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = side, end = side, top = topPadding, bottom = bottomPadding),
-            verticalArrangement = Arrangement.spacedBy(itemSpacing),
-            content = content,
-        )
-    }
+    // The list itself is capped and centred, so a caller's test tag sits on the scrollable node
+    // and nothing is subcomposed to learn the width.
+    LazyColumn(
+        state = state,
+        modifier = modifier.fillMaxSize().wrapContentWidth().widthIn(max = maxWidth + GradeyMetrics.screenPadding * 2).fillMaxWidth(),
+        contentPadding = PaddingValues(start = GradeyMetrics.screenPadding, end = GradeyMetrics.screenPadding, top = topPadding, bottom = bottomPadding),
+        verticalArrangement = Arrangement.spacedBy(itemSpacing),
+        content = content,
+    )
 }
 
 // MARK: - Headers
@@ -656,8 +658,8 @@ fun GradeyTopBar(
     val background = MaterialTheme.gradeyColors.groupedBackground
     val fade by animateFloatAsState(if (scrolled) 0.94f else 0f, tween(180), label = "topBarFade")
     val separator = MaterialTheme.gradeyColors.separator
-    Box(
-        modifier.fillMaxWidth()
+    Layout(
+        modifier = modifier.fillMaxWidth()
             .drawBehind {
                 if (fade > 0f) {
                     drawRect(background.copy(alpha = fade))
@@ -667,15 +669,16 @@ fun GradeyTopBar(
             .windowInsetsPadding(WindowInsets.statusBars)
             .height(56.dp)
             .padding(horizontal = GradeySpacing.xs),
-    ) {
-        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
+        measurePolicy = TopBarMeasurePolicy,
+        content = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             when {
                 onBack != null -> ToolbarIconButton(HugeIcons.ArrowLeft01, backDescription, onBack, tint = MaterialTheme.colorScheme.onSurface)
                 onOpenAI != null -> GradeyAIButton(onOpenAI, aiDescription)
             }
         }
         Row(
-            Modifier.align(Alignment.Center).widthIn(max = 220.dp)
+            Modifier
                 .then(if (onTitleClick != null) Modifier.clip(RoundedCornerShape(GradeyRadius.xs)).clickable(role = Role.Button, onClick = onTitleClick) else Modifier)
                 .padding(horizontal = GradeySpacing.sm, vertical = GradeySpacing.xs)
                 .semantics { heading() },
@@ -684,11 +687,34 @@ fun GradeyTopBar(
             Text(title, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (onTitleClick != null) GradeyIcon(HugeIcons.ArrowDown01, size = 13.dp, tint = MaterialTheme.gradeyColors.secondaryLabel)
         }
-        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             actions?.invoke(this)
             if (onRefresh != null) ToolbarIconButton(HugeIcons.Refresh04, refreshDescription, onRefresh, loading = isRefreshing)
             if (onOpenSettings != null) ToolbarIconButton(HugeIcons.Settings01, settingsDescription, onOpenSettings)
         }
+        },
+    )
+}
+
+/**
+ * Leading buttons, title, trailing buttons. The title sits in the middle of the bar when it fits
+ * between the two button groups mirrored; a longer title, or large text on a narrow phone, uses
+ * all the room between the groups instead, so it is never drawn under a button.
+ */
+private val TopBarMeasurePolicy = MeasurePolicy { measurables, constraints ->
+    val loose = constraints.copy(minWidth = 0, minHeight = 0)
+    val start = measurables[0].measure(loose)
+    val end = measurables[2].measure(loose)
+    val width = constraints.maxWidth
+    val height = constraints.maxHeight
+    val centred = (width - maxOf(start.width, end.width) * 2).coerceAtLeast(0)
+    val between = (width - start.width - end.width).coerceAtLeast(0)
+    val fitsCentred = measurables[1].maxIntrinsicWidth(height) <= centred
+    val title = measurables[1].measure(loose.copy(maxWidth = if (fitsCentred) centred else between))
+    layout(width, height) {
+        start.placeRelative(0, (height - start.height) / 2)
+        end.placeRelative(width - end.width, (height - end.height) / 2)
+        title.placeRelative(if (fitsCentred) (width - title.width) / 2 else start.width + (between - title.width) / 2, (height - title.height) / 2)
     }
 }
 

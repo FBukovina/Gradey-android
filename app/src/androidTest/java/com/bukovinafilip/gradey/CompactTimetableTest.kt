@@ -31,7 +31,6 @@ class CompactTimetableTest {
 
     @Test fun enlargedTitlesDoNotOverlapActionsAndLessonsRemainReachable() {
         var plannerOpened = 0
-        var weekAsked = 0
         var plannedLesson: String? = null
         val today = LocalDate.now(ZoneId.of("Europe/Prague"))
         val monday = today.minusDays((today.dayOfWeek.value - 1).toLong())
@@ -46,35 +45,25 @@ class CompactTimetableTest {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, 1.5f)) {
                     Box(Modifier.requiredSize(320.dp, 568.dp)) {
                         TimetableScreen(TimetableWeek(monday.toString(), days, emptyList()), false,
-                            onRefresh = {}, onChangeWeek = {}, onOpenAccount = {}, onOpenGradeyTools = {},
-                            onChangeKind = {}, onOpenPlanner = { plannerOpened++ }, onAskWeekAI = { weekAsked++ },
+                            onRefresh = {}, onChangeWeek = {}, onOpenAI = {}, onOpenSettings = {},
+                            onChangeKind = {}, onOpenPlanner = { plannerOpened++ },
                             onPlanLesson = { selected, _ -> plannedLesson = selected.id })
                     }
                 }
             }
         }
         val title = compose.onNodeWithText("Timetable").fetchSemanticsNode().boundsInRoot
-        for (description in listOf("Refresh timetable", "Open account", "Open Gradey tools")) {
+        for (description in listOf("Gradey AI", "Planner", "Refresh", "Settings")) {
             val action = compose.onNodeWithContentDescription(description).fetchSemanticsNode().boundsInRoot
             assertFalse("Title overlaps $description", title.overlaps(action))
         }
-        for (label in listOf("Plan week with AI", "Open Planner")) {
-            val layouts = mutableListOf<TextLayoutResult>()
-            compose.onNodeWithText(label, useUnmergedTree = true)
-                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-            assertTrue("Action text was not measured", layouts.isNotEmpty())
-            // FlowRow intrinsic measurement may leave extra paragraph layout width; check
-            // the rendered line bounds, with only subpixel rounding tolerance.
-            assertTrue("Action $label is clipped or fragmented: ${layouts.map { "${it.lineCount} lines, line=${it.getLineLeft(0)}..${it.getLineRight(0)}, bottom=${it.getLineBottom(0)}, size=${it.size}" }}", layouts.all { it.getLineLeft(0) >= -0.5f && it.getLineRight(0) <= it.size.width + 0.5f && it.getLineBottom(0) <= it.size.height + 0.5f && !it.isLineEllipsized(0) && it.lineCount == 1 })
-            compose.onNodeWithText(label).performScrollTo().performClick()
-        }
+        compose.onNodeWithTag("timetablePlannerButton").performClick()
         assertEquals(1, plannerOpened)
-        assertEquals(1, weekAsked)
         val lessonButton = hasContentDescription("Open Physics lesson details", substring = true)
         compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
             .performScrollToNode(lessonButton)
         compose.onNode(lessonButton).assertIsDisplayed().performClick()
-        compose.onNodeWithText("Add to Planner").performScrollTo().performClick()
+        compose.onNodeWithTag("lessonAddPlannerButton").performScrollTo().performClick()
         assertEquals("physics", plannedLesson)
     }
 }
