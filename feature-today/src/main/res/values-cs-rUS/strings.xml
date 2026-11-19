@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Top bar -->
+    <string name="today_title">dnes</string>
+    <string name="today_gradey_ai">Gradey AI</string>
+    <string name="today_refresh">obnovit</string>
+    <string name="today_settings">nastavení</string>
+
+    <!-- School connection -->
+    <string name="today_reconnect_title">školní účet potřebuje pozornost</string>
+    <string name="today_reconnect_fallback">přihlas se znova, ať známky a notifikace jedou</string>
+    <string name="today_reconnect_action">připojit znova</string>
+
+    <!-- Greeting and stats -->
+    <string name="today_greeting_morning">dobrý ráno</string>
+    <string name="today_greeting_afternoon">čau</string>
+    <string name="today_greeting_evening">dobrej večer</string>
+    <string name="today_hero_average">průměr</string>
+    <string name="today_hero_lessons_today">hodin dneska</string>
+    <string name="today_hero_new_marks">nový známky</string>
+
+    <!-- Now and next -->
+    <string name="today_now_and_next">teď a pak</string>
+    <string name="today_timetable_unavailable">rozvrh teď není</string>
+    <string name="today_no_school">dneska škola není, W</string>
+    <string name="today_no_more_lessons">žádný další hodiny, máš volno</string>
+    <string name="today_current_lesson">právě teď</string>
+    <string name="today_next_lesson">další</string>
+    <string name="today_minutes_remaining">zbejvá %1$d min</string>
+    <string name="today_starts_in">začíná za %1$d min</string>
+    <string name="today_starts_at">začíná v %1$s</string>
+    <string name="today_lesson_fallback">hodina</string>
+    <string name="today_timetable_change">změna v rozvrhu</string>
+    <string name="today_change_cancelled">odpadá</string>
+    <string name="today_change_substitution">supl</string>
+    <string name="today_change_room">jiná učebna</string>
+    <string name="today_change_added">přidáno</string>
+    <plurals name="today_changes">
+        <item quantity="one">dneska 1 změna: %2$s</item>
+        <item quantity="few">dneska %1$d změny</item>
+        <item quantity="many">dneska %1$d změn</item>
+        <item quantity="other">dneska %1$d změn</item>
+    </plurals>
+    <string name="today_cached_warning">ukazuju uložený data. obnov je nahoře</string>
+
+    <!-- Recent marks -->
+    <string name="today_recent_marks">poslední známky</string>
+    <string name="today_no_marks">zatím žádný známky. klídek</string>
+
+    <!-- Planner -->
+    <string name="today_planner">plánovač</string>
+    <string name="today_nothing_planned">nic v plánu, chill</string>
+    <string name="today_planner_undated">bez data</string>
+    <string name="today_planner_homework">úkol</string>
+    <string name="today_planner_test">test</string>
+    <string name="today_planner_presentation">prezentace</string>
+    <string name="today_planner_note">poznámka</string>
+    <string name="today_planner_task">úkol</string>
+
+    <!-- Lunch -->
+    <string name="today_lunch">oběd</string>
+    <string name="today_no_meal">žádnej objednanej oběd</string>
+</resources>

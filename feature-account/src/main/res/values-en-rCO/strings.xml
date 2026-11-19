@@ -1,26 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="account_account_85dfa">account</string>
-    <string name="account_cancel_77dfd">cancel</string>
-    <string name="account_connect_school_85e9d">connect school</string>
-    <string name="account_current_4fc0e">current</string>
-    <string name="account_delete_gradey_account_c70a9">delete Gradey account</string>
-    <string name="account_full_details_a005b">full details</string>
-    <string name="account_gradey_account_4bda8">Gradey account</string>
-    <string name="account_language_89b86">language</string>
-    <string name="account_new_marks_67db5">new marks</string>
-    <string name="account_notifications_753a2">notifications</string>
-    <string name="account_privacy_policy_9db10">privacy policy</string>
-    <string name="account_profile_ff4fc">profile</string>
-    <string name="account_quiet_hours_706b2">quiet hours</string>
-    <string name="account_reconnect_6988b">reconnect</string>
-    <string name="account_save_efc00">save</string>
-    <string name="account_save_name_8ce68">save name</string>
-    <string name="account_school_accounts_93efe">school accounts</string>
-    <string name="account_show_meals_tab_aa1ad">show meals tab</string>
-    <string name="account_sign_out_dc164">sign out</string>
-    <string name="account_time_zone_eea79">time zone</string>
-    <string name="account_try_again_042c8">try again</string>
-    <string name="account_your_gradey_c56a5">your Gradey</string>
-    <string name="account_your_name_ab422">your name</string>
+    <!-- Settings overview (iOS GradeyAccountHubView) -->
+    <string name="settings_title">settings</string>
+    <string name="settings_close">done</string>
+    <string name="settings_back">back</string>
+    <string name="settings_group_app">app</string>
+    <string name="settings_destination_account_title">account</string>
+    <string name="settings_destination_connected_title">connected services</string>
+    <string name="settings_destination_notifications_title">notifications</string>
+    <string name="settings_destination_privacy_title">privacy &amp; data</string>
+    <string name="settings_destination_preferences_title">language and preferences</string>
+    <string name="settings_destination_support_title">support &amp; about</string>
+    <string name="settings_overview_school_active">school active</string>
+    <string name="settings_overview_school_not_connected">school not connected</string>
+    <string name="settings_overview_canteen_connected">canteen connected</string>
+    <string name="settings_overview_canteen_not_connected">canteen not connected</string>
+    <string name="settings_overview_notifications_on">on</string>
+    <string name="settings_overview_notifications_off">off</string>
+    <string name="settings_overview_notifications_quiet_until">on · quiet until %1$s</string>
+    <string name="settings_overview_notifications_unavailable">link a school to turn on</string>
+    <string name="settings_profile_gradey_id">Gradey ID</string>
+    <string name="settings_profile_add_name_title">add your name</string>
+    <string name="settings_profile_add_name_message">make your Gradey profile yours</string>
+    <string name="settings_profile_guest_title">using Gradey as a guest</string>
+    <string name="settings_profile_guest_message">school data stays on this device</string>
+    <string name="settings_profile_demo">demo data</string>
+    <string name="settings_status_active">active</string>
+    <string name="settings_status_action_required">needs you</string>
+    <string name="settings_status_paused">paused</string>
+    <string name="settings_status_linking">linking</string>
+    <string name="settings_status_failed">failed</string>
+    <string name="settings_try_again">try again</string>
+    <string name="settings_cancel">cancel</string>
+    <string name="settings_save">save</string>
+
+    <!-- Account -->
+    <string name="settings_demo_title">demo mode</string>
+    <string name="settings_demo_message_live">you’re poking around sample data. sign in to Gradey ID to connect your own school.</string>
+    <string name="settings_demo_message_offline">explore Gradey with sample data. real school accounts can’t be connected or changed in demo mode.</string>
+    <string name="settings_demo_connect">connect my school</string>
+    <string name="settings_guest_account_title">Gradey account</string>
+    <string name="settings_guest_account_heading">want a Gradey ID?</string>
+    <string name="settings_guest_account_action">sign in to Gradey ID</string>
+    <string name="settings_account_profile_title">Gradey profile</string>
+    <string name="settings_account_name_title">name</string>
+    <string name="settings_account_name_placeholder">your name</string>
+    <string name="settings_account_name_too_long">names max out at 80 characters</string>
+    <string name="settings_account_name_save">save name</string>
+    <string name="settings_account_email_title">Gradey ID email</string>
+    <string name="settings_switch_student">switch student</string>
+    <string name="settings_choose_student">pick a student</string>
+    <string name="settings_student_profiles_note">parent profiles don’t get background mark pings or cloud grade history. open Gradey to refresh the picked student’s grades.</string>
+    <string name="settings_sign_out">sign out</string>
+    <string name="settings_guest_sign_out">sign out of school account</string>
+    <string name="settings_sign_out_title">sign out of every account on this device?</string>
+    <string name="settings_sign_out_message">this removes Gradey, school and canteen sessions and cached data from this device.</string>
+    <string name="settings_guest_sign_out_title">sign out of school account?</string>
+    <string name="settings_guest_sign_out_message">only the school and meals accounts on this device sign out. guest mode stays on.</string>
+    <string name="settings_delete_account">delete Gradey account</string>
+    <string name="settings_delete_first_title">delete your Gradey account?</string>
+    <string name="settings_delete_first_message">you will be asked once more before anything is deleted.</string>
+    <string name="settings_delete_first_action">continue to deletion</string>
+    <string name="settings_delete_final_title">this is your final confirmation</string>
+    <string name="settings_delete_final_message">your Gradey profile, linked accounts, preferences and history will be deleted. provider credentials and local sessions are then cleared from this device.</string>
+    <string name="settings_delete_final_action">permanently delete</string>
+
+    <!-- Connected services -->
+    <string name="settings_connected_school_title">school accounts</string>
+    <string name="settings_connected_canteen_title">canteen</string>
+    <string name="settings_link_school">link school</string>
+    <string name="settings_link_another_school">link another school</string>
+    <string name="settings_link_strava">link Strava.cz</string>
+    <string name="settings_use_on_device">use on this device</string>
+    <string name="settings_unlink">unlink</string>
+    <string name="settings_account_actions">account actions</string>
+    <string name="settings_in_use">in use</string>
+    <string name="settings_reconnect">reconnect</string>
+    <string name="settings_mark_notifications">mark notifications</string>
+    <string name="settings_connected_guest_explanation">connected services need a Gradey account. your school session on this device still works in guest mode.</string>
+    <string name="settings_unlink_title">unlink account?</string>
+    <string name="settings_unlink_confirm">unlink account</string>
+    <string name="settings_unlink_school_message">%1$s gets unlinked from Gradey. you can connect it again later.</string>
+    <string name="settings_unlink_canteen_message">remove %1$s from your Gradey ID? your meal orders stay put.</string>
+    <string name="settings_canteen_cloud_warning">Strava.cz works on this device, but it couldn\'t link to your Gradey ID</string>
+    <string name="settings_canteen_number">canteen %1$s</string>
+    <string name="settings_canteen_on_device">connected on this device</string>
+    <string name="settings_canteen_existing_link_note">if this canteen is already listed, remove its old link before linking it again. a saved link doesn’t sign you in to the canteen on a new device.</string>
+    <string name="settings_open_meals">open meals</string>
+    <string name="settings_local_school_on_device">school connected on this device</string>
+    <string name="settings_local_school_detail">grades, timetable and attendance live here. this school isn’t linked to a Gradey ID.</string>
+    <string name="settings_change_school">change school</string>
+    <string name="settings_watch_title">watch access</string>
+    <string name="settings_watch_manage">manage watch access</string>
+    <string name="settings_watch_description">choose whether a nearby watch can connect straight to your school. it stays off until you allow it.</string>
+
+    <!-- Notifications -->
+    <string name="settings_notifications_device_title">this device</string>
+    <string name="settings_permission_title">notification permission</string>
+    <string name="settings_permission_not_determined">not asked yet</string>
+    <string name="settings_permission_denied">blocked in system settings</string>
+    <string name="settings_permission_authorized">allowed</string>
+    <string name="settings_permission_enable">turn on</string>
+    <string name="settings_permission_open_settings">open settings</string>
+    <string name="settings_android_notification_settings">android notification settings</string>
+    <string name="settings_planner_reminder">daily planner reminder</string>
+    <string name="settings_planner_reminder_note">a daily nudge around 18:00 for tomorrow’s homework, tests and tasks. android might delay it to save battery.</string>
+    <string name="settings_mark_notifications_title">new mark pings</string>
+    <string name="settings_mark_notifications_toggle">ping me about new marks</string>
+    <string name="settings_lock_screen">lock screen</string>
+    <string name="settings_lock_private">private</string>
+    <string name="settings_lock_subject">subject</string>
+    <string name="settings_lock_full">full details</string>
+    <string name="settings_quiet_hours_title">quiet hours</string>
+    <string name="settings_quiet_hours_toggle">hold pings during quiet hours</string>
+    <string name="settings_quiet_hours_start">starts</string>
+    <string name="settings_quiet_hours_end">ends</string>
+    <string name="settings_time_zone_value">time zone: %1$s</string>
+    <string name="settings_notifications_unavailable_guest">sign in to Gradey to sync notification settings. you can still look around here first.</string>
+    <string name="settings_notifications_unavailable_school">link a school account to get mark pings. device permission is a separate thing.</string>
+
+    <!-- Privacy & data -->
+    <string name="settings_privacy_documents_title">policies and terms</string>
+    <string name="settings_privacy_policy">privacy policy</string>
+    <string name="settings_terms">terms of use (eula)</string>
+    <string name="settings_privacy_changes">what changed in the policy</string>
+    <string name="settings_age_title">age</string>
+    <string name="settings_age_sixteen">you confirmed you are 16 or older.</string>
+    <string name="settings_age_teen">you confirmed you are under 16 and a parent or guardian agrees.</string>
+    <string name="settings_age_unknown">age is not confirmed yet.</string>
+    <string name="settings_age_local">saved on this device. your date of birth isn’t stored.</string>
+    <string name="settings_export_title">export your data</string>
+    <string name="settings_export_prepare">prepare JSON export</string>
+    <string name="settings_privacy_guest_explanation">data export and account deletion become available after you sign in to a Gradey account.</string>
+
+    <!-- Language and preferences -->
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_czech">Čeština</string>
+    <string name="settings_chronically_online_title">chronically online</string>
+    <string name="settings_chronically_online_subtitle">lowercase, slang, the works</string>
+    <string name="settings_show_meals_tab">show meals tab</string>
+
+    <!-- Support & about -->
+    <string name="settings_support_title">help &amp; feedback</string>
+    <string name="settings_support_chat">chat with support</string>
+    <string name="settings_support_tips">support Gradey</string>
+    <string name="settings_support_contact">hit up the developer</string>
+    <string name="settings_github">GitHub repo</string>
+    <string name="settings_about_title">about</string>
+    <string name="settings_credits_title">credits</string>
+    <string name="settings_app_updates">app updates</string>
+    <string name="settings_app_updates_subtitle">grab the latest glow-ups and manage auto downloads.</string>
+    <string name="settings_version">version</string>
+    <string name="settings_version_unknown">unknown</string>
+    <string name="settings_independent_note">Gradey is an independent app, not an official Bakaláři, EduPage or Strava.cz product.</string>
+
+    <!-- Credits (iOS CreditsView) -->
+    <string name="settings_credits_made_by">made by</string>
+    <string name="settings_credits_lead_developer">lead dev</string>
+    <string name="settings_credits_lead_graphics">graphics &amp; marketing</string>
+    <string name="settings_credits_bakalari_title">Bakaláři support</string>
+    <string name="settings_credits_bakalari_message">this unofficial integration connects to Bakaláři school systems. Gradey is not a Bakaláři product and is not affiliated with or endorsed by Bakaláři software.</string>
+    <string name="settings_credits_edupage_title">EduPage support</string>
+    <string name="settings_credits_edupage_message">this unofficial integration follows publicly documented EduPage API behavior. Gradey is not an EduPage product.</string>
 </resources>

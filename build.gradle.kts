@@ -16,6 +16,22 @@ allprojects {
     layout.buildDirectory.set(localBuildRoot.resolve(projectBuildPath))
 }
 
+// Every Compose module shares one stability configuration, and can write compiler reports with
+// -Pgradey.composeReports=true (build/compose-reports) to audit skippability.
+val composeStability = layout.projectDirectory.file("compose-stability.conf")
+val composeReports = providers.gradleProperty("gradey.composeReports").orElse("false").map(String::toBoolean)
+subprojects {
+    plugins.withId("org.jetbrains.kotlin.plugin.compose") {
+        extensions.configure<org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension> {
+            stabilityConfigurationFiles.add(composeStability)
+            if (composeReports.get()) {
+                reportsDestination.set(layout.buildDirectory.dir("compose-reports"))
+                metricsDestination.set(layout.buildDirectory.dir("compose-metrics"))
+            }
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(localBuildRoot)
 }

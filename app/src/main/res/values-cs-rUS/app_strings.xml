@@ -1,4 +1,6 @@
 <resources>
     <string name="app_today">dnes</string>
     <string name="app_marks">známky</string>
+    <string name="app_report_card">vysvědčení</string>
+    <string name="app_recap">gradey recap</string>
 </resources>

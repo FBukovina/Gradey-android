@@ -1,50 +1,35 @@
 package com.bukovinafilip.gradey.feature.planner
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import android.content.Intent
 import android.provider.CalendarContract
-import androidx.activity.compose.BackHandler
+import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.key
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -52,27 +37,44 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.PersonalPlanner
-import com.bukovinafilip.gradey.domain.PlannerCalendarMirror
-import com.bukovinafilip.gradey.domain.PlannerCalendarReport
 import com.bukovinafilip.gradey.domain.PersonalPlannerRepository
 import com.bukovinafilip.gradey.domain.PlannerCalendarExport
+import com.bukovinafilip.gradey.domain.PlannerCalendarMirror
+import com.bukovinafilip.gradey.domain.PlannerCalendarReport
 import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.PlannerItemType
 import com.bukovinafilip.gradey.model.PlannerSubjectReference
-import com.bukovinafilip.gradey.ui.GradeyHero
-import com.bukovinafilip.gradey.ui.GradeySectionCard
+import com.bukovinafilip.gradey.ui.EmptyState
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyDialog
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyLazyColumn
+import com.bukovinafilip.gradey.ui.GradeyMetrics
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyTopBar
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.Hairline
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.InlineNotice
+import com.bukovinafilip.gradey.ui.LoadingState
+import com.bukovinafilip.gradey.ui.PlainLink
+import com.bukovinafilip.gradey.ui.PlainSectionTitle
+import com.bukovinafilip.gradey.ui.SegmentedControl
+import com.bukovinafilip.gradey.ui.ToolbarIconButton
+import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.isScrolled
+import com.bukovinafilip.gradey.ui.struck
+import com.bukovinafilip.gradey.ui.tabular
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -83,9 +85,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private enum class PlannerExport { NONE, CALENDAR, ICS }
+internal enum class PlannerExport { NONE, CALENDAR, ICS }
+
 private val PlannerJson = Json { ignoreUnknownKeys = true }
 
+/**
+ * Planner, pushed from Today or Timetable (iOS `PlannerView`): Upcoming | Completed, one plain
+ * section per day, and the item editor as a sheet. The app shell handles leaving the screen.
+ */
 @Composable
 fun PlannerRoute(
     repository: PersonalPlannerRepository,
@@ -101,7 +108,7 @@ fun PlannerRoute(
     calendarMirror: PlannerCalendarMirror? = null,
     onInitialItemHandled: () -> Unit = {},
 ) {
-    val strings = androidx.compose.ui.platform.LocalContext.current.resources
+    val resources = LocalResources.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var items by remember(repository) { mutableStateOf(emptyList<PersonalPlannerItem>()) }
@@ -117,6 +124,7 @@ fun PlannerRoute(
     val finding = findingItemID != null
     var pendingICS by rememberSaveable { mutableStateOf<String?>(null) }
     var exportMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var deletionID by remember { mutableStateOf<String?>(null) }
     var calendarReport by remember(calendarMirror) { mutableStateOf<PlannerCalendarReport?>(null) }
     var calendarError by remember(calendarMirror) { mutableStateOf(false) }
     suspend fun synchronizeCalendar() {
@@ -134,17 +142,17 @@ fun PlannerRoute(
             try {
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openOutputStream(uri, "w")?.use { it.write(encoded.toByteArray(Charsets.UTF_8)) }
-                        ?: throw IllegalStateException(strings.getString(R.string.planner_the_selected_file_could_not_be_opened))
+                        ?: throw IllegalStateException(resources.getString(R.string.planner_the_selected_file_could_not_be_opened))
                 }
-                exportMessage = strings.getString(R.string.planner_calendar_file_saved_it_is_a_copy)
-            } catch (_: Exception) { error = strings.getString(R.string.planner_the_calendar_file_could_not_be_saved) }
+                exportMessage = resources.getString(R.string.planner_calendar_file_saved_it_is_a_copy)
+            } catch (_: Exception) { error = resources.getString(R.string.planner_the_calendar_file_could_not_be_saved) }
             finally { pendingICS = null }
         } else pendingICS = null
     }
     fun export(item: PersonalPlannerItem, action: PlannerExport) {
         if (action == PlannerExport.NONE) return
         val event = PlannerCalendarExport.event(item)
-        if (event == null) { error = strings.getString(R.string.planner_add_a_day_or_due_date_before); return }
+        if (event == null) { error = resources.getString(R.string.planner_add_a_day_or_due_date_before); return }
         if (action == PlannerExport.ICS) {
             pendingICS = PlannerCalendarExport.ics(item)
             exportFile.launch("gradey-${item.id.take(8)}.ics")
@@ -159,7 +167,7 @@ fun PlannerRoute(
                     .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end.toEpochMilli())
                     .putExtra(CalendarContract.Events.ALL_DAY, event.allDay)
                     .putExtra(CalendarContract.Events.EVENT_TIMEZONE, event.timeZoneID))
-            } catch (_: Exception) { error = strings.getString(R.string.planner_no_calendar_app_is_available_you_can) }
+            } catch (_: Exception) { error = resources.getString(R.string.planner_no_calendar_app_is_available_you_can) }
         }
     }
     suspend fun load() {
@@ -171,7 +179,7 @@ fun PlannerRoute(
             onItemsChanged(items)
             synchronizeCalendar()
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { error = strings.getString(R.string.planner_your_planner_could_not_be_opened_saved) }
+        catch (_: Exception) { error = resources.getString(R.string.planner_your_planner_could_not_be_opened_saved) }
         finally { busy = false }
     }
     fun mutate(action: suspend () -> List<PersonalPlannerItem>, after: () -> Unit = {}) {
@@ -185,7 +193,7 @@ fun PlannerRoute(
                 after()
                 synchronizeCalendar()
             } catch (cancelled: CancellationException) { throw cancelled }
-            catch (failure: Exception) { error = failure.message?.takeIf { it.length <= 250 } ?: strings.getString(R.string.planner_the_planner_could_not_be_saved_your) }
+            catch (failure: Exception) { error = failure.message?.takeIf { it.length <= 250 } ?: resources.getString(R.string.planner_the_planner_could_not_be_saved_your) }
             finally { busy = false }
         }
     }
@@ -201,7 +209,7 @@ fun PlannerRoute(
                 val entry = initialItem ?: items.firstOrNull { it.id == initialItemID }
                 if (entry == null) {
                     pendingEntryData = null
-                    error = strings.getString(R.string.planner_entry_unavailable)
+                    error = resources.getString(R.string.planner_entry_unavailable)
                 }
                 // Reopening the same item must preserve the editor's unsaved version, including
                 // after saved-state restoration. A different item waits for a deliberate choice.
@@ -217,82 +225,105 @@ fun PlannerRoute(
             pendingEntryData = null
         }
     }
-    BackHandler(enabled = draft == null, onBack = onBack)
 
-    val visible = remember(items, complete, filterDay) {
-        items.filter { it.isCompleted == complete && (filterDay == null || PersonalPlanner.orderingDate(it)?.toString() == filterDay) }
-            .sortedWith(compareBy<PersonalPlannerItem> { PersonalPlanner.orderingDate(it) ?: LocalDate.MAX }.thenBy { it.dueTime ?: "23:59" }.thenBy { it.title.lowercase() })
+    val locale = LocalConfiguration.current.locales[0]
+    val is24Hour = DateFormat.is24HourFormat(context)
+    val labels = remember(resources, locale, is24Hour) { PlannerLabels.from(resources, locale, is24Hour) }
+    val sections = remember(items, complete, filterDay, labels) { plannerSections(items, complete, filterDay, labels) }
+    val filterDayTitle = remember(filterDay, labels) {
+        filterDay?.let { day -> PersonalPlannerDates.parse(day)?.let { dayTitle(it, LocalDate.now(), labels) } ?: day }
     }
-    Surface(modifier.fillMaxSize(), color = androidx.compose.ui.graphics.Color.Transparent, contentColor = MaterialTheme.colorScheme.onBackground) {
-        LazyColumn(Modifier.testTag("plannerList"), contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) { HugeIcon(HugeIcons.ArrowLeft01, strings.getString(R.string.planner_back)) }
-                    Text(strings.getString(R.string.planner_planner), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) }, enabled = loaded && !busy) { HugeIcon(HugeIcons.Add01, strings.getString(R.string.planner_add_planner_item)) }
+    val listState = rememberLazyListState()
+    val scrolled by remember { derivedStateOf { listState.isScrolled } }
+
+    Column(modifier.fillMaxSize()) {
+        GradeyTopBar(
+            title = stringResource(R.string.planner_planner),
+            scrolled = scrolled,
+            onBack = onBack,
+            backDescription = stringResource(R.string.planner_back),
+            actions = {
+                ToolbarIconButton(
+                    HugeIcons.Add01, stringResource(R.string.planner_add_planner_item),
+                    onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) },
+                    modifier = Modifier.testTag("plannerAddButton"), enabled = loaded && !busy,
+                )
+            },
+        )
+        GradeyLazyColumn(
+            Modifier.weight(1f).testTag("plannerList"), state = listState,
+            maxWidth = GradeyMetrics.narrowContentMaxWidth, itemSpacing = 0.dp,
+        ) {
+            item(key = "filter", contentType = "filter") {
+                SegmentedControl(
+                    options = listOf(stringResource(R.string.planner_upcoming), stringResource(R.string.planner_completed)),
+                    selectedIndex = if (complete) 1 else 0,
+                    onSelect = { complete = it == 1 },
+                    modifier = Modifier.fillMaxWidth().testTag("plannerFilter"),
+                )
+            }
+            filterDayTitle?.let { title ->
+                item(key = "dayFilter", contentType = "link") {
+                    PlainLink(stringResource(R.string.planner_1_s_clear_day_filter, title), { filterDay = null },
+                        Modifier.padding(top = GradeySpacing.sm), showsArrow = false)
                 }
             }
-            item { GradeyHero(strings.getString(R.string.planner_a_little_more_prepared), strings.getString(R.string.planner_keep_homework_tests_and_everything_in_between)) }
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item { FilterChip(!complete, { complete = false }, label = { Text(strings.getString(R.string.planner_upcoming)) }) }
-                    item { FilterChip(complete, { complete = true }, label = { Text(strings.getString(R.string.planner_completed)) }) }
-                    filterDay?.let { day -> item { FilterChip(true, { filterDay = null }, label = { Text(strings.getString(R.string.planner_1_s_clear_day_filter, day)) }) } }
+            error?.let { message ->
+                item(key = "error", contentType = "notice") {
+                    InlineNotice(
+                        message, Modifier.padding(top = GradeySpacing.lg),
+                        action = if (loaded) null else ({
+                            PlainLink(stringResource(R.string.planner_try_again), { scope.launch { load() } }, enabled = !busy, showsArrow = false)
+                        }),
+                    )
                 }
             }
-            if (busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-            error?.let { message -> item {
-                GradeySectionCard {
-                    Text(message, color = MaterialTheme.colorScheme.error)
-                    if (!loaded) TextButton(onClick = { scope.launch { load() } }, enabled = !busy) { Text(strings.getString(R.string.planner_retry_opening_planner)) }
-                }
-            } }
-            exportMessage?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.primary) } }
-            if (calendarMirror != null && (calendarError || (calendarReport?.pending ?: 0) > 0)) item {
-                PlannerCalendarStatus(calendarReport, calendarError, calendarMirror, busy) {
-                    busy = true
-                    scope.launch { try { synchronizeCalendar() } finally { busy = false } }
+            exportMessage?.let { message ->
+                item(key = "exportMessage", contentType = "notice") {
+                    InlineNotice(message, Modifier.padding(top = GradeySpacing.lg), color = MaterialTheme.colorScheme.primary, icon = HugeIcons.CheckmarkCircle02)
                 }
             }
-            if (loaded && visible.isEmpty()) item {
-                GradeySectionCard {
-                    HugeIcon(HugeIcons.CheckList, null, tint = MaterialTheme.colorScheme.primary)
-                    Text(if (complete) strings.getString(R.string.planner_completed_and_collected) else strings.getString(R.string.planner_make_room_for_what_s_next), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(if (complete) strings.getString(R.string.planner_items_you_finish_will_appear_here) else strings.getString(R.string.planner_add_homework_a_test_a_presentation_a), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (!complete) Button(onClick = { edit(PersonalPlannerItem(linkedDate = filterDay)) }, enabled = !busy) { Text(strings.getString(R.string.planner_add_an_item)) }
-                }
-            }
-            val groups = visible.groupBy { PersonalPlanner.orderingDate(it) }
-            groups.forEach { (date, group) ->
-                item(key = "heading-$date") { Text(dayLabel(date, strings), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold) }
-                items(group, key = { it.id }) { item ->
-                    Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface) {
-                        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { mutate({ repository.setCompleted(item.id, !item.isCompleted) }) }, enabled = !busy) {
-                                HugeIcon(if (item.isCompleted) HugeIcons.CheckmarkCircle02 else HugeIcons.Circle,
-                                    if (item.isCompleted) strings.getString(R.string.planner_mark_1_s_incomplete, item.title) else strings.getString(R.string.planner_mark_1_s_complete, item.title), tint = MaterialTheme.colorScheme.primary)
-                            }
-                            Column(Modifier.weight(1f).clickable(enabled = !busy) { edit(item) }.padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                                Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, textDecoration = if (item.isCompleted) TextDecoration.LineThrough else null)
-                                Text(listOfNotNull(plannerTypeTitle(item.type, strings), item.subject?.name, item.dueTime).joinToString(" · "),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (item.notes.isNotBlank()) Text(item.notes, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (PersonalPlanner.isOverdue(item)) Text(strings.getString(R.string.planner_overdue), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-                                if (item.type == PlannerItemType.TEST && onAskTestAI != null) {
-                                    TextButton(onClick = { onAskTestAI(item.id) }) { Text(strings.getString(R.string.planner_prepare_with_ai)) }
-                                }
-                            }
-                            IconButton(onClick = { edit(item) }, enabled = !busy) { HugeIcon(HugeIcons.ArrowRight01, strings.getString(R.string.planner_edit_1_s, item.title)) }
-                        }
+            if (calendarMirror != null && (calendarError || (calendarReport?.pending ?: 0) > 0)) {
+                item(key = "calendarStatus", contentType = "notice") {
+                    PlannerCalendarStatus(calendarReport, calendarError, calendarMirror, busy, Modifier.padding(top = GradeySpacing.lg)) {
+                        busy = true
+                        scope.launch { try { synchronizeCalendar() } finally { busy = false } }
                     }
                 }
             }
-            item { Text(strings.getString(R.string.planner_your_planner_is_stored_securely_on_this), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            if (!loaded && error == null) {
+                item(key = "loading", contentType = "state") { LoadingState(Modifier.padding(top = GradeySpacing.lg)) }
+            } else if (loaded && sections.isEmpty()) {
+                item(key = "empty", contentType = "state") {
+                    EmptyState(
+                        title = stringResource(if (complete) R.string.planner_empty_completed_title else R.string.planner_empty_title),
+                        message = stringResource(if (complete) R.string.planner_empty_completed_message else R.string.planner_empty_message),
+                        icon = HugeIcons.CheckList,
+                        modifier = Modifier.padding(top = GradeySpacing.lg).testTag("plannerEmptyState"),
+                    )
+                }
+            }
+            sections.forEach { section ->
+                item(key = "section-${section.key}", contentType = "sectionTitle") {
+                    PlainSectionTitle(section.title, Modifier.padding(top = GradeySpacing.lg, bottom = GradeySpacing.sm))
+                }
+                items(section.rows, key = { it.item.id }, contentType = { "plannerRow" }) { row ->
+                    PlannerRow(
+                        row, enabled = !busy,
+                        onToggle = { mutate({ repository.setCompleted(it.id, !it.isCompleted) }) },
+                        onEdit = ::edit,
+                        onDelete = { deletionID = it.id },
+                    )
+                }
+            }
         }
     }
+
     draft?.let { current ->
         key(current.id) {
-            PlannerEditor(current, subjects, items.any { it.id == current.id }, busy, finding, error,
+            PlannerItemEditor(
+                item = current, subjects = subjects, existing = items.any { it.id == current.id },
+                busy = busy, finding = finding, error = error,
                 onFindingChanged = { active ->
                     if (active) findingItemID = current.id
                     else if (findingItemID == current.id) findingItemID = null
@@ -301,158 +332,227 @@ fun PlannerRoute(
                 onDismiss = { draftData = null; error = null },
                 onSave = { item, exportAction -> mutate({ repository.save(item) }) { draftData = null; export(item, exportAction) } },
                 onDelete = { mutate({ repository.delete(current.id) }) { draftData = null } },
-                onFindNextLesson = onFindNextLesson, calendarMirror = calendarMirror)
+                onFindNextLesson = onFindNextLesson, calendarMirror = calendarMirror, onAskTestAI = onAskTestAI,
+            )
         }
     }
     if (pendingEntry != null && draft != null && !busy && !finding) {
-        AlertDialog(
-            onDismissRequest = { pendingEntryData = null },
-            title = { Text(strings.getString(R.string.planner_entry_replace_title)) },
-            text = { Text(strings.getString(R.string.planner_entry_replace_body, pendingEntry.title.ifBlank { strings.getString(R.string.planner_new_item) })) },
-            confirmButton = { TextButton(onClick = { edit(pendingEntry); pendingEntryData = null; error = null }) {
-                Text(strings.getString(R.string.planner_entry_discard_open))
-            } },
-            dismissButton = { TextButton(onClick = { pendingEntryData = null }) { Text(strings.getString(R.string.planner_entry_keep_editing)) } },
+        GradeyDialog(
+            title = stringResource(R.string.planner_entry_replace_title),
+            text = stringResource(R.string.planner_entry_replace_body, pendingEntry.title.ifBlank { stringResource(R.string.planner_new_item) }),
+            onDismiss = { pendingEntryData = null },
+            confirmLabel = stringResource(R.string.planner_entry_discard_open),
+            onConfirm = { edit(pendingEntry); pendingEntryData = null; error = null },
+            dismissLabel = stringResource(R.string.planner_entry_keep_editing),
+        )
+    }
+    val deletionTarget = deletionID?.let { id -> items.firstOrNull { it.id == id } }
+    deletionTarget?.let { target ->
+        GradeyDialog(
+            title = stringResource(R.string.planner_delete_this_planner_item),
+            text = stringResource(R.string.planner_1_s_will_be_removed_from_your, target.title),
+            onDismiss = { deletionID = null },
+            confirmLabel = stringResource(R.string.planner_delete),
+            onConfirm = { deletionID = null; mutate({ repository.delete(target.id) }) },
+            dismissLabel = stringResource(R.string.planner_cancel),
+            destructive = true,
+            confirmEnabled = !busy,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+// MARK: - Rows
+
+/** Completion circle in a 40×44 target, then the summary and a disclosure chevron (iOS planner row). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PlannerEditor(
-    item: PersonalPlannerItem,
-    subjects: List<PlannerSubjectReference>,
-    existing: Boolean,
-    busy: Boolean,
-    finding: Boolean,
-    error: String?,
-    onFindingChanged: (Boolean) -> Unit,
-    onChange: (PersonalPlannerItem) -> Unit,
-    onDismiss: () -> Unit,
-    onSave: (PersonalPlannerItem, PlannerExport) -> Unit,
-    onDelete: () -> Unit,
-    onFindNextLesson: (suspend (PersonalPlannerItem) -> Instant?)?,
-    calendarMirror: PlannerCalendarMirror?,
+private fun PlannerRow(
+    row: PlannerRowUi,
+    enabled: Boolean,
+    onToggle: (PersonalPlannerItem) -> Unit,
+    onEdit: (PersonalPlannerItem) -> Unit,
+    onDelete: (PersonalPlannerItem) -> Unit,
 ) {
-    val strings = androidx.compose.ui.platform.LocalContext.current.resources
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var nextMessage by remember { mutableStateOf<String?>(null) }
-    var subjectMenu by remember { mutableStateOf(false) }
-    var confirmDelete by remember { mutableStateOf(false) }
-    val enabled = !busy && !finding
-    DisposableEffect(item.id) { onDispose { onFindingChanged(false) } }
-    val choices = (subjects + listOfNotNull(item.subject)).distinctBy { "${it.scope}\u0000${it.id}" }
-    fun pickDate(current: String?, apply: (String) -> Unit) {
-        val date = current?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: LocalDate.now(PersonalPlanner.zone(item))
-        DatePickerDialog(context, { _, year, month, day -> apply(LocalDate.of(year, month + 1, day).toString()) }, date.year, date.monthValue - 1, date.dayOfMonth).show()
-    }
-    ModalBottomSheet(onDismissRequest = { if (!busy) onDismiss() }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        LazyColumn(Modifier.imePadding().testTag("plannerEditor"), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onDismiss, enabled = !busy) { Text(strings.getString(R.string.planner_cancel)) }
-                    Text(if (existing) strings.getString(R.string.planner_edit_item) else strings.getString(R.string.planner_new_item), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    TextButton(onClick = { onSave(item, PlannerExport.NONE) }, enabled = enabled && item.title.isNotBlank()) { Text(strings.getString(R.string.planner_save)) }
+    val item = row.item
+    val tokens = MaterialTheme.gradeyColors
+    var menu by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.xs)) {
+        Hairline()
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            Box(
+                Modifier.clickable(enabled = enabled, role = Role.Button, onClick = { onToggle(item) })
+                    .padding(vertical = GradeySpacing.md)
+                    .size(width = 40.dp, height = GradeyMetrics.minTouch)
+                    .testTag("plannerComplete-${item.id}"),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                GradeyIcon(
+                    if (item.isCompleted) HugeIcons.CheckmarkCircle02 else HugeIcons.Circle,
+                    size = 22.dp, tint = MaterialTheme.colorScheme.primary,
+                    contentDescription = stringResource(if (item.isCompleted) R.string.planner_mark_1_s_incomplete else R.string.planner_mark_1_s_complete, item.title),
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .combinedClickable(enabled = enabled, role = Role.Button, onClick = { onEdit(item) }, onLongClick = { menu = true })
+                        .padding(vertical = GradeySpacing.md)
+                        .testTag("plannerItem-${item.id}"),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+                ) {
+                    PlannerItemSummary(row, Modifier.weight(1f))
+                    GradeyIcon(HugeIcons.ArrowRight01, size = 13.dp, tint = tokens.tertiaryLabel, contentDescription = stringResource(R.string.planner_edit_1_s, item.title))
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = tokens.secondaryGroupedBackground) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.planner_edit_item), style = GradeyType.body) },
+                        onClick = { menu = false; onEdit(item) },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.planner_delete), style = GradeyType.body, color = GradeyColors.Poor) },
+                        onClick = { menu = false; onDelete(item) },
+                    )
                 }
             }
-            if (!enabled) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-            error?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
-            item {
-                GradeySectionCard(title = strings.getString(R.string.planner_details)) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(PlannerItemType.entries) { type -> FilterChip(item.type == type, { onChange(item.copy(type = type)) }, enabled = enabled, label = { Text(plannerTypeTitle(type, strings)) }) }
-                    }
-                    OutlinedTextField(item.title, { onChange(item.copy(title = it.take(300))) }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.getString(R.string.planner_title)) }, enabled = enabled, singleLine = true)
-                    OutlinedTextField(item.notes, { onChange(item.copy(notes = it.take(20_000))) }, modifier = Modifier.fillMaxWidth(), label = { Text(strings.getString(R.string.planner_notes)) }, enabled = enabled, minLines = 3, maxLines = 8)
-                }
-            }
-            item {
-                GradeySectionCard(title = strings.getString(R.string.planner_school_context)) {
-                    if (item.lesson != null) {
-                        Text(item.subject?.name ?: strings.getString(R.string.planner_linked_lesson), fontWeight = FontWeight.SemiBold)
-                        Text(listOfNotNull(item.lesson?.hourCaption, item.lesson?.teacher, item.lesson?.room).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        item.linkedDate?.let { Text(it) } ?: Text(strings.getString(R.string.planner_this_is_an_undated_timetable_lesson_choose), style = MaterialTheme.typography.bodySmall)
-                        TextButton(onClick = { onChange(item.copy(lesson = null)) }, enabled = enabled) { Text(strings.getString(R.string.planner_unlink_lesson)) }
-                    } else {
-                        Column {
-                            OutlinedButton(onClick = { subjectMenu = true }, modifier = Modifier.fillMaxWidth(), enabled = enabled) { Text(item.subject?.name ?: strings.getString(R.string.planner_choose_a_subject_optional)) }
-                            DropdownMenu(subjectMenu, { subjectMenu = false }) {
-                                DropdownMenuItem(text = { Text(strings.getString(R.string.planner_no_subject)) }, onClick = { onChange(item.copy(subject = null)); subjectMenu = false })
-                                choices.forEach { subject -> DropdownMenuItem(text = { Text(subject.name) }, onClick = { onChange(item.copy(subject = subject)); subjectMenu = false }) }
-                            }
-                        }
-                        PlannerToggle(strings.getString(R.string.planner_link_to_a_day), item.linkedDate != null, enabled) { linked -> onChange(item.copy(linkedDate = if (linked) LocalDate.now(PersonalPlanner.zone(item)).toString() else null)) }
-                        item.linkedDate?.let { day -> OutlinedButton(onClick = { pickDate(day) { onChange(item.copy(linkedDate = it)) } }, enabled = enabled) { Text(dayLabel(LocalDate.parse(day), strings)) } }
-                    }
-                }
-            }
-            item {
-                GradeySectionCard(title = strings.getString(R.string.planner_due_date)) {
-                    PlannerToggle(strings.getString(R.string.planner_set_a_due_date), item.dueDate != null, enabled) { dated -> onChange(item.copy(dueDate = if (dated) item.linkedDate ?: LocalDate.now(PersonalPlanner.zone(item)).toString() else null, dueTime = null)) }
-                    item.dueDate?.let { due ->
-                        OutlinedButton(onClick = { pickDate(due) { onChange(item.copy(dueDate = it)) } }, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(dayLabel(LocalDate.parse(due), strings)) }
-                        PlannerToggle(strings.getString(R.string.planner_include_a_time), item.dueTime != null, enabled) { timed -> onChange(item.copy(dueTime = if (timed) "08:00" else null)) }
-                        item.dueTime?.let { raw ->
-                            OutlinedButton(onClick = {
-                                val time = LocalTime.parse(raw)
-                                TimePickerDialog(context, { _, hour, minute -> onChange(item.copy(dueTime = "%02d:%02d".format(Locale.ROOT, hour, minute))) }, time.hour, time.minute, true).show()
-                            }, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.planner_due_at_1_s, raw)) }
-                        }
-                    }
-                    if (item.lesson?.startEpochMillis != null && onFindNextLesson != null) {
-                        OutlinedButton(onClick = {
-                            onFindingChanged(true)
-                            nextMessage = null
-                            scope.launch {
-                                try {
-                                    val next = onFindNextLesson(item)
-                                    if (next == null) nextMessage = strings.getString(R.string.planner_no_next_lesson_was_found_in_the)
-                                    else { onChange(PersonalPlanner.withDueInstant(item, next)); nextMessage = strings.getString(R.string.planner_due_date_set_to_the_next_matching) }
-                                } catch (cancelled: CancellationException) { throw cancelled }
-                                catch (failure: Exception) { nextMessage = failure.message?.takeIf { it.length <= 250 } ?: strings.getString(R.string.planner_could_not_look_up_the_next_lesson) }
-                                finally { onFindingChanged(false) }
-                            }
-                        }, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.planner_due_at_the_next_lesson)) }
-                    }
-                    nextMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                    Text(strings.getString(R.string.planner_time_zone_1_s, item.timeZoneID), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            calendarMirror?.let { mirror -> item { PlannerCalendarSettings(item, mirror, enabled, onChange) } }
-            if (PersonalPlanner.orderingDate(item) != null) item {
-                GradeySectionCard(title = strings.getString(R.string.planner_calendar_copy)) {
-                    Text(strings.getString(R.string.planner_export_a_copy_to_your_calendar_later), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    OutlinedButton(onClick = { onSave(item, PlannerExport.CALENDAR) }, enabled = enabled && item.title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { HugeIcon(HugeIcons.Calendar03, null); Text(strings.getString(R.string.planner_save_add_to_calendar)) }
-                    TextButton(onClick = { onSave(item, PlannerExport.ICS) }, enabled = enabled && item.title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.planner_save_export_calendar_file)) }
-                }
-            }
-            if (existing) item { TextButton(onClick = { confirmDelete = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(strings.getString(R.string.planner_delete_item), color = MaterialTheme.colorScheme.error) } }
         }
     }
-    if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false }, title = { Text(strings.getString(R.string.planner_delete_this_planner_item)) }, text = { Text(strings.getString(R.string.planner_1_s_will_be_removed_from_your, item.title)) },
-        confirmButton = { TextButton(onClick = { confirmDelete = false; onDelete() }) { Text(strings.getString(R.string.planner_delete), color = MaterialTheme.colorScheme.error) } }, dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(strings.getString(R.string.planner_keep_item)) } })
 }
 
+/** Title, type/subject metadata and the schedule line (iOS `PlannerItemSummary`). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PlannerToggle(label: String, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-        Text(label, modifier = Modifier.weight(1f))
-        Switch(checked, onChange, enabled = enabled, modifier = Modifier.semantics { contentDescription = label })
+private fun PlannerItemSummary(row: PlannerRowUi, modifier: Modifier = Modifier) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+        Text(row.item.title, style = GradeyType.headline.struck(row.item.isCompleted), color = MaterialTheme.colorScheme.onSurface)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            CaptionLabel(row.typeIcon, row.typeTitle)
+            row.subject?.let { Text(it, style = GradeyType.caption, color = secondary) }
+            if (row.calendarSynced) GradeyIcon(HugeIcons.Calendar03, size = 12.dp, tint = secondary)
+        }
+        row.schedule?.let { CaptionLabel(HugeIcons.Clock01, it) }
     }
 }
 
-private fun dayLabel(date: LocalDate?, strings: android.content.res.Resources): String = when (date) {
-    null -> strings.getString(R.string.planner_no_date)
-    LocalDate.now() -> strings.getString(R.string.planner_today)
-    LocalDate.now().plusDays(1) -> strings.getString(R.string.planner_tomorrow)
-    else -> date.format(DateTimeFormatter.ofPattern("EEE d MMM yyyy", strings.configuration.locales[0]))
+@Composable
+private fun CaptionLabel(icon: String, text: String) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+        GradeyIcon(icon, size = 12.dp, tint = secondary)
+        Text(text, style = GradeyType.caption.tabular(), color = secondary)
+    }
 }
 
-private fun plannerTypeTitle(type: PlannerItemType, strings: android.content.res.Resources): String = when (type) {
-    PlannerItemType.HOMEWORK -> strings.getString(R.string.planner_homework)
-    PlannerItemType.TEST -> strings.getString(R.string.planner_test)
-    PlannerItemType.PRESENTATION -> strings.getString(R.string.planner_presentation)
-    PlannerItemType.NOTE -> strings.getString(R.string.planner_note)
-    PlannerItemType.TASK -> strings.getString(R.string.planner_task)
+// MARK: - Grouping
+
+@Immutable
+internal data class PlannerRowUi(
+    val item: PersonalPlannerItem,
+    val typeTitle: String,
+    val typeIcon: String,
+    val subject: String?,
+    val calendarSynced: Boolean,
+    val schedule: String?,
+)
+
+@Immutable
+internal data class PlannerSectionUi(val key: String, val title: String, val rows: List<PlannerRowUi>)
+
+@Immutable
+internal class PlannerLabels(
+    val today: String,
+    val tomorrow: String,
+    val noDate: String,
+    val types: Map<PlannerItemType, String>,
+    val locale: Locale,
+    val is24Hour: Boolean,
+) {
+    val weekday: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE", locale)
+    val time: DateTimeFormatter = DateTimeFormatter.ofPattern(if (is24Hour) "H:mm" else "h:mm a", locale)
+
+    companion object {
+        fun from(resources: android.content.res.Resources, locale: Locale, is24Hour: Boolean) = PlannerLabels(
+            today = resources.getString(R.string.planner_today),
+            tomorrow = resources.getString(R.string.planner_tomorrow),
+            noDate = resources.getString(R.string.planner_no_date),
+            types = PlannerItemType.entries.associateWith { resources.getString(plannerTypeTitle(it)) },
+            locale = locale,
+            is24Hour = is24Hour,
+        )
+    }
+}
+
+internal object PersonalPlannerDates {
+    private val ShortDayMonth: DateTimeFormatter = DateTimeFormatter.ofPattern("d. M.")
+    private val ShortDayMonthYear: DateTimeFormatter = DateTimeFormatter.ofPattern("d. M. yyyy")
+
+    fun parse(raw: String): LocalDate? = runCatching { LocalDate.parse(raw) }.getOrNull()
+
+    /** Day and month ("19. 10."), with the year when it is not the current one (iOS `shortDate`). */
+    fun shortDate(date: LocalDate, today: LocalDate): String =
+        date.format(if (date.year == today.year) ShortDayMonth else ShortDayMonthYear)
+}
+
+internal fun dayTitle(date: LocalDate?, today: LocalDate, labels: PlannerLabels): String = when (date) {
+    null -> labels.noDate
+    today -> labels.today
+    today.plusDays(1) -> labels.tomorrow
+    else -> date.format(labels.weekday).replaceFirstChar { it.titlecase(labels.locale) } + " " + PersonalPlannerDates.shortDate(date, today)
+}
+
+internal fun plannerSections(
+    items: List<PersonalPlannerItem>,
+    completed: Boolean,
+    filterDay: String?,
+    labels: PlannerLabels,
+    today: LocalDate = LocalDate.now(),
+): List<PlannerSectionUi> {
+    val visible = items.filter { it.isCompleted == completed && (filterDay == null || PersonalPlanner.orderingDate(it)?.toString() == filterDay) }
+        .sortedWith(compareBy<PersonalPlannerItem> { PersonalPlanner.orderingDate(it) ?: LocalDate.MAX }.thenBy { it.dueTime ?: "23:59" }.thenBy { it.title.lowercase() })
+    return visible.groupBy { PersonalPlanner.orderingDate(it) }.map { (date, group) ->
+        PlannerSectionUi(
+            key = date?.toString() ?: "undated",
+            title = dayTitle(date, today, labels),
+            rows = group.map { item ->
+                PlannerRowUi(
+                    item = item,
+                    typeTitle = labels.types.getValue(item.type),
+                    typeIcon = plannerTypeIcon(item.type),
+                    subject = item.subject?.let { subject -> subject.abbreviation?.takeIf { it.isNotBlank() } ?: subject.name },
+                    calendarSynced = item.calendarID != null,
+                    schedule = scheduleSummary(item, date, today, labels),
+                )
+            },
+        )
+    }
+}
+
+/** Short day ("19. 10.") plus the time when the item has one (iOS `scheduleSummary`). */
+private fun scheduleSummary(item: PersonalPlannerItem, date: LocalDate?, today: LocalDate, labels: PlannerLabels): String? {
+    date ?: return null
+    val due = item.dueDate?.let(PersonalPlannerDates::parse)
+    val time = item.dueTime?.let { raw -> runCatching { java.time.LocalTime.parse(raw) }.getOrNull() }
+    if (due != null && time != null) return PersonalPlannerDates.shortDate(due, today) + " " + time.format(labels.time)
+    return PersonalPlannerDates.shortDate(date, today)
+}
+
+internal fun plannerTypeTitle(type: PlannerItemType): Int = when (type) {
+    PlannerItemType.HOMEWORK -> R.string.planner_homework
+    PlannerItemType.TEST -> R.string.planner_test
+    PlannerItemType.PRESENTATION -> R.string.planner_presentation
+    PlannerItemType.NOTE -> R.string.planner_note
+    PlannerItemType.TASK -> R.string.planner_task
+}
+
+/** iOS `PlannerItemType.systemImage`, through the Hugeicons catalog. */
+internal fun plannerTypeIcon(type: PlannerItemType): String = when (type) {
+    PlannerItemType.HOMEWORK, PlannerItemType.NOTE -> HugeIcons.Book02
+    PlannerItemType.TEST -> HugeIcons.Edit02
+    PlannerItemType.PRESENTATION -> HugeIcons.UserGroup
+    PlannerItemType.TASK -> HugeIcons.CheckList
 }

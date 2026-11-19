@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Top bar -->
+    <string name="today_title">today</string>
+    <string name="today_gradey_ai">Gradey AI</string>
+    <string name="today_refresh">refresh</string>
+    <string name="today_settings">settings</string>
+
+    <!-- School connection -->
+    <string name="today_reconnect_title">school connection needs attention</string>
+    <string name="today_reconnect_fallback">reconnect so your marks and notifications stay fresh</string>
+    <string name="today_reconnect_action">reconnect</string>
+
+    <!-- Greeting and stats -->
+    <string name="today_greeting_morning">gm</string>
+    <string name="today_greeting_afternoon">hey</string>
+    <string name="today_greeting_evening">evening</string>
+    <string name="today_hero_average">average</string>
+    <string name="today_hero_lessons_today">lessons today</string>
+    <string name="today_hero_new_marks">new marks</string>
+
+    <!-- Now and next -->
+    <string name="today_now_and_next">now and next</string>
+    <string name="today_timetable_unavailable">no timetable rn</string>
+    <string name="today_no_school">no school today, W</string>
+    <string name="today_no_more_lessons">no more lessons, you\'re free</string>
+    <string name="today_current_lesson">right now</string>
+    <string name="today_next_lesson">next up</string>
+    <string name="today_minutes_remaining">%1$d min left</string>
+    <string name="today_starts_in">starts in %1$d min</string>
+    <string name="today_starts_at">starts at %1$s</string>
+    <string name="today_lesson_fallback">lesson</string>
+    <string name="today_timetable_change">timetable change</string>
+    <string name="today_change_cancelled">cancelled</string>
+    <string name="today_change_substitution">sub</string>
+    <string name="today_change_room">new room</string>
+    <string name="today_change_added">added</string>
+    <plurals name="today_changes">
+        <item quantity="one">1 change today: %2$s</item>
+        <item quantity="other">%1$d changes today</item>
+    </plurals>
+    <string name="today_cached_warning">showing saved data. hit refresh up top</string>
+
+    <!-- Recent marks -->
+    <string name="today_recent_marks">recent marks</string>
+    <string name="today_no_marks">no marks yet. lowkey peaceful</string>
+
+    <!-- Planner -->
+    <string name="today_planner">planner</string>
+    <string name="today_nothing_planned">nothing planned rn</string>
+    <string name="today_planner_undated">no date</string>
+    <string name="today_planner_homework">homework</string>
+    <string name="today_planner_test">test</string>
+    <string name="today_planner_presentation">presentation</string>
+    <string name="today_planner_note">note</string>
+    <string name="today_planner_task">task</string>
+
+    <!-- Lunch -->
+    <string name="today_lunch">lunch</string>
+    <string name="today_no_meal">no lunch ordered</string>
+</resources>

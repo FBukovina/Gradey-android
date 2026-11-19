@@ -33,6 +33,27 @@ android {
         buildConfigField("boolean", "DIRECT_UPDATES_ENABLED", directUpdatesEnabled.toString())
     }
 
+    // Direct installs update in place only when every release is signed with the key used since 0.2.1.
+    // The default is that key (the local Android debug keystore); override it with gradey.signing.* properties.
+    signingConfigs {
+        create("directUpdate") {
+            storeFile = file(providers.gradleProperty("gradey.signing.storeFile").orElse("${System.getProperty("user.home")}/.android/debug.keystore").get())
+            storePassword = providers.gradleProperty("gradey.signing.storePassword").orElse("android").get()
+            keyAlias = providers.gradleProperty("gradey.signing.keyAlias").orElse("androiddebugkey").get()
+            keyPassword = providers.gradleProperty("gradey.signing.keyPassword").orElse("android").get()
+        }
+    }
+
+    buildTypes {
+        release {
+            // Users get an optimized, non-debuggable build: R8, resource shrinking and the baseline profile.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("directUpdate")
+        }
+    }
+
     buildFeatures {
         buildConfig = true
         compose = true
@@ -110,18 +131,31 @@ dependencies {
 
 // A demo preview must be an explicit release choice, never an accidental store build.
 val allowDemoRelease = providers.gradleProperty("gradey.allowDemoRelease").orElse("false").map(String::toBoolean)
-val missingReleaseProperties = listOf("gradey.supabaseUrl", "gradey.supabaseAnonKey", "gradey.googleWebClientId", "gradey.appleOAuthClientId", "gradey.revenueCatAndroidKey")
+// A direct GitHub preview ships with Gradey ID accounts only, like 0.4; AI, Apple, purchases and push stay unconfigured.
+val directPreview = providers.gradleProperty("gradey.directPreview").orElse("false").map(String::toBoolean)
+val accountReleaseProperties = listOf("gradey.supabaseUrl", "gradey.supabaseAnonKey", "gradey.googleWebClientId")
+val missingAccountProperties = accountReleaseProperties.filter { providers.gradleProperty(it).orNull.isNullOrBlank() }
+val missingReleaseProperties = (accountReleaseProperties + listOf("gradey.appleOAuthClientId", "gradey.revenueCatAndroidKey"))
     .filter { providers.gradleProperty(it).orNull.isNullOrBlank() }
 val verifyReleaseConfiguration by tasks.registering {
     val intentionalDemo = allowDemoRelease.get()
+    val preview = directPreview.get()
     val missingProperties = missingReleaseProperties.toList()
+    val missingAccounts = missingAccountProperties.toList()
     val firebaseConfigured = layout.projectDirectory.file("google-services.json").asFile.isFile
     inputs.property("firebaseConfigured", firebaseConfigured)
     doLast {
-        check(intentionalDemo || missingProperties.isEmpty()) {
-            "Live release configuration missing: ${missingProperties.joinToString()}. For an intentional demo release, set gradey.allowDemoRelease=true."
+        if (intentionalDemo) return@doLast
+        if (preview) {
+            check(missingAccounts.isEmpty()) {
+                "A direct preview needs Gradey ID accounts: ${missingAccounts.joinToString()} missing. For a demo-only build, set gradey.allowDemoRelease=true."
+            }
+            return@doLast
         }
-        check(intentionalDemo || firebaseConfigured) {
+        check(missingProperties.isEmpty()) {
+            "Live release configuration missing: ${missingProperties.joinToString()}. Set gradey.directPreview=true for an accounts-only GitHub preview or gradey.allowDemoRelease=true for a demo."
+        }
+        check(firebaseConfigured) {
             "Live releases require app/google-services.json from the deployed Gradey AI Firebase project. AI and Android push cannot work without it."
         }
     }

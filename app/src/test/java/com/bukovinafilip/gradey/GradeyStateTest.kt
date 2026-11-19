@@ -1,6 +1,5 @@
 package com.bukovinafilip.gradey
 
-import com.bukovinafilip.gradey.domain.GradeHistoryTrend
 import com.bukovinafilip.gradey.model.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -14,7 +13,6 @@ class GradeyStateTest {
             absence = AbsenceResponse(percentageThreshold = 30.0),
             timetable = TimetableWeek("2026-09-21", emptyList(), emptyList()),
             currentTimetable = TimetableWeek("2026-09-21", emptyList(), emptyList()),
-            history = listOf(GradeHistoryTrend("math", "Other child's maths", 0.5, 1)),
             plans = listOf(PlannedAbsence("2026-09-22", emptyList())),
             error = "Old account failure",
             preferences = NotificationPreferences(newMarksEnabled = false),
@@ -28,7 +26,6 @@ class GradeyStateTest {
         assertNull(next.currentTimetable)
         assertTrue(next.absence.absences.isEmpty())
         assertNull(next.absence.percentageThreshold)
-        assertTrue(next.history.isEmpty())
         assertTrue(next.plans.isEmpty())
         assertNull(next.error)
         assertFalse(next.preferences.newMarksEnabled)

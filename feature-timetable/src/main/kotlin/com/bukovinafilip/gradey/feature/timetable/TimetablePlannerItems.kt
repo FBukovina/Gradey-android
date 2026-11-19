@@ -1,28 +1,43 @@
 package com.bukovinafilip.gradey.feature.timetable
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
-import android.content.res.Resources
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.PersonalPlanner
 import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.PlannerItemType
 import com.bukovinafilip.gradey.model.ScheduledDay
 import com.bukovinafilip.gradey.model.ScheduledLesson
+import com.bukovinafilip.gradey.ui.DisclosureIcon
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyMetrics
+import com.bukovinafilip.gradey.ui.GradeyPrimaryButton
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.Hairline
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.SchoolTimeZone
+import com.bukovinafilip.gradey.ui.SectionHeader
+import com.bukovinafilip.gradey.ui.gradeyColors
 import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.time.LocalDate
+import java.time.LocalTime
 
 /** Use the provider day, including its undated permanent ID, never a synthetic display date. */
 internal fun attachedPlannerItems(
@@ -41,75 +56,126 @@ internal fun attachedPlannerItems(
         .thenBy { it.createdAtEpochMillis }.thenBy { it.id })
 }
 
+/** Green caption under a lesson naming its first Planner item, "+N" for more (iOS lesson card). */
 @Composable
-internal fun TimetablePlannerBadge(items: List<PersonalPlannerItem>) {
+internal fun TimetablePlannerBadge(items: List<PersonalPlannerItem>, modifier: Modifier = Modifier) {
     val first = items.firstOrNull() ?: return
-    val strings = LocalResources.current
-    val type = plannerTypeTitle(first.type, strings)
-    Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.padding(top = 5.dp).testTag("timetable-planner-badge")) {
-        Row(Modifier.padding(horizontal = 7.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            HugeIcon(plannerTypeIcon(first.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
-            Text(if (items.size == 1) type else strings.getString(R.string.timetable_planner_multiple, type, items.size - 1),
-                style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+    val type = plannerTypeTitle(first.type)
+    val primary = MaterialTheme.colorScheme.primary
+    Row(
+        modifier.testTag("timetable-planner-badge"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs),
+    ) {
+        GradeyIcon(plannerTypeIcon(first.type), size = 12.dp, tint = primary)
+        Text(
+            if (items.size == 1) type else stringResource(R.string.timetable_planner_multiple, type, items.size - 1),
+            style = GradeyType.captionSemibold, color = primary, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/**
+ * The Planner part of the lesson sheet: an uppercase header, the lesson's unfinished items separated
+ * by hairlines, then the gradient "Add to Planner" button (iOS `LessonDetailSheet.plannerSection`).
+ */
+@Composable
+internal fun LessonPlannerSection(
+    items: List<PersonalPlannerItem>,
+    onOpen: ((String) -> Unit)?,
+    onAdd: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+        SectionHeader(stringResource(R.string.timetable_planner_title), Modifier.padding(horizontal = GradeySpacing.xs))
+        if (items.isNotEmpty()) {
+            Column(Modifier.fillMaxWidth()) {
+                items.forEachIndexed { index, item ->
+                    if (index > 0) Hairline()
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .testTag("timetable-planner-item-${item.id}")
+                            .then(if (onOpen != null) Modifier.clickable(role = Role.Button) { onOpen(item.id) } else Modifier)
+                            .heightIn(min = GradeyMetrics.minTouch)
+                            .padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.md),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+                    ) {
+                        PlannerItemSummary(item, Modifier.weight(1f))
+                        if (onOpen != null) DisclosureIcon()
+                    }
+                }
+            }
+        }
+        if (onAdd != null) {
+            GradeyPrimaryButton(stringResource(R.string.timetable_planner_add), onAdd, icon = HugeIcons.Add01)
         }
     }
 }
 
+/** Title, type, subject, Calendar link and due date of one item (iOS `PlannerItemSummary`). */
 @Composable
-internal fun LessonPlannerItems(items: List<PersonalPlannerItem>, onOpen: ((String) -> Unit)?, modifier: Modifier = Modifier) {
-    val strings = LocalResources.current
-    val locale = LocalConfiguration.current.locales[0]
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(strings.getString(R.string.timetable_planner_attached), style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-        items.forEach { item ->
-            Surface(onClick = { onOpen?.invoke(item.id) }, enabled = onOpen != null,
-                color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().testTag("timetable-planner-item-${item.id}")) {
-                Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                HugeIcon(plannerTypeIcon(item.type), null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-                                Text(plannerTypeTitle(item.type, strings), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            item.subject?.let { Text(it.abbreviation?.takeIf(String::isNotBlank) ?: it.name,
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            if (item.calendarID != null) HugeIcon(HugeIcons.Calendar03,
-                                strings.getString(R.string.timetable_planner_calendar), Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        // An undated permanent lesson has no invented calendar date. A user-chosen
-                        // due date remains visible, independently of that original lesson context.
-                        val date = PersonalPlanner.orderingDate(item)
-                        date?.let {
-                            val timed = item.dueTime != null || (item.dueDate == null && item.lesson?.startEpochMillis != null)
-                            val schedule = if (timed) PersonalPlanner.orderingInstant(item)?.atZone(PersonalPlanner.zone(item))
-                                ?.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale))
-                                else it.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
-                            schedule?.let { text -> Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        }
-                    }
-                    if (onOpen != null) HugeIcon(HugeIcons.ArrowRight01, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+private fun PlannerItemSummary(item: PersonalPlannerItem, modifier: Modifier = Modifier) {
+    val format = rememberTimetableDateFormat()
+    val schedule = remember(item.dueDate, item.dueTime, item.lesson, item.linkedDate, item.timeZoneID, format) {
+        scheduleSummary(item, format)
+    }
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+        Text(item.title, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                GradeyIcon(plannerTypeIcon(item.type), size = 12.dp, tint = secondary)
+                Text(plannerTypeTitle(item.type), style = GradeyType.caption, color = secondary)
+            }
+            item.subject?.let { subject ->
+                Text(subject.abbreviation?.takeIf { it.isNotBlank() } ?: subject.name, style = GradeyType.caption, color = secondary)
+            }
+            if (item.calendarID != null) {
+                GradeyIcon(HugeIcons.Calendar03, size = 12.dp, tint = secondary, contentDescription = stringResource(R.string.timetable_planner_calendar))
+            }
+        }
+        if (schedule != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                GradeyIcon(HugeIcons.Clock01, size = 12.dp, tint = secondary)
+                Text(schedule, style = GradeyType.caption.copy(fontFeatureSettings = "tnum"), color = secondary)
             }
         }
     }
 }
 
-private fun plannerTypeTitle(type: PlannerItemType, strings: Resources): String = strings.getString(when (type) {
-    PlannerItemType.HOMEWORK -> R.string.timetable_planner_homework
-    PlannerItemType.TEST -> R.string.timetable_planner_test
-    PlannerItemType.PRESENTATION -> R.string.timetable_planner_presentation
-    PlannerItemType.NOTE -> R.string.timetable_planner_note
-    PlannerItemType.TASK -> R.string.timetable_planner_task
-})
+/**
+ * Short day ("19. 10.") plus the time when the item has one. An undated permanent lesson has no
+ * invented calendar date; a user-chosen due date stays visible, independently of that lesson.
+ */
+private fun scheduleSummary(item: PersonalPlannerItem, format: TimetableDateFormat): String? {
+    val date = PersonalPlanner.orderingDate(item) ?: return null
+    val currentYear = LocalDate.now(SchoolTimeZone).year
+    val dueDate = item.dueDate?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
+    val dueTime = item.dueTime?.let { runCatching { LocalTime.parse(it) }.getOrNull() }
+    if (dueDate != null && dueTime != null) return format.shortDate(dueDate, currentYear) + " " + format.time(dueTime)
+    return format.shortDate(date, currentYear)
+}
 
+@Composable
+private fun plannerTypeTitle(type: PlannerItemType): String = stringResource(
+    when (type) {
+        PlannerItemType.HOMEWORK -> R.string.timetable_planner_homework
+        PlannerItemType.TEST -> R.string.timetable_planner_test
+        PlannerItemType.PRESENTATION -> R.string.timetable_planner_presentation
+        PlannerItemType.NOTE -> R.string.timetable_planner_note
+        PlannerItemType.TASK -> R.string.timetable_planner_task
+    },
+)
+
+/** iOS `PlannerItemType.systemImage`, through the Hugeicons catalog. */
 private fun plannerTypeIcon(type: PlannerItemType): String = when (type) {
-    PlannerItemType.HOMEWORK -> HugeIcons.Edit02
-    PlannerItemType.TEST, PlannerItemType.PRESENTATION -> HugeIcons.University
-    PlannerItemType.NOTE -> HugeIcons.TaskDaily02
+    PlannerItemType.HOMEWORK, PlannerItemType.NOTE -> HugeIcons.Book02
+    PlannerItemType.TEST -> HugeIcons.Edit02
+    PlannerItemType.PRESENTATION -> HugeIcons.UserGroup
     PlannerItemType.TASK -> HugeIcons.CheckList
 }

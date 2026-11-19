@@ -1,11 +1,11 @@
 package com.bukovinafilip.gradey
 
+import kotlinx.coroutines.sync.withLock
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bukovinafilip.gradey.data.AndroidGradeyGraph
 import com.bukovinafilip.gradey.data.SecureJsonStore
-import com.bukovinafilip.gradey.domain.GradeHistoryTrend
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.isEduPageParentSession
 import com.bukovinafilip.gradey.model.*
@@ -30,11 +30,23 @@ internal data class AIEntryRequest(
     val week: String? = null,
     val key: String = java.util.UUID.randomUUID().toString(),
 )
-internal enum class AppTab(val labelRes: Int) {
-    TODAY(R.string.app_today), SUBJECTS(R.string.app_marks), ABSENCE(R.string.app_absence), TIMETABLE(R.string.app_timetable),
-    STRAVACZ(R.string.app_meals), ACCOUNT(R.string.app_account), PLANNER(R.string.app_plan_absence), HISTORY(R.string.app_history), TOOLS(R.string.app_tools),
-    PERSONAL_PLANNER(R.string.app_planner), AI(R.string.app_ai), SUPPORT(R.string.app_support), UPDATES(R.string.app_updates)
+/**
+ * Every destination of the signed-in app. [kind] decides how the shell presents it: the five tabs sit
+ * on the bottom bar, pushed screens slide in over their tab and keep the bar, and full-screen
+ * surfaces (Settings, Gradey AI, Recap story and the screens opened from Settings) cover it.
+ */
+internal enum class AppTab(val labelRes: Int, val kind: DestinationKind) {
+    TODAY(R.string.app_today, DestinationKind.TAB), SUBJECTS(R.string.app_marks, DestinationKind.TAB),
+    ABSENCE(R.string.app_absence, DestinationKind.TAB), TIMETABLE(R.string.app_timetable, DestinationKind.TAB),
+    STRAVACZ(R.string.app_meals, DestinationKind.TAB),
+    PLANNER(R.string.app_plan_absence, DestinationKind.PUSHED), PERSONAL_PLANNER(R.string.app_planner, DestinationKind.PUSHED),
+    REPORT_CARD(R.string.app_report_card, DestinationKind.PUSHED), RECAP_LIST(R.string.app_recap, DestinationKind.PUSHED),
+    ACCOUNT(R.string.app_account, DestinationKind.FULL_SCREEN), AI(R.string.app_ai, DestinationKind.FULL_SCREEN),
+    RECAP_STORY(R.string.app_recap, DestinationKind.FULL_SCREEN), SUPPORT(R.string.app_support, DestinationKind.FULL_SCREEN),
+    UPDATES(R.string.app_updates, DestinationKind.FULL_SCREEN),
 }
+
+internal enum class DestinationKind { TAB, PUSHED, FULL_SCREEN }
 
 internal data class GradeyState(
     val phase: AppPhase = AppPhase.CHECKING,
@@ -58,7 +70,6 @@ internal data class GradeyState(
     val permanentTimetableError: String? = null,
     val viewedWeek: String = LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString(),
     val plans: List<PlannedAbsence> = emptyList(),
-    val history: List<GradeHistoryTrend> = emptyList(),
     val preferences: NotificationPreferences = NotificationPreferences.Default,
     val isDemo: Boolean = false,
     val isGuest: Boolean = false,
@@ -80,7 +91,13 @@ internal data class GradeyState(
     val directoryError: String? = null,
     val insightState: com.bukovinafilip.gradey.domain.SchoolInsightState? = null,
     val focusedSubjectID: String? = null,
+    /** Destinations under [tab], oldest first; Back returns to the last one. */
+    val backStack: List<AppTab> = emptyList(),
+    val recapPeriodID: String? = null,
 ) {
+    /** The bottom-bar tab the current destination belongs to. */
+    val rootTab: AppTab get() = if (tab.kind == DestinationKind.TAB) tab else backStack.lastOrNull { it.kind == DestinationKind.TAB } ?: AppTab.TODAY
+
     val absenceOverrideScope: String? get() = (account?.id ?: "guest-local".takeIf { isGuest })?.let { owner -> school?.cacheScope?.let { "$owner:$it" } }
 }
 
@@ -108,7 +125,6 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         get() = if (graph.isDemo) app.demoAbsenceOverrides else app.absenceOverrides
     private var correctionRevision = 0L
     private var permanentRevision = 0L
-    private var historyRequested = false
     private var initialTabApplied = false
     private var pendingDestination: AppDestination? = null
     private var awaitingPlannerEntry = false
@@ -137,7 +153,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun openPlanner(day: String? = null, item: PersonalPlannerItem? = null, itemID: String? = null) {
-        mutableState.update { it.copy(tab = AppTab.PERSONAL_PLANNER, plannerDay = day, plannerDraft = item, plannerItemID = itemID) }
+        mutableState.update { it.copy(tab = AppTab.PERSONAL_PLANNER, plannerDay = day, plannerDraft = item, plannerItemID = itemID, backStack = nextBackStack(it, AppTab.PERSONAL_PLANNER)) }
     }
 
     fun plannerEntryHandled() {
@@ -157,11 +173,11 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun openAI(request: AIEntryRequest) {
-        mutableState.update { it.copy(tab = AppTab.AI, aiEntry = request) }
+        mutableState.update { it.copy(tab = AppTab.AI, aiEntry = request, backStack = nextBackStack(it, AppTab.AI)) }
     }
 
     fun openSubject(subjectID: String) {
-        mutableState.update { it.copy(tab = AppTab.SUBJECTS, focusedSubjectID = subjectID) }
+        mutableState.update { it.copy(tab = AppTab.SUBJECTS, focusedSubjectID = subjectID, backStack = emptyList()) }
     }
 
     fun plannerChanged(items: List<PersonalPlannerItem>) {
@@ -491,15 +507,15 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     fun dismissError() { mutableState.update { it.copy(error = null) } }
     fun select(tab: AppTab) {
         if (tab != AppTab.PERSONAL_PLANNER) awaitingPlannerEntry = false
-        mutableState.update { if (tab == AppTab.PERSONAL_PLANNER && it.tab != tab) it.copy(tab = tab, plannerDraft = null, plannerDay = null, plannerItemID = null) else it.copy(tab = tab, focusedSubjectID = if (tab == AppTab.SUBJECTS && it.tab != tab) null else it.focusedSubjectID, aiEntry = if (tab == AppTab.AI && it.tab != tab) null else it.aiEntry) }
+        mutableState.update {
+            val moved = if (tab == AppTab.PERSONAL_PLANNER && it.tab != tab) it.copy(tab = tab, plannerDraft = null, plannerDay = null, plannerItemID = null) else it.copy(tab = tab, focusedSubjectID = if (tab == AppTab.SUBJECTS && it.tab != tab) null else it.focusedSubjectID, aiEntry = if (tab == AppTab.AI && it.tab != tab) null else it.aiEntry)
+            moved.copy(backStack = nextBackStack(it, tab))
+        }
         if (tab == AppTab.TODAY && state.value.phase == AppPhase.SIGNED_IN && !state.value.loading) action {
             updateInsights()
             val mealSession = graph.stravaCZRepository.bootstrapSession()
             val menu = if (mealSession == null) null else graph.stravaCZRepository.loadCachedMenu()
             mutableState.update { it.copy(hasMealAccount = mealSession != null, mealMenu = menu) }
-        }
-        if (tab == AppTab.HISTORY) {
-            if (state.value.loading) historyRequested = true else loadHistory()
         }
         if (tab == AppTab.ACCOUNT && state.value.phase == AppPhase.SIGNED_IN && !state.value.loading) action { refreshCanteenAccounts(true) }
     }
@@ -507,7 +523,22 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         if (state.value.loading && state.value.phase != AppPhase.SIGNED_IN) return
         if (state.value.phase == AppPhase.NEEDS_SCHOOL && state.value.school != null) {
             mutableState.update { it.copy(phase = AppPhase.SIGNED_IN, tab = AppTab.ACCOUNT, error = null) }
-        } else select(AppTab.TODAY)
+            return
+        }
+        val previous = state.value.backStack.lastOrNull()
+        if (previous == null) { select(AppTab.TODAY); return }
+        if (previous != AppTab.PERSONAL_PLANNER) awaitingPlannerEntry = false
+        mutableState.update { it.copy(tab = previous, backStack = it.backStack.dropLast(1)) }
+    }
+
+    /** True when Back should leave the current destination rather than the app. */
+    val canGoBack: Boolean get() = state.value.tab != AppTab.TODAY || state.value.backStack.isNotEmpty()
+
+    fun openReportCard() = select(AppTab.REPORT_CARD)
+    fun openRecapList() = select(AppTab.RECAP_LIST)
+    fun openRecapStory(periodID: String) {
+        mutableState.update { it.copy(recapPeriodID = periodID) }
+        select(AppTab.RECAP_STORY)
     }
     fun updateProfile(name: String) = action {
         val account = graph.gradeyAuthRepository.updateFullName(name.trim())
@@ -543,15 +574,16 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
 
     private suspend fun restoreCachedData() {
         val session = state.value.school ?: return
-        val plannerItems = plannerRepository.load()
-        val cached = graph.schoolRepository.loadCachedDashboard()
-        val cachedAbsence = graph.cache?.loadAbsence(session.cacheScope)
-        val week = graph.schoolRepository.loadCachedTimetable(LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString())
-        val plans = plansStore.load("plans.${session.cacheScope}", ListSerializer(PlannedAbsence.serializer())).orEmpty()
-        val preferences = if (state.value.isGuest) guestPreferences.load() else graph.notificationSettings.load()
-        val linkedAccounts = if (state.value.isGuest) emptyList() else graph.linkedAccountRepository.cachedAccounts()
-        val mealSession = graph.stravaCZRepository.bootstrapSession()
-        val mealMenu = if (mealSession != null) graph.stravaCZRepository.loadCachedMenu() else null
+        val isGuest = state.value.isGuest
+        val plannerItems = off { plannerRepository.load() }
+        val cached = off { graph.schoolRepository.loadCachedDashboard() }
+        val cachedAbsence = off { graph.cache?.loadAbsence(session.cacheScope) }
+        val week = off { graph.schoolRepository.loadCachedTimetable(LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString()) }
+        val plans = off { plansStore.load("plans.${session.cacheScope}", ListSerializer(PlannedAbsence.serializer())).orEmpty() }
+        val preferences = off { if (isGuest) guestPreferences.load() else graph.notificationSettings.load() }
+        val linkedAccounts = off { if (isGuest) emptyList() else graph.linkedAccountRepository.cachedAccounts() }
+        val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
+        val mealMenu = if (mealSession != null) off { graph.stravaCZRepository.loadCachedMenu() } else null
         mutableState.update { it.copy(dashboard = cached ?: DashboardData(MarksResponse()), personalPlannerItems = plannerItems,
             timetable = week, currentTimetable = week, viewedWeek = week?.weekStart ?: LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString(), plans = plans,
             preferences = preferences, linkedAccounts = linkedAccounts, mealMenu = mealMenu, hasMealAccount = mealSession != null,
@@ -571,31 +603,27 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
                 failures += label
             }
         }
-        attempt(context.getString(R.string.app_planner)) { val items = plannerRepository.load(); mutableState.update { it.copy(personalPlannerItems = items) } }
-        attempt(context.getString(R.string.app_marks)) { val dashboard = graph.schoolRepository.loadDashboard(true); mutableState.update { it.copy(dashboard = dashboard) } }
-        attempt(context.getString(R.string.app_absence)) { applyAbsence(graph.schoolRepository.loadAbsence(true)) }
+        attempt(context.getString(R.string.app_planner)) { val items = off { plannerRepository.load() }; mutableState.update { it.copy(personalPlannerItems = items) } }
+        attempt(context.getString(R.string.app_marks)) { val dashboard = off { graph.schoolRepository.loadDashboard(true) }; mutableState.update { it.copy(dashboard = dashboard) } }
+        attempt(context.getString(R.string.app_absence)) { applyAbsence(off { graph.schoolRepository.loadAbsence(true) }) }
         attempt(context.getString(R.string.app_timetable)) {
-            val week = graph.schoolRepository.loadTimetable(LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString())
+            val week = off { graph.schoolRepository.loadTimetable(LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString()) }
             mutableState.update { it.copy(currentTimetable = week, timetable = week, viewedWeek = week.weekStart) }
             syncCompanions(week)
         }
-        if (!state.value.isGuest) attempt(context.getString(R.string.app_school_accounts)) { val accounts = graph.linkedAccountRepository.localAccounts(); mutableState.update { it.copy(linkedAccounts = accounts) } }
-        val school = state.value.school
-        if (school?.linkedAccountID != null && !school.isEduPageParentSession()) attempt(context.getString(R.string.app_history)) {
-            val history = graph.historyRepository.gradeHistory(school.linkedAccountID)
-            mutableState.update { it.copy(history = history) }
-        }
+        if (!state.value.isGuest) attempt(context.getString(R.string.app_school_accounts)) { val accounts = off { graph.linkedAccountRepository.localAccounts() }; mutableState.update { it.copy(linkedAccounts = accounts) } }
         attempt(context.getString(R.string.app_meals)) {
-            val mealSession = graph.stravaCZRepository.bootstrapSession()
-            val menu = if (mealSession != null) graph.stravaCZRepository.loadMenu().second else null
+            val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
+            val menu = if (mealSession != null) off { graph.stravaCZRepository.loadMenu().second } else null
             mutableState.update { it.copy(hasMealAccount = mealSession != null, mealMenu = menu) }
             refreshCanteenAccounts(!state.value.isGuest)
         }
-        val savedPreferences = if (state.value.isGuest) guestPreferences.load() else graph.notificationSettings.load()
+        val guest = state.value.isGuest
+        val savedPreferences = off { if (guest) guestPreferences.load() else graph.notificationSettings.load() }
         mutableState.update { it.copy(preferences = savedPreferences) }
-        if (!state.value.isGuest) attempt(context.getString(R.string.app_notification_settings)) { val prefs = graph.notificationSettings.refresh(); mutableState.update { it.copy(preferences = prefs) } }
+        if (!guest) attempt(context.getString(R.string.app_notification_settings)) { val prefs = off { graph.notificationSettings.refresh() }; mutableState.update { it.copy(preferences = prefs) } }
         // Refreshes can rotate provider tokens or restore a selected student's session.
-        val refreshedSession = graph.schoolRepository.currentStoredSession()
+        val refreshedSession = off { graph.schoolRepository.currentStoredSession() }
         mutableState.update { it.copy(school = refreshedSession) }
         updateInsights()
         if (failures.isNotEmpty()) showError(context.getString(R.string.app_refresh_failed, failures.joinToString()))
@@ -603,9 +631,9 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
 
     fun changeWeek(date: String) = action {
         mutableState.update { it.copy(viewedWeek = date, timetable = null) }
-        val cached = graph.schoolRepository.loadCachedTimetable(date)
+        val cached = off { graph.schoolRepository.loadCachedTimetable(date) }
         mutableState.update { it.copy(timetable = cached) }
-        val week = graph.schoolRepository.loadTimetable(date)
+        val week = off { graph.schoolRepository.loadTimetable(date) }
         mutableState.update { it.copy(timetable = week) }
     }
 
@@ -641,9 +669,12 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         val scope = state.value.absenceOverrideScope
         if (scope == null) { mutableState.update { it.copy(rawAbsence = raw, absence = raw, absenceOverrides = emptyList()) }; return }
         try {
-            val stored = absenceOverrideRepository.load(scope)
-            val result = com.bukovinafilip.gradey.domain.AbsenceOverrideProjection.project(raw, stored, scope)
-            if (result.reconciledOverrides != stored) absenceOverrideRepository.replace(scope, result.reconciledOverrides)
+            val result = off {
+                val stored = absenceOverrideRepository.load(scope)
+                val projected = com.bukovinafilip.gradey.domain.AbsenceOverrideProjection.project(raw, stored, scope)
+                if (projected.reconciledOverrides != stored) absenceOverrideRepository.replace(scope, projected.reconciledOverrides)
+                projected
+            }
             mutableState.update { if (it.absenceOverrideScope != scope) it else it.copy(rawAbsence = raw, absence = result.response, absenceOverrides = result.reconciledOverrides, correctionError = null) }
         } catch (error: CancellationException) { throw error }
         catch (_: Exception) {
@@ -696,16 +727,16 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         if (state.value.loading || state.value.phase != AppPhase.SIGNED_IN) return
         val school = state.value.school ?: return
         val plans = (state.value.plans.filterNot { it.date == plan.date } + plan).sortedBy { it.date }
-        plansStore.save("plans.${school.cacheScope}", plans, ListSerializer(PlannedAbsence.serializer()))
         mutableState.update { it.copy(plans = plans) }
+        persistPlans(school.cacheScope, plans)
     }
 
     fun removePlan(date: String) {
         if (state.value.loading || state.value.phase != AppPhase.SIGNED_IN) return
         val school = state.value.school ?: return
         val plans = state.value.plans.filterNot { it.date == date }
-        plansStore.save("plans.${school.cacheScope}", plans, ListSerializer(PlannedAbsence.serializer()))
         mutableState.update { it.copy(plans = plans) }
+        persistPlans(school.cacheScope, plans)
     }
 
     fun activateAccount(id: String) = action {
@@ -762,23 +793,6 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             PlannerReminderScheduler.invalidate(app)
         }
         mutableState.update { it.copy(preferences = if (it.isGuest) value.copy(newMarksEnabled = false) else value) }
-    }
-
-    private fun loadHistory() = action {
-        val school = state.value.school ?: return@action
-        if (school.isEduPageParentSession()) {
-            mutableState.update { it.copy(history = emptyList()) }
-            showError(context.getString(R.string.app_error_history_parent))
-            return@action
-        }
-        val accountID = school.linkedAccountID
-        if (accountID == null) {
-            mutableState.update { it.copy(history = emptyList()) }
-            showError(context.getString(R.string.app_error_history_link))
-            return@action
-        }
-        val history = graph.historyRepository.gradeHistory(accountID)
-        mutableState.update { it.copy(history = history) }
     }
 
     fun deleteAccount() = action {
@@ -838,6 +852,27 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    /** Tabs reset the stack; any other destination is pushed on top of the current one. */
+    private fun nextBackStack(current: GradeyState, target: AppTab): List<AppTab> = when {
+        target.kind == DestinationKind.TAB -> emptyList()
+        current.tab == target -> current.backStack
+        else -> (current.backStack.filterNot { it == target } + current.tab).takeLast(8)
+    }
+
+    /** Encrypted preferences are written off the main thread, in order, so a quick second edit cannot overtake the first. */
+    private val planWrites = kotlinx.coroutines.sync.Mutex()
+    private fun persistPlans(scope: String, plans: List<PlannedAbsence>) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            planWrites.withLock { plansStore.save("plans.$scope", plans, ListSerializer(PlannedAbsence.serializer())) }
+        }
+    }
+
+    /**
+     * Repository work (network decoding, Room/JSON caches, encrypted preferences) runs on a background
+     * dispatcher so the main thread only applies the finished state and keeps every frame on time.
+     */
+    private suspend fun <T> off(block: suspend () -> T): T = withContext(kotlinx.coroutines.Dispatchers.Default) { block() }
+
     private fun action(block: suspend () -> Unit) {
         if (state.value.loading) return
         mutableState.update { it.copy(loading = true, error = null) }
@@ -852,10 +887,6 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
                 pendingAppleCallback?.let { callback ->
                     pendingAppleCallback = null
                     acceptAppleCallback(callback)
-                }
-                if (historyRequested) {
-                    historyRequested = false
-                    if (state.value.phase == AppPhase.SIGNED_IN && state.value.tab == AppTab.HISTORY) loadHistory()
                 }
             }
         }

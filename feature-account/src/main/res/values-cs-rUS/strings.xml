@@ -1,26 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="account_account_85dfa">účet</string>
-    <string name="account_cancel_77dfd">zrušit</string>
-    <string name="account_connect_school_85e9d">připojit školu</string>
-    <string name="account_current_4fc0e">aktuální</string>
-    <string name="account_delete_gradey_account_c70a9">smazat účet Gradey</string>
-    <string name="account_full_details_a005b">podrobnosti</string>
-    <string name="account_gradey_account_4bda8">účet Gradey</string>
-    <string name="account_language_89b86">jazyk</string>
-    <string name="account_new_marks_67db5">nové známky</string>
-    <string name="account_notifications_753a2">upozornění</string>
-    <string name="account_privacy_policy_9db10">zásady ochrany osobních údajů</string>
-    <string name="account_profile_ff4fc">profil</string>
-    <string name="account_quiet_hours_706b2">klidový režim</string>
-    <string name="account_reconnect_6988b">znovu připojit</string>
-    <string name="account_save_efc00">uložit</string>
-    <string name="account_save_name_8ce68">uložit jméno</string>
-    <string name="account_school_accounts_93efe">školní účty</string>
-    <string name="account_show_meals_tab_aa1ad">zobrazit záložku jídelna</string>
-    <string name="account_sign_out_dc164">odhlásit se</string>
-    <string name="account_time_zone_eea79">časové pásmo</string>
-    <string name="account_try_again_042c8">zkus to znovu</string>
-    <string name="account_your_gradey_c56a5">tvoje Gradey</string>
-    <string name="account_your_name_ab422">tvoje jméno</string>
+    <!-- Settings overview (iOS GradeyAccountHubView) -->
+    <string name="settings_title">nastavení</string>
+    <string name="settings_close">hotovo</string>
+    <string name="settings_back">zpět</string>
+    <string name="settings_group_app">appka</string>
+    <string name="settings_destination_account_title">účet</string>
+    <string name="settings_destination_connected_title">propojený služby</string>
+    <string name="settings_destination_notifications_title">notifikace</string>
+    <string name="settings_destination_privacy_title">soukromí a data</string>
+    <string name="settings_destination_preferences_title">jazyk a předvolby</string>
+    <string name="settings_destination_support_title">podpora a info</string>
+    <string name="settings_overview_school_active">škola jede</string>
+    <string name="settings_overview_school_not_connected">škola nepřipojená</string>
+    <string name="settings_overview_canteen_connected">jídelna připojená</string>
+    <string name="settings_overview_canteen_not_connected">jídelna nepřipojená</string>
+    <string name="settings_overview_notifications_on">zapnuto</string>
+    <string name="settings_overview_notifications_off">vypnuto</string>
+    <string name="settings_overview_notifications_quiet_until">zapnuto · klid do %1$s</string>
+    <string name="settings_overview_notifications_unavailable">na zapnutí propoj školu</string>
+    <string name="settings_profile_gradey_id">Gradey ID</string>
+    <string name="settings_profile_add_name_title">přidat jméno</string>
+    <string name="settings_profile_add_name_message">udělej si profil v Gradey po svým</string>
+    <string name="settings_profile_guest_title">používáš Gradey jako host</string>
+    <string name="settings_profile_guest_message">školní data zůstávaj v tomhle zařízení</string>
+    <string name="settings_profile_demo">ukázkový data</string>
+    <string name="settings_status_active">jede</string>
+    <string name="settings_status_action_required">chce to akci</string>
+    <string name="settings_status_paused">pozastaveno</string>
+    <string name="settings_status_linking">připojuju</string>
+    <string name="settings_status_failed">selhalo</string>
+    <string name="settings_try_again">zkusit znova</string>
+    <string name="settings_cancel">zrušit</string>
+    <string name="settings_save">uložit</string>
+
+    <!-- Account -->
+    <string name="settings_demo_title">ukázkovej režim</string>
+    <string name="settings_demo_message_live">koukáš na ukázkový data. na připojení vlastní školy se přihlas přes Gradey ID.</string>
+    <string name="settings_demo_message_offline">mrkni na Gradey s ukázkovými daty. v ukázkovým režimu nejde připojit ani měnit skutečný školní účty.</string>
+    <string name="settings_demo_connect">připojit moji školu</string>
+    <string name="settings_guest_account_title">účet Gradey</string>
+    <string name="settings_guest_account_heading">chceš Gradey ID?</string>
+    <string name="settings_guest_account_action">přihlásit se ke Gradey ID</string>
+    <string name="settings_account_profile_title">profil v Gradey</string>
+    <string name="settings_account_name_title">jméno</string>
+    <string name="settings_account_name_placeholder">tvoje jméno</string>
+    <string name="settings_account_name_too_long">jméno může mít max 80 znaků</string>
+    <string name="settings_account_name_save">uložit jméno</string>
+    <string name="settings_account_email_title">mail ke Gradey ID</string>
+    <string name="settings_switch_student">přepnout dítě</string>
+    <string name="settings_choose_student">vyber dítě</string>
+    <string name="settings_student_profiles_note">u rodičovskejch profilů nejsou notifikace známek na pozadí ani cloudová historie známek. známky vybranýho dítěte obnovíš otevřením Gradey.</string>
+    <string name="settings_sign_out">odhlásit se</string>
+    <string name="settings_guest_sign_out">odhlásit školní účet</string>
+    <string name="settings_sign_out_title">odhlásit všechny účty v tomhle zařízení?</string>
+    <string name="settings_sign_out_message">tohle z tohohle zařízení odstraní relace Gradey, školy i jídelny a data v mezipaměti.</string>
+    <string name="settings_guest_sign_out_title">odhlásit školní účet?</string>
+    <string name="settings_guest_sign_out_message">odhlásí se jen školní a jídelní účet v tomhle zařízení. režim hosta zůstane zapnutej.</string>
+    <string name="settings_delete_account">smazat účet Gradey</string>
+    <string name="settings_delete_first_title">smazat tvůj účet Gradey?</string>
+    <string name="settings_delete_first_message">před smazáním tě ještě jednou požádáme o potvrzení.</string>
+    <string name="settings_delete_first_action">pokračovat ke smazání</string>
+    <string name="settings_delete_final_title">tohle je poslední potvrzení</string>
+    <string name="settings_delete_final_message">tvůj profil Gradey, propojené účty, předvolby a historie budou smazány. přihlašovací údaje poskytovatelů a místní relace se pak odstraní z tohoto zařízení.</string>
+    <string name="settings_delete_final_action">trvale smazat</string>
+
+    <!-- Connected services -->
+    <string name="settings_connected_school_title">školní účty</string>
+    <string name="settings_connected_canteen_title">jídelna</string>
+    <string name="settings_link_school">připojit školu</string>
+    <string name="settings_link_another_school">propojit další školu</string>
+    <string name="settings_link_strava">připojit Strava.cz</string>
+    <string name="settings_use_on_device">použít v tomhle zařízení</string>
+    <string name="settings_unlink">odpojit</string>
+    <string name="settings_account_actions">akce účtu</string>
+    <string name="settings_in_use">používá se</string>
+    <string name="settings_reconnect">připojit znova</string>
+    <string name="settings_mark_notifications">notifikace známek</string>
+    <string name="settings_connected_guest_explanation">propojený služby chtěj účet Gradey. školní relace v tomhle zařízení v režimu hosta pořád jede.</string>
+    <string name="settings_unlink_title">odpojit účet?</string>
+    <string name="settings_unlink_confirm">odpojit účet</string>
+    <string name="settings_unlink_school_message">účet %1$s se odpojí od Gradey. pak ho můžeš připojit znova.</string>
+    <string name="settings_unlink_canteen_message">odebrat %1$s z tvýho Gradey ID? objednávky jídel zůstanou.</string>
+    <string name="settings_canteen_cloud_warning">Strava.cz jede v tomhle zařízení, ale s Gradey ID se propojit nepovedlo</string>
+    <string name="settings_canteen_number">jídelna %1$s</string>
+    <string name="settings_canteen_on_device">připojeno v tomhle zařízení</string>
+    <string name="settings_canteen_existing_link_note">jestli už tahle jídelna v seznamu je, před dalším propojením odeber starý propojení. uložený propojení tě na novým zařízení do jídelny nepřihlásí.</string>
+    <string name="settings_open_meals">otevřít jídelnu</string>
+    <string name="settings_local_school_on_device">škola připojená v tomhle zařízení</string>
+    <string name="settings_local_school_detail">známky, rozvrh a docházka jsou tady. tahle škola není propojená s Gradey ID.</string>
+    <string name="settings_change_school">změnit školu</string>
+    <string name="settings_watch_title">přístup hodinek</string>
+    <string name="settings_watch_manage">spravovat přístup hodinek</string>
+    <string name="settings_watch_description">vyber, jestli se hodinky poblíž můžou připojit rovnou ke škole. dokud to nepovolíš, je to vypnutý.</string>
+
+    <!-- Notifications -->
+    <string name="settings_notifications_device_title">tohle zařízení</string>
+    <string name="settings_permission_title">povolení notifikací</string>
+    <string name="settings_permission_not_determined">zatím se neptalo</string>
+    <string name="settings_permission_denied">blokovaný v nastavení systému</string>
+    <string name="settings_permission_authorized">povoleno</string>
+    <string name="settings_permission_enable">zapnout</string>
+    <string name="settings_permission_open_settings">otevřít nastavení</string>
+    <string name="settings_android_notification_settings">nastavení notifikací v androidu</string>
+    <string name="settings_planner_reminder">denní připomínka plánovače</string>
+    <string name="settings_planner_reminder_note">každej den kolem 18:00 připomene zítřejší úkoly, testy a další věci. android to může kvůli baterce trochu zdržet.</string>
+    <string name="settings_mark_notifications_title">notifikace známek</string>
+    <string name="settings_mark_notifications_toggle">dávej vědět o novejch známkách</string>
+    <string name="settings_lock_screen">zamčená obrazovka</string>
+    <string name="settings_lock_private">soukromý</string>
+    <string name="settings_lock_subject">předmět</string>
+    <string name="settings_lock_full">všechno</string>
+    <string name="settings_quiet_hours_title">nerušit</string>
+    <string name="settings_quiet_hours_toggle">odložit notifikace v době nerušit</string>
+    <string name="settings_quiet_hours_start">začíná</string>
+    <string name="settings_quiet_hours_end">končí</string>
+    <string name="settings_time_zone_value">časový pásmo: %1$s</string>
+    <string name="settings_notifications_unavailable_guest">na sync nastavení notifikací se přihlas do Gradey. koukat se tu můžeš i bez toho.</string>
+    <string name="settings_notifications_unavailable_school">propoj školní účet, ať ti chodí známky. povolení v zařízení je zvlášť.</string>
+
+    <!-- Privacy & data -->
+    <string name="settings_privacy_documents_title">zásady a podmínky</string>
+    <string name="settings_privacy_policy">zásady ochrany osobních údajů</string>
+    <string name="settings_terms">podmínky používání (eula)</string>
+    <string name="settings_privacy_changes">co se v zásadách změnilo</string>
+    <string name="settings_age_title">věk</string>
+    <string name="settings_age_sixteen">potvrdil jsi, že ti je 16 nebo víc.</string>
+    <string name="settings_age_teen">potvrdil jsi, že ti ještě není 16 a že rodič nebo zákonný zástupce souhlasí.</string>
+    <string name="settings_age_unknown">věk ještě není potvrzený.</string>
+    <string name="settings_age_local">uloženo v tomhle zařízení. datum narození neukládáme.</string>
+    <string name="settings_export_title">exportovat data</string>
+    <string name="settings_export_prepare">připravit export JSON</string>
+    <string name="settings_privacy_guest_explanation">export dat a smazání účtu budou dostupné po přihlášení k účtu Gradey.</string>
+
+    <!-- Language and preferences -->
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_czech">Čeština</string>
+    <string name="settings_chronically_online_title">chronically online</string>
+    <string name="settings_chronically_online_subtitle">malý písmena, slang, prostě online</string>
+    <string name="settings_show_meals_tab">ukazovat záložku jídelna</string>
+
+    <!-- Support & about -->
+    <string name="settings_support_title">pomoc a feedback</string>
+    <string name="settings_support_chat">napsat podpoře</string>
+    <string name="settings_support_tips">podpořit Gradey</string>
+    <string name="settings_support_contact">napsat vývojáři</string>
+    <string name="settings_github">GitHub repo</string>
+    <string name="settings_about_title">o appce</string>
+    <string name="settings_credits_title">tvůrci</string>
+    <string name="settings_app_updates">aktualizace appky</string>
+    <string name="settings_app_updates_subtitle">stáhni si nejnovější vylepšení a nastav automatický stahování.</string>
+    <string name="settings_version">verze</string>
+    <string name="settings_version_unknown">neznámý</string>
+    <string name="settings_independent_note">Gradey je nezávislá appka, ne oficiální produkt Bakaláři, EduPage nebo Strava.cz.</string>
+
+    <!-- Credits (iOS CreditsView) -->
+    <string name="settings_credits_made_by">udělali</string>
+    <string name="settings_credits_lead_developer">hlavní vývojář</string>
+    <string name="settings_credits_lead_graphics">grafika &amp; marketing</string>
+    <string name="settings_credits_bakalari_title">podpora Bakaláři</string>
+    <string name="settings_credits_bakalari_message">neoficiální integrace se připojuje ke školním systémům Bakaláři. Gradey není produktem Bakaláři a není s Bakaláři software nijak spojený ani jím schválený.</string>
+    <string name="settings_credits_edupage_title">podpora EduPage</string>
+    <string name="settings_credits_edupage_message">neoficiální integrace vychází z veřejně zdokumentovanýho chování EduPage API. Gradey není produktem EduPage.</string>
 </resources>

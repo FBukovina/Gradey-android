@@ -1,8 +1,9 @@
 <resources>
+    <!-- DayNight window so the launch window and framework dialogs follow the system theme. -->
     <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/gradey_window_background</item>
+        <item name="android:colorAccent">@color/gradey_window_accent</item>
     </style>
 </resources>
-

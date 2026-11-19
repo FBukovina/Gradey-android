@@ -168,4 +168,6 @@
         <item quantity="many">Každých %1$d let: %2$s</item>
         <item quantity="other">Každých %1$d let: %2$s</item>
     </plurals>
+    <string name="app_report_card">Vysvědčení</string>
+    <string name="app_recap">Gradey Recap</string>
 </resources>

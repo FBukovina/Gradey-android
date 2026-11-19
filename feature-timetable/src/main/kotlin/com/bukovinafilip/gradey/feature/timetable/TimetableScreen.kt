@@ -1,108 +1,124 @@
 package com.bukovinafilip.gradey.feature.timetable
 
-import com.bukovinafilip.gradey.ui.HugeIcons
-import com.bukovinafilip.gradey.ui.HugeIcon
-
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.MaterialTheme
-import com.bukovinafilip.gradey.ui.adaptiveColor
-import com.bukovinafilip.gradey.ui.GradeyColors
-import com.bukovinafilip.gradey.ui.brandGradient
-import com.bukovinafilip.gradey.ui.gradeyColors
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.bukovinafilip.gradey.domain.TimetableDates
-import com.bukovinafilip.gradey.model.PersonalPlannerItem
-import com.bukovinafilip.gradey.ui.rememberSchoolTime
-import com.bukovinafilip.gradey.ui.SchoolTimeZone
 import com.bukovinafilip.gradey.model.LessonChangeKind
+import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.ScheduledDay
 import com.bukovinafilip.gradey.model.ScheduledLesson
 import com.bukovinafilip.gradey.model.TimetableKind
 import com.bukovinafilip.gradey.model.TimetableWeek
+import com.bukovinafilip.gradey.ui.EmptyState
+import com.bukovinafilip.gradey.ui.ErrorState
+import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyLazyColumn
+import com.bukovinafilip.gradey.ui.GradeyMetrics
+import com.bukovinafilip.gradey.ui.GradeyRadius
+import com.bukovinafilip.gradey.ui.GradeySheet
+import com.bukovinafilip.gradey.ui.GradeySpacing
+import com.bukovinafilip.gradey.ui.GradeyTopBar
+import com.bukovinafilip.gradey.ui.GradeyType
+import com.bukovinafilip.gradey.ui.Hairline
+import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.IconTile
+import com.bukovinafilip.gradey.ui.LoadingState
+import com.bukovinafilip.gradey.ui.ModalCloseButton
+import com.bukovinafilip.gradey.ui.StatusChip
+import com.bukovinafilip.gradey.ui.ToolbarIconButton
+import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.rememberSchoolTime
+import com.bukovinafilip.gradey.ui.struck
+import com.bukovinafilip.gradey.ui.tabular
 import java.time.LocalDate
-import java.time.LocalTime
-import java.time.Duration
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import kotlinx.coroutines.launch
 
-private val AccentTeal: Color
-    @Composable get() = MaterialTheme.colorScheme.primary
-private val MutedText: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
-private val MutedLight: Color
-    @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-private val SubjectTile: Color
-    @Composable get() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-private val NoticeRed = GradeyColors.Poor
-private val DividerColor: Color
-    @Composable get() = MaterialTheme.gradeyColors.separator
+/** Width of the weekly/permanent title menu, centred under the title. */
+private val KindMenuWidth = 200.dp
 
-private data class TimetableDaySlot(
-    val date: LocalDate,
-    val day: ScheduledDay?,
+/** Subject tiles shrink long text down to 60 % (iOS `minimumScaleFactor(0.6)`). */
+private val TileAutoSize = TextAutoSize.StepBased(
+    minFontSize = GradeyType.subheadlineBold.fontSize * 0.6f,
+    maxFontSize = GradeyType.subheadlineBold.fontSize,
 )
 
+/** The week title shrinks down to 70 % before it truncates (iOS `minimumScaleFactor(0.7)`). */
+private val WeekTitleAutoSize = TextAutoSize.StepBased(
+    minFontSize = GradeyType.headline.fontSize * 0.7f,
+    maxFontSize = GradeyType.headline.fontSize,
+)
+
+@Immutable
+private data class LessonSelection(val lesson: ScheduledLesson, val day: ScheduledDay)
+
+@Immutable
+private data class DayChipModel(
+    val date: LocalDate,
+    val weekday: String,
+    val number: String,
+    val description: String,
+    val hasChanges: Boolean,
+)
+
+/**
+ * The Timetable tab (iOS `TimetableView`, compact layout): the top bar with the weekly/permanent
+ * title menu and the Planner button, a fixed week bar and day row, then the selected day's lessons.
+ * Tapping a lesson opens its detail sheet with the Planner items attached to it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimetableScreen(
@@ -110,14 +126,12 @@ fun TimetableScreen(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onChangeWeek: (String) -> Unit,
-    onOpenAccount: () -> Unit,
-    onOpenGradeyTools: () -> Unit,
+    onOpenAI: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
     requestedWeek: String? = null,
     onOpenPlanner: (() -> Unit)? = null,
-    onPlanDay: ((ScheduledDay) -> Unit)? = null,
     onPlanLesson: ((ScheduledLesson, ScheduledDay) -> Unit)? = null,
-    onAskWeekAI: ((String) -> Unit)? = null,
     kind: TimetableKind = TimetableKind.WEEKLY,
     onChangeKind: ((TimetableKind) -> Unit)? = null,
     errorMessage: String? = null,
@@ -125,760 +139,686 @@ fun TimetableScreen(
     schoolScope: String? = null,
     onOpenPlannerItem: ((String) -> Unit)? = null,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val schoolTime by rememberSchoolTime()
-    val monday = remember(week?.weekStart, requestedWeek) {
-        requestedWeek?.let { runCatching { com.bukovinafilip.gradey.domain.TimetableDates.monday(LocalDate.parse(it.take(10))) }.getOrNull() } ?: weekMonday(week)
-    }
     val isPermanent = kind == TimetableKind.PERMANENT
-    val displayedWeek = week?.takeIf { it.kind == kind && (isPermanent || weekMonday(it) == monday) }
+    val schoolTime = rememberSchoolTime()
+    val today by remember { derivedStateOf { schoolTime.value.toLocalDate() } }
+    val format = rememberTimetableDateFormat()
+
+    val monday = remember(week?.weekStart, requestedWeek) {
+        requestedWeek?.let { runCatching { TimetableDates.monday(LocalDate.parse(it.take(10))) }.getOrNull() } ?: weekMonday(week)
+    }
+    val displayedWeek = remember(week, kind, monday) {
+        week?.takeIf { it.kind == kind && (isPermanent || weekMonday(it) == monday) }
+    }
+    val isLoaded = displayedWeek != null
     val daySlots = remember(displayedWeek, monday) { timetableDaySlots(displayedWeek, monday) }
-    val initialDate = if (isPermanent) monday else daySlots.firstOrNull { it.date == schoolTime.toLocalDate() }?.date ?: monday
-    var selectedDate by rememberSaveable(monday.toString(), kind, schoolScope) { mutableStateOf(initialDate.toString()) }
-    var selectedLesson by remember(kind, monday, schoolScope) { mutableStateOf<ScheduledLesson?>(null) }
-    val selectedDay = daySlots.firstOrNull { it.date.toString() == selectedDate }?.day
-    val plannerByLesson = remember(plannerItems, selectedDay, schoolScope) {
-        selectedDay?.lessons.orEmpty().associate { lesson ->
-            lesson.id to attachedPlannerItems(plannerItems, lesson, selectedDay, schoolScope)
+    val chips = remember(daySlots, format, isPermanent) {
+        daySlots.map { slot ->
+            val weekday = format.weekday(slot.date)
+            DayChipModel(
+                date = slot.date,
+                weekday = weekday.uppercase(format.locale),
+                number = slot.date.dayOfMonth.toString(),
+                description = if (isPermanent) weekday else "$weekday, ${slot.date.dayOfMonth}",
+                hasChanges = slot.day?.hasChanges == true,
+            )
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(top = 8.dp),
-            contentPadding = PaddingValues(bottom = com.bukovinafilip.gradey.ui.floatingNavigationContentPadding()),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+    var selectedDate by rememberSaveable(monday.toString(), kind, schoolScope) {
+        mutableStateOf(initialDayDate(daySlots, today, monday, isPermanent).toString())
+    }
+    val selectedLocalDate = remember(selectedDate) { LocalDate.parse(selectedDate) }
+    val selectedDay = daySlots.firstOrNull { it.date == selectedLocalDate }?.day
+    val lessons = remember(selectedDay) { selectedDay.sortedLessons() }
+    val plannerByLesson = remember(plannerItems, lessons, selectedDay, schoolScope) {
+        lessons.associate { lesson -> lesson.id to attachedPlannerItems(plannerItems, lesson, selectedDay, schoolScope) }
+    }
+    val selectedIsToday = !isPermanent && selectedLocalDate == today
+    // The clock ticks every 30 s; only a change of the current lesson recomposes the list.
+    val currentLessonIDs by remember(lessons, selectedIsToday) {
+        derivedStateOf {
+            if (!selectedIsToday) emptySet() else {
+                val now = schoolTime.value.toLocalTime()
+                lessons.filter { it.isCurrentAt(now) }.mapTo(HashSet()) { it.id }
+            }
+        }
+    }
+
+    var selection by remember(kind, monday, schoolScope) { mutableStateOf<LessonSelection?>(null) }
+    val openLesson: (ScheduledLesson) -> Unit = remember(selectedDay) {
+        { lesson -> selectedDay?.let { selection = LessonSelection(lesson, it) } }
+    }
+    val listState = rememberLazyListState()
+
+    Column(modifier.fillMaxSize()) {
+        TimetableTopBar(
+            kind = kind,
+            onChangeKind = onChangeKind,
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            onOpenAI = onOpenAI,
+            onOpenSettings = onOpenSettings,
+            onOpenPlanner = onOpenPlanner,
+        )
+        Column(Modifier.align(Alignment.CenterHorizontally).widthIn(max = GradeyMetrics.contentMaxWidth).fillMaxWidth()) {
+            if (isPermanent) {
+                PermanentHeader()
+            } else {
+                val title = remember(monday, format, today.year) { format.weekTitle(monday, today.year) }
+                val thisMonday = TimetableDates.monday(today)
+                WeekBar(
+                    title = title,
+                    isCurrentWeek = monday == thisMonday,
+                    enabled = !isRefreshing,
+                    onPrevious = { onChangeWeek(monday.minusWeeks(1).toString()) },
+                    onNext = { onChangeWeek(monday.plusWeeks(1).toString()) },
+                    onToday = { onChangeWeek(thisMonday.toString()) },
+                )
+            }
+            DayRow(
+                chips = chips,
+                selectedDate = selectedLocalDate,
+                today = if (isPermanent) null else today,
+                showDates = !isPermanent,
+                onSelect = { selectedDate = it.toString() },
+            )
+        }
+        Hairline()
+        GradeyLazyColumn(
+            modifier = Modifier.weight(1f).testTag("timetableList"),
+            state = listState,
+            topPadding = GradeySpacing.md,
+            bottomPadding = GradeySpacing.md,
+            itemSpacing = 0.dp,
         ) {
-            item(key = "timetable_controls") {
-                Column {
-                    com.bukovinafilip.gradey.ui.GradeyPageHeader(
-                        title = strings.getString(R.string.timetable_timetable),
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        onOpenAI = onOpenGradeyTools, aiDescription = strings.getString(R.string.timetable_open_gradey_tools),
-                        onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = strings.getString(R.string.timetable_refresh_timetable),
-                        onOpenSettings = onOpenAccount, settingsDescription = strings.getString(R.string.timetable_open_account),
+            if (isRefreshing && isLoaded) {
+                item(key = "refreshing", contentType = "refreshing") { RefreshingRow() }
+            }
+            when {
+                !isLoaded && isRefreshing -> item(key = "loading", contentType = "state") {
+                    LoadingState(text = stringResource(R.string.timetable_loading))
+                }
+                !isLoaded && errorMessage != null -> item(key = "error", contentType = "state") {
+                    ErrorState(
+                        message = errorMessage,
+                        title = stringResource(R.string.timetable_error_title),
+                        retryLabel = stringResource(R.string.timetable_retry),
+                        onRetry = onRefresh,
                     )
-                    Spacer(Modifier.height(8.dp))
-                    onChangeKind?.let { selectKind ->
-                        FlowRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(!isPermanent, { selectKind(TimetableKind.WEEKLY) }, label = { Text(strings.getString(R.string.timetable_weekly)) })
-                            FilterChip(isPermanent, { selectKind(TimetableKind.PERMANENT) }, label = { Text(strings.getString(R.string.timetable_permanent)) })
-                        }
-                    }
-                    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End,
-                        maxItemsInEachRow = if (LocalDensity.current.fontScale > 1.15f) 1 else 2) {
-                        onAskWeekAI?.takeIf { !isPermanent }?.let { askAI -> TextButton(onClick = { askAI(monday.toString()) }) { Text(strings.getString(R.string.timetable_plan_week_with_ai), color = AccentTeal) } }
-                        onOpenPlanner?.let { openPlanner -> TextButton(onClick = openPlanner) { Text(strings.getString(R.string.timetable_open_planner), color = AccentTeal) } }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    if (isPermanent) {
-                        Text(strings.getString(R.string.timetable_permanent_description), modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp), color = MutedText, fontSize = 13.sp)
-                    } else WeekNavigator(
-                        monday = monday,
-                        enabled = !isRefreshing,
-                        onPrevious = { onChangeWeek(monday.minusWeeks(1).toString()) },
-                        onNext = { onChangeWeek(monday.plusWeeks(1).toString()) },
+                }
+                !isLoaded -> item(key = "unavailable", contentType = "state") {
+                    EmptyState(
+                        title = stringResource(R.string.timetable_timetable_unavailable_tap_refresh),
+                        icon = HugeIcons.CalendarRemove02,
                     )
-                    if (!isPermanent && monday != TimetableDates.monday(schoolTime.toLocalDate())) {
-                        TextButton(onClick = { onChangeWeek(TimetableDates.monday(schoolTime.toLocalDate()).toString()) }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            Text(strings.getString(R.string.timetable_back_to_this_week), color = AccentTeal)
-                        }
-                    }
-                    errorMessage?.let { message ->
-                        Surface(Modifier.fillMaxWidth().padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(16.dp)) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(message, color = MaterialTheme.colorScheme.onErrorContainer, fontSize = 13.sp)
-                                TextButton(onClick = onRefresh, enabled = !isRefreshing) { Text(strings.getString(R.string.timetable_retry)) }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    DayStrip(
-                        daySlots = daySlots,
-                        selectedDate = selectedDate,
-                        onSelect = { selectedDate = it.toString() },
-                        showDates = !isPermanent,
+                }
+                lessons.isEmpty() -> item(key = "empty", contentType = "state") { EmptyDay(selectedDay) }
+                else -> itemsIndexed(lessons, key = { _, lesson -> lesson.id }, contentType = { _, _ -> "lesson" }) { index, lesson ->
+                    LessonRow(
+                        lesson = lesson,
+                        isCurrent = lesson.id in currentLessonIDs,
+                        plannerItems = plannerByLesson[lesson.id].orEmpty(),
+                        showDivider = index > 0,
+                        onOpen = openLesson,
                     )
-                    Spacer(Modifier.height(11.dp))
-                    HorizontalDivider(thickness = 0.5.dp, color = DividerColor.copy(alpha = 0.62f))
                 }
             }
-            timetableLessons(
-                strings = strings,
-                day = selectedDay,
-                isLoaded = displayedWeek != null,
-                isPermanent = isPermanent,
-                selectedDate = LocalDate.parse(selectedDate),
-                today = schoolTime.toLocalDate(),
-                currentTime = schoolTime.toLocalTime(),
-                onPlanDay = onPlanDay,
-                onOpenLesson = { selectedLesson = it },
-                plannerByLesson = plannerByLesson,
-            )
         }
     }
 
-    selectedLesson?.let { lesson ->
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { selectedLesson = null },
-            modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-            sheetState = sheetState,
-            shape = RoundedCornerShape(28.dp),
-            containerColor = Color.Transparent,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 12.dp,
-            scrimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f),
-            dragHandle = null,
-            contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
-        ) {
-            LessonDetailSheet(
-                lesson = lesson,
-                onPlanLesson = if (onPlanLesson != null && selectedDay != null) ({ onPlanLesson(lesson, selectedDay) }) else null,
-                plannerItems = attachedPlannerItems(plannerItems, lesson, selectedDay, schoolScope),
-                onOpenPlannerItem = onOpenPlannerItem?.let { open -> { itemID: String ->
-                    selectedLesson = null
+    selection?.let { current ->
+        val attached = remember(plannerItems, current, schoolScope) {
+            attachedPlannerItems(plannerItems, current.lesson, current.day, schoolScope)
+        }
+        LessonDetailSheet(
+            selection = current,
+            plannerItems = attached,
+            showPlanner = !schoolScope.isNullOrBlank() && (attached.isNotEmpty() || onPlanLesson != null),
+            onDismiss = { selection = null },
+            onOpenPlannerItem = onOpenPlannerItem?.let { open ->
+                { itemID: String ->
+                    selection = null
                     open(itemID)
-                } },
-            )
+                }
+            },
+            onAdd = onPlanLesson?.let { plan ->
+                {
+                    selection = null
+                    plan(current.lesson, current.day)
+                }
+            },
+        )
+    }
+}
+
+// MARK: - Top bar
+
+/** Inline title with the weekly/permanent menu (iOS `toolbarTitleMenu`), Planner, refresh and Settings. */
+@Composable
+private fun TimetableTopBar(
+    kind: TimetableKind,
+    onChangeKind: ((TimetableKind) -> Unit)?,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onOpenAI: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenPlanner: (() -> Unit)?,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val plannerDescription = stringResource(R.string.timetable_planner_title)
+    Box(Modifier.fillMaxWidth()) {
+        GradeyTopBar(
+            title = stringResource(R.string.timetable_title),
+            onOpenAI = onOpenAI,
+            aiDescription = stringResource(R.string.timetable_gradey_ai),
+            onRefresh = onRefresh,
+            isRefreshing = isRefreshing,
+            refreshDescription = stringResource(R.string.timetable_refresh),
+            onOpenSettings = onOpenSettings,
+            settingsDescription = stringResource(R.string.timetable_settings),
+            onTitleClick = if (onChangeKind != null) ({ menuOpen = true }) else null,
+            actions = if (onOpenPlanner != null) {
+                { ToolbarIconButton(HugeIcons.CheckList, plannerDescription, onOpenPlanner, Modifier.testTag("timetablePlannerButton")) }
+            } else null,
+        )
+        if (onChangeKind != null) {
+            Box(Modifier.align(Alignment.BottomCenter).width(KindMenuWidth)) {
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    modifier = Modifier.width(KindMenuWidth).testTag("timetableKindPicker"),
+                    shape = RoundedCornerShape(GradeyRadius.md),
+                    containerColor = MaterialTheme.gradeyColors.secondaryGroupedBackground,
+                ) {
+                    TimetableKind.entries.forEach { option ->
+                        val isSelected = option == kind
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(if (option == TimetableKind.PERMANENT) R.string.timetable_kind_permanent else R.string.timetable_kind_weekly),
+                                    style = GradeyType.body,
+                                )
+                            },
+                            onClick = {
+                                menuOpen = false
+                                if (!isSelected) onChangeKind(option)
+                            },
+                            modifier = Modifier.semantics { selected = isSelected },
+                            leadingIcon = {
+                                Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                                    if (isSelected) GradeyIcon(HugeIcons.Tick02, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+                                }
+                            },
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+// MARK: - Week bar and day row
+
+/** Previous/next arrows around the week's dates, with a "Today" link off the current week (iOS `WeekNavBar`). */
 @Composable
-private fun WeekNavigator(
-    monday: LocalDate,
+private fun WeekBar(
+    title: String,
+    isCurrentWeek: Boolean,
     enabled: Boolean,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    onToday: () -> Unit,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 40.dp)
-            .padding(horizontal = 16.dp),
+        Modifier.fillMaxWidth().padding(start = GradeySpacing.lg, end = GradeySpacing.lg, top = GradeySpacing.md, bottom = GradeySpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
-        WeekArrow(
-            description = strings.getString(R.string.timetable_previous_week),
-            enabled = enabled,
-            onClick = onPrevious,
-        ) {
-            HugeIcon(HugeIcons.ArrowLeft01, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
+        WeekArrow(HugeIcons.ArrowLeft01, stringResource(R.string.timetable_previous_week), enabled, onPrevious, Modifier.testTag("weekPrev"))
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title,
+                style = GradeyType.headline.tabular(),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                autoSize = WeekTitleAutoSize,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.semantics { heading() },
+            )
+            if (!isCurrentWeek) {
+                Text(
+                    stringResource(R.string.timetable_today),
+                    modifier = Modifier.clip(RoundedCornerShape(GradeyRadius.xs))
+                        .clickable(role = Role.Button, onClick = onToday)
+                        .padding(horizontal = GradeySpacing.xs)
+                        .testTag("weekToday"),
+                    style = GradeyType.captionSemibold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
-        Text(
-            text = formatWeekRange(monday, locale),
-            modifier = Modifier.weight(1f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 18.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        WeekArrow(
-            description = strings.getString(R.string.timetable_next_week),
-            enabled = enabled,
-            onClick = onNext,
-        ) {
-            HugeIcon(HugeIcons.ArrowRight01, contentDescription = null, tint = AccentTeal, modifier = Modifier.size(24.dp))
-        }
+        WeekArrow(HugeIcons.ArrowRight01, stringResource(R.string.timetable_next_week), enabled, onNext, Modifier.testTag("weekNext"))
     }
 }
 
 @Composable
-private fun WeekArrow(
-    description: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    icon: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = modifier
-            .size(40.dp)
+private fun WeekArrow(icon: String, description: String, enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(GradeyMetrics.minTouch).clip(CircleShape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
-        onClick = onClick,
-        enabled = enabled,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 0.12f else 0.06f),
+        contentAlignment = Alignment.Center,
     ) {
-        Box(contentAlignment = Alignment.Center) { icon() }
+        GradeyIcon(icon, size = 14.dp, tint = MaterialTheme.colorScheme.primary.copy(alpha = if (enabled) 1f else 0.45f))
     }
 }
 
+/** Replaces the week bar on the permanent timetable. */
 @Composable
-private fun DayStrip(
-    daySlots: List<TimetableDaySlot>,
-    selectedDate: String,
-    onSelect: (LocalDate) -> Unit,
-    showDates: Boolean = true,
-) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val WeekdayFormatter = DateTimeFormatter.ofPattern("EEE", locale)
-    val dayHeight = if (showDates) (26 + 40 * LocalDensity.current.fontScale).dp else (22 + 16 * LocalDensity.current.fontScale).dp
+private fun PermanentHeader() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(dayHeight)
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Modifier.fillMaxWidth().padding(start = GradeySpacing.lg, end = GradeySpacing.lg, top = GradeySpacing.md, bottom = GradeySpacing.md),
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
     ) {
-        daySlots.forEach { slot ->
-            val selected = slot.date.toString() == selectedDate
-            val description = if (showDates) "${slot.date.format(WeekdayFormatter)}, ${slot.date.dayOfMonth}" else slot.date.format(WeekdayFormatter)
-            val shape = RoundedCornerShape(17.dp)
-            Box(
-                modifier = Modifier
-                    .size(width = (32 + 20 * LocalDensity.current.fontScale).dp, height = dayHeight)
-                    .clip(shape)
-                    .background(
-                        if (selected) {
-                            MaterialTheme.colorScheme.brandGradient
-                        } else {
-                            Brush.linearGradient(listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surface))
-                        },
-                    )
-                    .clickable(
-                        role = Role.Tab,
-                        onClickLabel = strings.getString(R.string.timetable_show_1_s, description),
-                        onClick = { onSelect(slot.date) },
-                    )
-                    .semantics {
-                        contentDescription = description
-                        this.selected = selected
-                    },
-                contentAlignment = Alignment.TopCenter,
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Spacer(Modifier.height(9.dp))
-                    Text(
-                        text = slot.date.format(WeekdayFormatter).uppercase(locale),
-                        color = if (selected) Color(0xFF041816) else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.sp,
-                        lineHeight = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    if (showDates) Text(
-                        text = slot.date.dayOfMonth.toString(),
-                        color = if (selected) Color(0xFF041816) else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 20.sp,
-                        lineHeight = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    val hasNotice = slot.day?.dayType.equals("notice", ignoreCase = true) ||
-                        slot.day?.lessons?.any { it.changeKind != LessonChangeKind.NONE } == true
-                    if (!selected && hasNotice) {
-                        Spacer(Modifier.height(1.dp))
-                        Box(Modifier.size(5.dp).background(NoticeRed, CircleShape))
-                    }
-                }
-            }
+        GradeyIcon(HugeIcons.TimeSchedule, Modifier.padding(top = 2.dp), size = 15.dp, tint = MaterialTheme.colorScheme.primary)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(stringResource(R.string.timetable_kind_permanent), style = GradeyType.subheadlineSemibold, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.timetable_permanent_description), style = GradeyType.caption, color = MaterialTheme.gradeyColors.secondaryLabel)
         }
     }
 }
 
-private fun LazyListScope.timetableLessons(
-    strings: android.content.res.Resources,
-    day: ScheduledDay?,
-    isLoaded: Boolean,
-    isPermanent: Boolean,
+/** One column per day: weekday, the date in a circle when selected, and a red dot for changes (iOS `DayStrip`). */
+@Composable
+private fun DayRow(
+    chips: List<DayChipModel>,
     selectedDate: LocalDate,
-    today: LocalDate,
-    currentTime: LocalTime,
-    onPlanDay: ((ScheduledDay) -> Unit)?,
-    onOpenLesson: (ScheduledLesson) -> Unit,
-    plannerByLesson: Map<String, List<PersonalPlannerItem>>,
+    today: LocalDate?,
+    showDates: Boolean,
+    onSelect: (LocalDate) -> Unit,
 ) {
-    val lessons = day?.lessons.orEmpty().sortedBy { it.hour.beginTime.asSchoolTime() ?: LocalTime.MAX }
-    if (isLoaded && day != null && !isPermanent) {
-        item {
-            DaySummaryCard(day, selectedDate == today, currentTime, Modifier.padding(horizontal = 16.dp), onPlanDay?.let { { it(day) } })
-        }
-    }
-    if (!isLoaded || lessons.isEmpty()) {
-        item {
-            Surface(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp)
-                    .fillMaxWidth()
-                    .heightIn(min = 76.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 2.dp,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = if (isLoaded) day?.dayDescription?.takeIf { it.isNotBlank() } ?: strings.getString(R.string.timetable_no_lessons_scheduled_2) else strings.getString(R.string.timetable_timetable_unavailable_tap_refresh),
-                        color = MutedText,
-                        fontSize = 15.sp,
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
-        }
-    } else {
-        items(lessons, key = ScheduledLesson::id) { lesson ->
-            Box(Modifier.padding(end = 16.dp)) {
-                LessonRow(lesson = lesson, isCurrent = !isPermanent && selectedDate == today && lesson.isCurrentAt(currentTime),
-                    plannerItems = plannerByLesson[lesson.id].orEmpty(), onClick = { onOpenLesson(lesson) })
+    Row(Modifier.fillMaxWidth().padding(start = GradeySpacing.lg, end = GradeySpacing.lg, bottom = GradeySpacing.sm)) {
+        chips.forEach { chip ->
+            key(chip.date) {
+                DayChip(
+                    chip = chip,
+                    isSelected = chip.date == selectedDate,
+                    isToday = chip.date == today,
+                    showDate = showDates,
+                    onSelect = onSelect,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DaySummaryCard(day: ScheduledDay, isToday: Boolean, now: LocalTime, modifier: Modifier = Modifier, onPlanDay: (() -> Unit)? = null) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val activeLessons = day.lessons.filter { it.changeKind != LessonChangeKind.CANCELED }
-        .sortedBy { it.hour.beginTime.asSchoolTime() ?: LocalTime.MAX }
-    val current = if (isToday) activeLessons.firstOrNull { it.isCurrentAt(now) } else null
-    val next = if (isToday && current == null) activeLessons.firstOrNull { it.hour.beginTime.asSchoolTime()?.isAfter(now) == true } else null
-    val changed = day.lessons.count { it.changeKind != LessonChangeKind.NONE }
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), contentColor = MaterialTheme.colorScheme.onSurface) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(when {
-                current != null -> strings.getString(R.string.timetable_now_1_s, current.subjectDisplayName(strings))
-                next != null -> strings.getString(R.string.timetable_next_1_s, next.subjectDisplayName(strings))
-                activeLessons.isEmpty() -> strings.getString(R.string.timetable_a_day_to_recharge)
-                isToday && activeLessons.any { it.hour.beginTime.asSchoolTime() == null || it.hour.endTime.asSchoolTime() == null } -> strings.getString(R.string.timetable_lesson_times_unavailable)
-                isToday -> strings.getString(R.string.timetable_you_re_done_for_today)
-                else -> strings.getQuantityString(R.plurals.timetable_lessons_scheduled, activeLessons.size, activeLessons.size)
-            }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-            val featured = current ?: next
-            val description = if (featured != null) {
-                val end = (if (current != null) featured.hour.endTime else featured.hour.beginTime).asSchoolTime()
-                val minutes = end?.let { kotlin.math.ceil(Duration.between(now, it).seconds / 60.0).toInt().coerceAtLeast(1) }
-                listOfNotNull(
-                    minutes?.let { if (current != null) strings.getString(R.string.timetable_1_d_min_remaining, it) else strings.getString(R.string.timetable_starts_in_1_d_min, it) },
-                    featured.roomTitle?.takeIf { it.isNotBlank() }?.let { strings.getString(R.string.timetable_room_1_s, it) },
-                    featured.teacherTitle?.takeIf { it.isNotBlank() },
-                ).joinToString(" · ")
-            } else if (activeLessons.isEmpty()) day.dayDescription.ifBlank { strings.getString(R.string.timetable_no_lessons_scheduled) }
-            else listOfNotNull(activeLessons.firstOrNull()?.hour?.beginTime, activeLessons.lastOrNull()?.hour?.endTime).joinToString(" – ")
-            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-            current?.let { lesson ->
-                val start = lesson.hour.beginTime.asSchoolTime()
-                val end = lesson.hour.endTime.asSchoolTime()
-                if (start != null && end != null && end.isAfter(start)) {
-                    val progress = Duration.between(start, now).seconds.toFloat() / Duration.between(start, end).seconds
-                    LinearProgressIndicator(progress = { progress.coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth(), color = AccentTeal, trackColor = MaterialTheme.colorScheme.surface)
-                }
+private fun DayChip(
+    chip: DayChipModel,
+    isSelected: Boolean,
+    isToday: Boolean,
+    showDate: Boolean,
+    onSelect: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val numberColor = when {
+        isSelected -> GradeyColors.OnAccent
+        isToday -> primary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    Column(
+        modifier.heightIn(min = GradeyMetrics.minTouch)
+            .clip(RoundedCornerShape(GradeyRadius.sm))
+            .clickable(role = Role.Tab, onClickLabel = stringResource(R.string.timetable_show_1_s, chip.description)) { onSelect(chip.date) }
+            .semantics {
+                contentDescription = chip.description
+                selected = isSelected
             }
-            if (changed > 0) Text(strings.getQuantityString(R.plurals.timetable_timetable_changes, changed, changed), color = GradeyColors.Average, fontSize = 12.sp)
-            onPlanDay?.let { action -> TextButton(onClick = action) { Text(strings.getString(R.string.timetable_plan_this_day), color = AccentTeal) } }
+            .testTag("dayChip-${chip.date.dayOfWeek.value}"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs, Alignment.CenterVertically),
+    ) {
+        if (showDate) {
+            Text(
+                chip.weekday,
+                Modifier.clearAndSetSemantics { },
+                style = GradeyType.caption2Semibold,
+                color = if (isToday) primary else MaterialTheme.gradeyColors.secondaryLabel,
+                maxLines = 1,
+            )
+            Box(
+                Modifier.sizeIn(minWidth = 38.dp, minHeight = 38.dp)
+                    .then(if (isSelected) Modifier.background(primary, CircleShape) else Modifier)
+                    .clearAndSetSemantics { },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(chip.number, style = GradeyType.headline.tabular(), color = numberColor, maxLines = 1)
+            }
+            Box(Modifier.size(5.dp).then(if (chip.hasChanges) Modifier.background(GradeyColors.Poor, CircleShape) else Modifier))
+        } else {
+            Box(
+                Modifier.then(if (isSelected) Modifier.background(primary, CircleShape) else Modifier)
+                    .heightIn(min = 34.dp)
+                    .padding(horizontal = 10.dp)
+                    .clearAndSetSemantics { },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(chip.weekday, style = GradeyType.subheadlineBold, color = numberColor, maxLines = 1)
+            }
         }
     }
 }
 
-private fun String.asSchoolTime(): LocalTime? {
-    val parts = Regex("^([01]?[0-9]|2[0-3]):([0-5][0-9])$").matchEntire(trim()) ?: return null
-    return LocalTime.of(parts.groupValues[1].toInt(), parts.groupValues[2].toInt())
+// MARK: - Lesson list
+
+/** "Refreshing…" above the lessons while new data loads. */
+@Composable
+private fun RefreshingRow() {
+    Row(
+        Modifier.fillMaxWidth().padding(bottom = GradeySpacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm, Alignment.CenterHorizontally),
+    ) {
+        CircularProgressIndicator(Modifier.size(16.dp), color = MaterialTheme.gradeyColors.secondaryLabel, strokeWidth = 2.dp)
+        Text(stringResource(R.string.timetable_refreshing), style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel)
+    }
 }
 
-private fun ScheduledLesson.isCurrentAt(time: LocalTime): Boolean {
-    if (changeKind == LessonChangeKind.CANCELED) return false
-    val start = hour.beginTime.asSchoolTime() ?: return false
-    val end = hour.endTime.asSchoolTime() ?: return false
-    return !time.isBefore(start) && time.isBefore(end)
+/** No lessons on the selected day: holiday, weekend or an empty school day (iOS `EmptyDayView`). */
+@Composable
+private fun EmptyDay(day: ScheduledDay?) {
+    val kind = day.emptyDayKind()
+    val description = day?.dayDescription?.takeIf { it.isNotBlank() }
+    EmptyState(
+        title = stringResource(
+            when (kind) {
+                EmptyDayKind.NO_SCHOOL -> R.string.timetable_holiday
+                EmptyDayKind.WEEKEND -> R.string.timetable_weekend
+                EmptyDayKind.NO_LESSONS -> R.string.timetable_empty_title
+            },
+        ),
+        message = description ?: if (kind == EmptyDayKind.NO_LESSONS) stringResource(R.string.timetable_empty_message) else null,
+        icon = when (kind) {
+            EmptyDayKind.NO_SCHOOL -> HugeIcons.Sparkles
+            EmptyDayKind.WEEKEND -> HugeIcons.Sun01
+            EmptyDayKind.NO_LESSONS -> HugeIcons.CalendarCheckIn02
+        },
+        modifier = Modifier.padding(top = GradeySpacing.sm).testTag("timetableEmptyDay"),
+    )
 }
 
+/** Accent colour of a change, reusing the grade palette (iOS `LessonChangeKind.color`). */
+@Composable
+private fun LessonChangeKind.color(): Color = when (this) {
+    LessonChangeKind.NONE -> MaterialTheme.gradeyColors.secondaryLabel
+    LessonChangeKind.CANCELED -> GradeyColors.Poor
+    LessonChangeKind.SUBSTITUTION -> GradeyColors.Average
+    LessonChangeKind.ROOM_CHANGED -> MaterialTheme.gradeyColors.good
+    LessonChangeKind.ADDED -> MaterialTheme.gradeyColors.purple
+}
+
+@Composable
+private fun LessonChangeKind.label(): String? = when (this) {
+    LessonChangeKind.NONE -> null
+    LessonChangeKind.CANCELED -> stringResource(R.string.timetable_change_canceled)
+    LessonChangeKind.SUBSTITUTION -> stringResource(R.string.timetable_change_substitution)
+    LessonChangeKind.ROOM_CHANGED -> stringResource(R.string.timetable_change_room)
+    LessonChangeKind.ADDED -> stringResource(R.string.timetable_change_added)
+}
+
+/** Hour rail, subject tile and the lesson's details; a hairline separates it from the row above. */
 @Composable
 private fun LessonRow(
     lesson: ScheduledLesson,
     isCurrent: Boolean,
     plannerItems: List<PersonalPlannerItem>,
-    onClick: () -> Unit,
+    showDivider: Boolean,
+    onOpen: (ScheduledLesson) -> Unit,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val hasTopic = !lesson.theme.isNullOrBlank()
-    val hasChange = lesson.changeKind != LessonChangeKind.NONE || !lesson.changeDescription.isNullOrBlank()
-    val rowHeight = if (hasTopic || hasChange) 83.dp else 68.dp
-    val isCanceled = lesson.changeKind == LessonChangeKind.CANCELED
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .heightIn(min = rowHeight),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LessonTimeRail(lesson = lesson, modifier = Modifier.width(72.dp).fillMaxHeight())
-        Surface(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .semantics {
-                    contentDescription = buildString {
-                        append(strings.getString(R.string.timetable_open_1_s_lesson_details_2_s, lesson.subjectDisplayName(strings), lesson.formattedTimeRange()))
-                        lesson.changeDescription?.takeIf { it.isNotBlank() }?.let { append(", $it") }
-                        if (plannerItems.isNotEmpty()) append(", " + strings.getQuantityString(
-                            R.plurals.timetable_planner_incomplete_count, plannerItems.size, plannerItems.size))
-                    }
-                },
-            onClick = onClick,
-            shape = RoundedCornerShape(20.dp),
-            color = if (isCanceled) GradeyColors.Poor.copy(alpha = 0.12f) else if (isCurrent) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surface,
-            border = if (isCurrent) BorderStroke(1.5.dp, AccentTeal) else null,
-            shadowElevation = 1.dp,
+    val resources = LocalResources.current
+    val unknown = stringResource(R.string.timetable_lesson_unknown)
+    val changeLabel = lesson.changeKind.label()
+    val subject = remember(lesson, unknown) { lesson.subjectTitle(unknown) }
+    val note = remember(lesson, changeLabel) { lesson.distinctChangeNote(changeLabel) }
+    val cycles = remember(lesson.cycles) { lesson.cycles.joinToString(", ") }
+    val description = remember(lesson, subject, plannerItems.size, resources) {
+        buildString {
+            append(resources.getString(R.string.timetable_open_1_s_lesson_details_2_s, subject, lesson.timeText))
+            lesson.changeNote()?.let { append(", ").append(it) }
+            if (plannerItems.isNotEmpty()) {
+                append(", ").append(resources.getQuantityString(R.plurals.timetable_planner_incomplete_count, plannerItems.size, plannerItems.size))
+            }
+        }
+    }
+    val canceled = lesson.isCanceled
+    val changeColor = lesson.changeKind.color()
+    val accent = if (lesson.changeKind == LessonChangeKind.NONE) MaterialTheme.colorScheme.primary else changeColor
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Column(Modifier.fillMaxWidth()) {
+        if (showDivider) Hairline()
+        Row(
+            Modifier.fillMaxWidth()
+                .testTag("lessonRow-${lesson.id}")
+                .clickable(role = Role.Button) { onOpen(lesson) }
+                .semantics { contentDescription = description }
+                .padding(vertical = GradeySpacing.md),
+            horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .background(SubjectTile, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
+            LessonTimeRail(lesson, isCurrent, canceled)
+            LessonTile(lesson.tileText, canceled, accent)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
                     Text(
-                        text = lesson.subjectAbbrev ?: lesson.subjectDisplayName(strings).take(2),
-                        color = AccentTeal,
-                        fontSize = 17.sp,
-                        lineHeight = 21.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = lesson.subjectDisplayName(strings),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
-                        lineHeight = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        subject,
+                        Modifier.weight(1f),
+                        style = GradeyType.headline.struck(canceled),
+                        color = if (canceled) secondary else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        HugeIcon(
-                            name = HugeIcons.DoorOpen,
-                            contentDescription = null,
-                            tint = MutedText,
-                            modifier = Modifier.size(15.dp),
-                        )
-                        Text(
-                            text = lesson.roomAbbrev ?: lesson.roomName.orEmpty(),
-                            color = MutedText,
-                            fontSize = 15.sp,
-                            lineHeight = 18.sp,
-                            maxLines = 1,
-                        )
-                        HugeIcon(
-                            name = HugeIcons.User,
-                            contentDescription = null,
-                            tint = MutedText,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Text(
-                            text = lesson.teacherName ?: lesson.teacherAbbrev.orEmpty(),
-                            color = MutedText,
-                            fontSize = 15.sp,
-                            lineHeight = 18.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (lesson.cycles.isNotEmpty()) Text(lesson.cycles.joinToString(" · "), color = AccentTeal, fontSize = 12.sp)
-                    if (plannerItems.isNotEmpty()) TimetablePlannerBadge(plannerItems)
-                    (lesson.changeDescription?.takeIf { it.isNotBlank() }
-                        ?: lesson.theme?.takeIf { it.isNotBlank() })?.let { secondaryText ->
-                        Text(
-                            text = secondaryText,
-                            color = when (lesson.changeKind) {
-                                LessonChangeKind.CANCELED -> Color(0xFFD95461)
-                                LessonChangeKind.NONE -> MutedText
-                                else -> Color(0xFFD98F10)
-                            },
-                            fontSize = 13.sp,
-                            lineHeight = 17.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                    if (changeLabel != null) StatusChip(changeLabel, color = changeColor)
+                }
+                // A cancelled hour has no room or teacher worth reading; the school's note matters more.
+                val room = lesson.roomDisplay
+                val teacher = lesson.teacherDisplay
+                if (!canceled && (room != null || teacher != null)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                        if (room != null) InlineLabel(room, HugeIcons.DoorOpen)
+                        if (teacher != null) InlineLabel(teacher, HugeIcons.User, Modifier.weight(1f, fill = false))
                     }
                 }
+                if (note != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        GradeyIcon(HugeIcons.InformationCircle, Modifier.padding(top = 1.dp), size = 12.dp, tint = changeColor)
+                        Text(note, style = GradeyType.caption, color = secondary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                if (!canceled && cycles.isNotEmpty()) {
+                    Text(cycles, style = GradeyType.captionSemibold, color = secondary)
+                }
+                if (!canceled) {
+                    lesson.theme?.takeIf { it.isNotBlank() }?.let { theme ->
+                        Text(theme, style = GradeyType.caption, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                if (plannerItems.isNotEmpty()) TimetablePlannerBadge(plannerItems)
             }
         }
     }
 }
 
+/** Lesson number, start and end; green while the lesson is on (iOS `hourRail`). */
 @Composable
-private fun LessonTimeRail(
-    lesson: ScheduledLesson,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(top = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+private fun LessonTimeRail(lesson: ScheduledLesson, isCurrent: Boolean, canceled: Boolean) {
+    val primary = MaterialTheme.colorScheme.primary
+    val tokens = MaterialTheme.gradeyColors
+    Column(Modifier.width(GradeyMetrics.minTouch), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-            text = lesson.hour.caption,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 18.sp,
-            lineHeight = 22.sp,
-            fontWeight = FontWeight.Bold,
+            lesson.hour.caption,
+            style = GradeyType.headline.tabular(),
+            color = when {
+                isCurrent -> primary
+                canceled -> tokens.secondaryLabel
+                else -> MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = 1,
         )
-        Text(
-            text = lesson.hour.beginTime.clockDisplay(),
-            color = MutedText,
-            fontSize = 13.sp,
-            lineHeight = 16.sp,
-            fontWeight = FontWeight.Medium,
-        )
-        Text(
-            text = lesson.hour.endTime.clockDisplay(),
-            color = MutedLight,
-            fontSize = 13.sp,
-            lineHeight = 16.sp,
-            fontWeight = FontWeight.Medium,
-        )
+        if (lesson.hour.beginTime.isNotBlank()) {
+            Text(
+                lesson.hour.beginTime.trim(),
+                style = GradeyType.caption2.tabular(),
+                color = when {
+                    isCurrent -> primary
+                    canceled -> tokens.tertiaryLabel
+                    else -> tokens.secondaryLabel
+                },
+                maxLines = 1,
+            )
+            Text(lesson.hour.endTime.trim(), style = GradeyType.caption2.tabular(), color = tokens.tertiaryLabel, maxLines = 1)
+        }
     }
 }
 
+/** 40 dp subject abbreviation tile tinted by the change; a calendar glyph when there is no subject. */
+@Composable
+private fun LessonTile(text: String?, canceled: Boolean, accent: Color) {
+    val fontScale = LocalDensity.current.fontScale
+    Box(
+        Modifier.size(40.dp).clip(RoundedCornerShape(GradeyRadius.md)).background(accent.copy(alpha = if (canceled) 0.10f else 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (text != null) {
+            Text(
+                text,
+                Modifier.padding(horizontal = GradeySpacing.xs),
+                style = GradeyType.subheadlineBold.struck(canceled),
+                color = accent,
+                maxLines = 1,
+                softWrap = false,
+                // Only long names and enlarged text need the shrink-to-fit layout passes.
+                autoSize = if (text.length > 3 || fontScale > 1.15f) TileAutoSize else null,
+            )
+        } else {
+            GradeyIcon(if (canceled) HugeIcons.CalendarRemove02 else HugeIcons.Calendar03, size = 18.dp, tint = accent)
+        }
+    }
+}
+
+@Composable
+private fun InlineLabel(text: String, icon: String, modifier: Modifier = Modifier) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+        GradeyIcon(icon, size = 13.dp, tint = secondary)
+        Text(text, style = GradeyType.subheadline, color = secondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+// MARK: - Lesson detail
+
+/**
+ * The lesson in a bottom sheet: the change first, then time, teacher, room, group, weeks, topic and
+ * homework, then the Planner section (iOS `LessonDetailSheet`).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LessonDetailSheet(
-    lesson: ScheduledLesson,
-    onPlanLesson: (() -> Unit)? = null,
-    plannerItems: List<PersonalPlannerItem> = emptyList(),
-    onOpenPlannerItem: ((String) -> Unit)? = null,
+    selection: LessonSelection,
+    plannerItems: List<PersonalPlannerItem>,
+    showPlanner: Boolean,
+    onDismiss: () -> Unit,
+    onOpenPlannerItem: ((String) -> Unit)?,
+    onAdd: (() -> Unit)?,
 ) {
-    val strings = androidx.compose.ui.platform.LocalResources.current
-    val hasTopic = !lesson.theme.isNullOrBlank()
-    val hasChange = !lesson.changeDescription.isNullOrBlank()
-    val detailRowCount = 2 + (if (hasTopic) 1 else 0) + (if (hasChange) 1 else 0)
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 360.dp, max = 680.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface),
-    ) {
-        val glow = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(glow, Color.Transparent),
-                    center = Offset(size.width * 0.76f, size.height * 0.05f),
-                    radius = size.width * 0.65f,
-                ),
-                radius = size.width * 0.65f,
-                center = Offset(size.width * 0.76f, size.height * 0.05f),
-            )
-        }
+    val lesson = selection.lesson
+    val unknown = stringResource(R.string.timetable_lesson_unknown)
+    val subject = remember(lesson, unknown) { lesson.subjectTitle(unknown) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    GradeySheet(onDismiss = onDismiss, sheetState = sheetState) {
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
         ) {
-            Spacer(Modifier.height(6.dp))
-            Box(
-                modifier = Modifier
-                    .size(width = 34.dp, height = 5.dp)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(3.dp)),
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = lesson.subjectDisplayName(strings),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 20.sp,
-                lineHeight = 26.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(31.dp))
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 15.dp)
-                    .fillMaxWidth()
-                    .heightIn(min = 96.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.brandGradient)
-                    .semantics {
-                        contentDescription = "${lesson.subjectDisplayName(strings)}, ${lesson.formattedTimeRange()}"
-                    },
-                contentAlignment = Alignment.CenterStart,
-            ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
-                    Text(
-                        text = lesson.formattedTimeRange(),
-                        color = GradeyColors.OnAccent.copy(alpha = 0.85f),
-                        fontSize = 16.sp,
-                        lineHeight = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(Modifier.height(5.dp))
-                    Text(
-                        text = lesson.subjectDisplayName(strings),
-                        color = GradeyColors.OnAccent,
-                        fontSize = 22.sp,
-                        lineHeight = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                Text(
+                    subject,
+                    Modifier.weight(1f).semantics { heading() },
+                    style = GradeyType.title2.struck(lesson.isCanceled),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                ModalCloseButton(
+                    onClick = { scope.launch { sheetState.hide() }.invokeOnCompletion { if (!sheetState.isVisible) onDismiss() } },
+                    contentDescription = stringResource(R.string.timetable_done),
+                )
             }
-            if (plannerItems.isNotEmpty()) LessonPlannerItems(plannerItems, onOpenPlannerItem,
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp))
-            onPlanLesson?.let { action ->
-                TextButton(onClick = action, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) { Text(strings.getString(R.string.timetable_add_to_planner), color = AccentTeal) }
-            }
-            Spacer(Modifier.height(15.dp))
-            Surface(
-                modifier = Modifier
-                    .padding(horizontal = 15.dp)
-                    .fillMaxWidth()
-                    .heightIn(min = 108.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 1.dp,
-            ) {
-                Column(
-                    modifier = Modifier.padding(start = 20.dp, top = 13.dp, end = 20.dp, bottom = 11.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    DetailRow(
-                        icon = { HugeIcon(HugeIcons.User, contentDescription = null) },
-                        label = strings.getString(R.string.timetable_teacher),
-                        value = lesson.teacherName ?: lesson.teacherAbbrev ?: "—",
-                    )
-                    DetailRow(
-                        icon = { HugeIcon(HugeIcons.DoorOpen, contentDescription = null) },
-                        label = strings.getString(R.string.timetable_room),
-                        value = lesson.roomName ?: lesson.roomAbbrev ?: "—",
-                    )
-                    if (lesson.groups.isNotEmpty()) DetailRow(
-                        icon = { HugeIcon(HugeIcons.User, contentDescription = null) },
-                        label = strings.getString(R.string.timetable_groups),
-                        value = lesson.groups.joinToString(", "),
-                    )
-                    if (lesson.cycles.isNotEmpty()) DetailRow(
-                        icon = { HugeIcon(HugeIcons.InformationCircle, contentDescription = null) },
-                        label = strings.getString(R.string.timetable_cycles),
-                        value = lesson.cycles.joinToString(", "),
-                    )
-                    if (lesson.hasHomework) DetailRow(
-                        icon = { HugeIcon(HugeIcons.Book02, contentDescription = null) },
-                        label = strings.getString(R.string.timetable_homework),
-                        value = strings.getString(R.string.timetable_homework_assigned_for_this_lesson),
-                    )
-                    lesson.theme?.takeIf { it.isNotBlank() }?.let { topic ->
-                        DetailRow(
-                            icon = { HugeIcon(HugeIcons.Book02, contentDescription = null) },
-                            label = strings.getString(R.string.timetable_topic),
-                            value = topic,
-                        )
-                    }
-                    lesson.changeDescription?.takeIf { it.isNotBlank() }?.let { change ->
-                        DetailRow(
-                            icon = { HugeIcon(HugeIcons.InformationCircle, contentDescription = null) },
-                            label = strings.getString(R.string.timetable_change),
-                            value = change,
-                        )
-                    }
-                }
+            // The change is the news: show it before the regular details.
+            if (lesson.changeKind != LessonChangeKind.NONE) LessonChangeBlock(lesson)
+            LessonDetailRows(lesson)
+            if (showPlanner) LessonPlannerSection(plannerItems, onOpenPlannerItem, onAdd)
+        }
+    }
+}
+
+@Composable
+private fun LessonChangeBlock(lesson: ScheduledLesson) {
+    val color = lesson.changeKind.color()
+    val label = lesson.changeKind.label() ?: stringResource(R.string.timetable_detail_change)
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
+    ) {
+        IconTile(
+            icon = if (lesson.isCanceled) HugeIcons.CalendarRemove02 else HugeIcons.Alert02,
+            tint = color,
+            size = 36.dp,
+            iconSize = 20.dp,
+            cornerRadius = GradeyRadius.xs,
+            background = color.copy(alpha = 0.14f),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+            Text(label, style = GradeyType.headline, color = color)
+            lesson.changeDescription?.trim()?.takeIf { it.isNotEmpty() }?.let { description ->
+                Text(description, style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel)
             }
         }
     }
 }
 
 @Composable
-private fun DetailRow(
-    icon: @Composable () -> Unit,
-    label: String,
-    value: String,
-) {
+private fun LessonDetailRows(lesson: ScheduledLesson) {
+    val groups = remember(lesson.groups) { lesson.groups.joinToString(", ") }
+    val cycles = remember(lesson.cycles) { lesson.cycles.joinToString(", ") }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+        DetailRow(HugeIcons.Clock01, stringResource(R.string.timetable_detail_time), lesson.timeText)
+        lesson.teacherDisplay?.let { DetailRow(HugeIcons.User, stringResource(R.string.timetable_detail_teacher), it) }
+        (lesson.roomName?.takeIf { it.isNotBlank() } ?: lesson.roomAbbrev?.takeIf { it.isNotBlank() })?.let {
+            DetailRow(HugeIcons.DoorOpen, stringResource(R.string.timetable_detail_room), it)
+        }
+        if (groups.isNotEmpty()) DetailRow(HugeIcons.Students, stringResource(R.string.timetable_detail_group), groups)
+        if (cycles.isNotEmpty()) DetailRow(HugeIcons.Calendar03, stringResource(R.string.timetable_detail_cycles), cycles)
+        lesson.theme?.takeIf { it.isNotBlank() }?.let { DetailRow(HugeIcons.Book02, stringResource(R.string.timetable_detail_topic), it) }
+        if (lesson.hasHomework) {
+            DetailRow(HugeIcons.CheckList, stringResource(R.string.timetable_detail_homework), stringResource(R.string.timetable_detail_homework_assigned))
+        }
+    }
+}
+
+/** 24 dp icon column in primary, caption title over a subheadline value (iOS `DetailRow`). */
+@Composable
+private fun DetailRow(icon: String, title: String, value: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 38.dp),
-        verticalAlignment = Alignment.Top,
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
-        Box(
-            modifier = Modifier
-                .width(28.dp)
-                .padding(top = 2.dp),
-            contentAlignment = Alignment.TopStart,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(18.dp)
-                    .semantics { contentDescription = label },
-            ) {
-                CompositionLocalProvider(LocalContentColor provides AccentTeal) { icon() }
-            }
+        Box(Modifier.width(24.dp).padding(top = 2.dp), contentAlignment = Alignment.TopCenter) {
+            GradeyIcon(icon, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
         }
-        Column {
-            Text(
-                text = label,
-                color = MutedText,
-                fontSize = 13.sp,
-                lineHeight = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = value,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 17.sp,
-                lineHeight = 20.sp,
-                fontWeight = FontWeight.Normal,
-            )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = GradeyType.captionSemibold, color = MaterialTheme.gradeyColors.secondaryLabel)
+            Text(value, style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }
-
-private fun timetableDaySlots(week: TimetableWeek?, monday: LocalDate): List<TimetableDaySlot> {
-    val byDate = week?.days.orEmpty().mapNotNull { day ->
-        day.date?.let { date -> runCatching { LocalDate.parse(date.take(10)) }.getOrNull()?.let { it to day } }
-    }.toMap()
-    val byWeekday = week?.days.orEmpty().filter { it.date.isNullOrBlank() }.associateBy { it.dayOfWeek }
-    val lastDay = if (week?.days.orEmpty().any { it.dayOfWeek in 6..7 }) 6L else 4L
-    return (0L..lastDay).map { offset ->
-        val date = monday.plusDays(offset)
-        TimetableDaySlot(
-            date = date,
-            day = byDate[date] ?: byWeekday[date.dayOfWeek.value],
-        )
-    }
-}
-
-private fun weekMonday(week: TimetableWeek?): LocalDate {
-    val parsed = week?.weekStart?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }
-    return TimetableDates.monday(parsed ?: LocalDate.now(SchoolTimeZone))
-}
-
-private fun formatWeekRange(monday: LocalDate, locale: Locale): String {
-    val WeekMonthFormatter = DateTimeFormatter.ofPattern("MMM", locale)
-    val friday = monday.plusDays(4)
-    if (locale.language == "cs") {
-        val dayMonth = DateTimeFormatter.ofPattern("d. MMM", locale)
-        return if (monday.month == friday.month) "${monday.dayOfMonth}.–${friday.format(dayMonth)}"
-        else "${monday.format(dayMonth)}–${friday.format(dayMonth)}"
-    }
-    return if (monday.month == friday.month) {
-        "${monday.format(WeekMonthFormatter)} ${monday.dayOfMonth}–${friday.dayOfMonth}"
-    } else {
-        "${monday.format(WeekMonthFormatter)} ${monday.dayOfMonth}–${friday.format(WeekMonthFormatter)} ${friday.dayOfMonth}"
-    }
-}
-
-private fun ScheduledLesson.subjectDisplayName(strings: android.content.res.Resources): String = subjectName ?: subjectAbbrev ?: strings.getString(R.string.timetable_lesson)
-
-private fun ScheduledLesson.formattedTimeRange(): String =
-    listOf(hour.beginTime.clockDisplay(), hour.endTime.clockDisplay())
-        .filter { it.isNotBlank() }
-        .joinToString(" – ")
-
-private fun String.clockDisplay(): String = trim().removePrefix("0")

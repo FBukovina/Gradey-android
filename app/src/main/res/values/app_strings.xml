@@ -160,4 +160,6 @@
         <item quantity="one">Every %1$d year: %2$s</item>
         <item quantity="other">Every %1$d years: %2$s</item>
     </plurals>
+    <string name="app_report_card">Report card</string>
+    <string name="app_recap">Gradey Recap</string>
 </resources>
