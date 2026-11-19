@@ -59,6 +59,8 @@ import com.bukovinafilip.gradey.feature.absence.AbsenceScreen
 import com.bukovinafilip.gradey.feature.account.AccountScreen
 import com.bukovinafilip.gradey.feature.auth.GradeyIdLoginScreen
 import com.bukovinafilip.gradey.feature.login.SchoolLoginScreen
+import com.bukovinafilip.gradey.feature.subjects.MarksReportCardRow
+import com.bukovinafilip.gradey.feature.subjects.ReportCardScreen
 import com.bukovinafilip.gradey.feature.subjects.SubjectsScreen
 import com.bukovinafilip.gradey.feature.timetable.TimetableScreen
 import com.bukovinafilip.gradey.feature.today.TodayScreen
@@ -238,6 +240,10 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 initialSubjectID = state.focusedSubjectID, onInitialSubjectHandled = model::subjectHandled,
                                 insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
                                 absenceOverrides = state.absenceOverrides, errorMessage = state.error,
+                                // Report cards exist only in Bakaláři (iOS `supportsReportCards`).
+                                reportCardRow = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) {
+                                    { MarksReportCardRow(state.dashboard.marksResponse.subjects, onClick = model::openReportCard) }
+                                } else null,
                             )
                             AppTab.ABSENCE -> AbsenceScreen(
                                 response = state.absence, isRefreshing = state.loading, onRefresh = model::refresh, onOpenAI = openAI, onOpenSettings = openSettings,
@@ -284,7 +290,12 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 calendarMirror = if (state.isDemo) null else (context.applicationContext as GradeyApplication).plannerCalendarMirror,
                                 onInitialItemHandled = model::plannerEntryHandled,
                             )
-                            AppTab.REPORT_CARD, AppTab.RECAP_LIST, AppTab.RECAP_STORY -> LaunchedEffect(tab) { model.back() }
+                            AppTab.REPORT_CARD -> ReportCardScreen(
+                                subjects = state.dashboard.marksResponse.subjects,
+                                loadCached = model.graph.schoolRepository::loadCachedReportCards,
+                                load = model.graph.schoolRepository::loadReportCards, onBack = model::back,
+                            )
+                            AppTab.RECAP_LIST, AppTab.RECAP_STORY -> LaunchedEffect(tab) { model.back() }
                             AppTab.ACCOUNT -> AccountScreen(
                                 onOpenWatch = { showWatchAccess = true },
                                 ageAttestation = ageAttestation, onOpenPrivacyChanges = { reviewPrivacyChanges = true },

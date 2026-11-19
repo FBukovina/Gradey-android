@@ -43,24 +43,29 @@ object DemoData {
 
     val marksResponse = MarksResponse(subjects = listOf(math, czech))
 
-    /** Two earlier report cards for the sample student, so the report card screens have history. */
-    val finalMarksResponse = com.bukovinafilip.gradey.model.FinalMarksResponse(
-        terms = listOf("1" to listOf("2", "2"), "2" to listOf("1", "2")).map { (semester, marks) ->
-            com.bukovinafilip.gradey.model.CertificateTermDTO(
-                finalMarks = listOf(
-                    com.bukovinafilip.gradey.model.FinalMarkDTO(subjectID = math.subjectInfo.id, markText = marks[0]),
-                    com.bukovinafilip.gradey.model.FinalMarkDTO(subjectID = czech.subjectInfo.id, markText = marks[1]),
-                ),
-                subjects = listOf(math, czech).map {
-                    com.bukovinafilip.gradey.model.FinalMarkSubjectDTO(it.subjectInfo.id, it.subjectInfo.abbrev, it.subjectInfo.name)
-                },
-                schoolYear = "2024/25", semester = semester, closed = true,
-                achievementText = if (semester == "2") "Prospěl s vyznamenáním" else "Prospěl",
-                marksAverage = if (semester == "2") 1.5 else 2.0, absentHours = if (semester == "2") 18.0 else 12.0, notExcusedHours = 0.0,
-                certificateDate = if (semester == "2") "2025-06-27T00:00:00+02:00" else "2025-01-30T00:00:00+01:00",
-            )
-        },
-    )
+    /** Last school year's two report cards for the sample student, so the report card screens have history. */
+    val finalMarksResponse: com.bukovinafilip.gradey.model.FinalMarksResponse = run {
+        val lastYear = ReportCardPeriod.containing(java.time.LocalDate.now(java.time.ZoneId.of("Europe/Prague"))).startYear - 1
+        val schoolYear = ReportCardPeriod(lastYear, 1).schoolYear
+        com.bukovinafilip.gradey.model.FinalMarksResponse(
+            terms = listOf("1" to listOf("2", "2"), "2" to listOf("1", "2")).map { (semester, marks) ->
+                val second = semester == "2"
+                com.bukovinafilip.gradey.model.CertificateTermDTO(
+                    finalMarks = listOf(
+                        com.bukovinafilip.gradey.model.FinalMarkDTO(subjectID = math.subjectInfo.id, markText = marks[0]),
+                        com.bukovinafilip.gradey.model.FinalMarkDTO(subjectID = czech.subjectInfo.id, markText = marks[1]),
+                    ),
+                    subjects = listOf(math, czech).map {
+                        com.bukovinafilip.gradey.model.FinalMarkSubjectDTO(it.subjectInfo.id, it.subjectInfo.abbrev, it.subjectInfo.name)
+                    },
+                    schoolYear = schoolYear, semester = semester, closed = true,
+                    achievementText = if (second) "Prospěl s vyznamenáním" else "Prospěl",
+                    marksAverage = if (second) 1.5 else 2.0, absentHours = if (second) 18.0 else 12.0, notExcusedHours = 0.0,
+                    certificateDate = if (second) "${lastYear + 1}-06-30T00:00:00+02:00" else "${lastYear + 1}-01-31T00:00:00+01:00",
+                )
+            },
+        )
+    }
 
     val absenceResponse = AbsenceResponse(
         percentageThreshold = 25.0,

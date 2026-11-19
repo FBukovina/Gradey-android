@@ -86,6 +86,47 @@ class AndroidSchoolRepositoryTest {
         assertNull(repository.loadCachedPermanentTimetable())
     }
 
+    @Test fun reportCardsAreDecodedLenientlyCachedPerAccountAndClearedWithTheSchool() = runBlocking {
+        // Bakaláři versions disagree on numbers versus strings; one odd field must not lose the report card.
+        val response = GradeyJson.decodeFromString(FinalMarksResponse.serializer(), """
+            {"CertificateTerms":[
+              {"SchoolYear":"2024/25","Semester":2,"Closed":"yes","MarksAverage":"1,45","AbsentHours":18,"NotExcusedHours":"0",
+               "AchievementText":7,"CertificateDate":"2025-06-27T00:00:00+02:00",
+               "Subjects":[{"Id":12,"Abbrev":"M","Name":"Matematika"}],
+               "FinalMarks":[{"Id":1,"SubjectId":12,"MarkText":"1"}]},
+              {"SchoolYear":"2025/26","Semester":"1","Closed":false,"Subjects":[],"FinalMarks":[],"Unknown":{"nested":true}}
+            ]}
+        """.trimIndent())
+        val store = SchoolSessionStore(MemoryJsonStore())
+        val first = session("first")
+        store.save(first)
+        val cache = RoomGradeyCache(MemoryCacheDao(), GradeyJson)
+        val client = FakeBakalariClient().apply { finalMarks = { response } }
+        val repository = AndroidSchoolRepository(client, OkHttpEduPageClient(), store, cache)
+        assertTrue(repository.loadCachedReportCards().isEmpty())
+
+        val terms = repository.loadReportCards()
+        assertEquals(listOf("2025/26-1", "2024/25-2"), terms.map { it.id })
+        val issued = terms.last()
+        assertEquals(1.45, issued.average!!, 0.0001)
+        assertEquals(18.0, issued.absentHours!!, 0.0)
+        assertEquals(0.0, issued.unexcusedHours!!, 0.0)
+        assertTrue(issued.isClosed)
+        assertNull(issued.achievementText)
+        assertEquals(listOf("12" to "1"), issued.marks.map { it.subjectID to it.markText })
+        assertFalse(terms.first().isClosed)
+        assertEquals(terms, repository.loadCachedReportCards())
+
+        // Another account, and EduPage, never see this account's report cards.
+        store.save(session("second"))
+        assertTrue(repository.loadCachedReportCards().isEmpty())
+        store.save(first.copy(provider = SchoolProvider.EDU_PAGE))
+        assertTrue(repository.loadCachedReportCards().isEmpty())
+        store.save(first)
+        cache.clearSchool(first.cacheScope)
+        assertTrue(repository.loadCachedReportCards().isEmpty())
+    }
+
     private class FakeBakalariClient : BakalariClient {
         var marks: (String) -> MarksResponse = { MarksResponse() }
         var refreshCount = 0
@@ -101,6 +142,8 @@ class AndroidSchoolRepositoryTest {
         override suspend fun fetchUser(baseURL: String, accessToken: String) = UserResponse("Student")
         override suspend fun fetchTimetable(baseURL: String, accessToken: String, date: String) = TimetableResponse()
         override suspend fun fetchPermanentTimetable(baseURL: String, accessToken: String) = com.bukovinafilip.gradey.domain.DemoData.permanentTimetableResponse()
+        var finalMarks: () -> FinalMarksResponse = { FinalMarksResponse() }
+        override suspend fun fetchFinalMarks(baseURL: String, accessToken: String) = finalMarks()
         override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int) = subject
     }
 

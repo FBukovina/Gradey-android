@@ -60,4 +60,29 @@
         <item quantity="many">%d známek</item>
         <item quantity="other">%d známek</item>
     </plurals>
+    <string name="subjects_report_card_absence">Zameškáno %1$s h · neomluveno %2$s h</string>
+    <string name="subjects_report_card_borderline_1">Na hraně · %s od jedničky</string>
+    <string name="subjects_report_card_borderline_2">Na hraně · %s od dvojky</string>
+    <string name="subjects_report_card_borderline_3">Na hraně · %s od trojky</string>
+    <string name="subjects_report_card_borderline_4">Na hraně · %s od čtyřky</string>
+    <string name="subjects_report_card_borderline_5">Na hraně · %s od pětky</string>
+    <plurals name="subjects_report_card_borderline_count">
+        <item quantity="few">%d na hraně</item>
+        <item quantity="many">%d na hraně</item>
+        <item quantity="one">%d na hraně</item>
+        <item quantity="other">%d na hraně</item>
+    </plurals>
+    <string name="subjects_report_card_estimate_footer">Odhad z tvých průměrů. Známky na vysvědčení dávají učitelé.</string>
+    <string name="subjects_report_card_hero_estimate">Odhad průměru na vysvědčení</string>
+    <string name="subjects_report_card_hero_written">Průměr na vysvědčení</string>
+    <string name="subjects_report_card_past">Předchozí vysvědčení</string>
+    <string name="subjects_report_card_past_empty">Zatím žádné vysvědčení.</string>
+    <string name="subjects_report_card_past_loading">Načítám vysvědčení…</string>
+    <string name="subjects_report_card_row_average">Průměr %s</string>
+    <string name="subjects_report_card_row_estimate">odhad %s</string>
+    <string name="subjects_report_card_row_no_marks">Zatím bez známek</string>
+    <string name="subjects_report_card_row_written">Zapsáno na vysvědčení</string>
+    <string name="subjects_report_card_subjects">Předměty</string>
+    <string name="subjects_report_card_term">%1$s. pololetí %2$s</string>
+    <string name="subjects_report_card_title">Vysvědčení</string>
 </resources>

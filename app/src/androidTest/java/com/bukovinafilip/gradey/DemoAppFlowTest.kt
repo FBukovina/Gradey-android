@@ -211,6 +211,31 @@ class DemoAppFlowTest {
         assertEquals(AppTab.SUBJECTS, state().tab)
     }
 
+    @Test fun reportCardShowsEstimatesAndOpensAnEarlierTerm() {
+        compose.onNodeWithTag("tab-subjects").performClick()
+        compose.onNodeWithTag("marksReportCardRow").performClick()
+        compose.waitUntil(5_000) { state().tab == AppTab.REPORT_CARD }
+        compose.onNodeWithTag("reportCard").assertExists()
+        compose.onNodeWithText("Expected report card average").assertIsDisplayed()
+        compose.onNodeWithTag("tab-subjects").assertIsSelected()
+
+        // Demo mode carries last school year's two report cards.
+        val term = runBlocking { (compose.activity.application as GradeyApplication).activeGraph.schoolRepository.loadReportCards() }.first()
+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("reportCardTerm-${term.id}").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("reportCard").performScrollToNode(hasTestTag("reportCardTerm-${term.id}"))
+        compose.onNodeWithTag("reportCardTerm-${term.id}").performClick()
+        compose.onNodeWithTag("reportCardTerm").assertExists()
+        compose.onNodeWithText("Report card average").assertIsDisplayed()
+
+        // Back returns to the estimate first, then to Marks.
+        androidx.test.espresso.Espresso.pressBack()
+        compose.onNodeWithTag("reportCard").assertExists()
+        assertEquals(AppTab.REPORT_CARD, state().tab)
+        androidx.test.espresso.Espresso.pressBack()
+        compose.waitUntil(5_000) { state().tab == AppTab.SUBJECTS }
+        compose.onNodeWithTag("subjectsList").assertExists()
+    }
+
     @Test fun mealReplacementAndCancellationRequireConfirmation() {
         compose.onNodeWithTag("tab-stravacz").performClick()
         compose.onNodeWithTag("mealsList").performScrollToNode(hasTestTag("mealToggle-2"))

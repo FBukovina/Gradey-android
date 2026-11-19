@@ -56,4 +56,27 @@
         <item quantity="one">%d mark</item>
         <item quantity="other">%d marks</item>
     </plurals>
+    <string name="subjects_report_card_absence">missed %1$s h · %2$s h unexcused</string>
+    <string name="subjects_report_card_borderline_1">on the edge · %s from a 1</string>
+    <string name="subjects_report_card_borderline_2">on the edge · %s from a 2</string>
+    <string name="subjects_report_card_borderline_3">on the edge · %s from a 3</string>
+    <string name="subjects_report_card_borderline_4">on the edge · %s from a 4</string>
+    <string name="subjects_report_card_borderline_5">on the edge · %s from a 5</string>
+    <plurals name="subjects_report_card_borderline_count">
+        <item quantity="one">%d on the edge</item>
+        <item quantity="other">%d on the edge</item>
+    </plurals>
+    <string name="subjects_report_card_estimate_footer">estimated from ur averages. teachers have the final say</string>
+    <string name="subjects_report_card_hero_estimate">expected report card avg</string>
+    <string name="subjects_report_card_hero_written">report card avg</string>
+    <string name="subjects_report_card_past">past report cards</string>
+    <string name="subjects_report_card_past_empty">no report cards yet</string>
+    <string name="subjects_report_card_past_loading">loading report cards…</string>
+    <string name="subjects_report_card_row_average">avg %s</string>
+    <string name="subjects_report_card_row_estimate">estimate %s</string>
+    <string name="subjects_report_card_row_no_marks">no marks yet</string>
+    <string name="subjects_report_card_row_written">already on the report card</string>
+    <string name="subjects_report_card_subjects">subjects</string>
+    <string name="subjects_report_card_term">semester %1$s, %2$s</string>
+    <string name="subjects_report_card_title">report card</string>
 </resources>
