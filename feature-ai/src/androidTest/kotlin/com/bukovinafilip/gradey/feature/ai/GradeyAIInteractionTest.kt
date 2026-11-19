@@ -13,11 +13,14 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import com.bukovinafilip.gradey.domain.SchoolRepository
 import com.bukovinafilip.gradey.model.StoredSession
 import com.bukovinafilip.gradey.ui.GradeyTheme
@@ -43,32 +46,32 @@ class GradeyAIInteractionTest {
         compose.setContent {
             val controller = androidx.compose.runtime.remember { GradeyAIController(client, school, ByteArray(32)) }
             val state by controller.state.collectAsState()
-            GradeyTheme { GradeyAIScreen(state, controller, false, true, Modifier) }
+            GradeyTheme { GradeyAIScreen(state, controller, isDemo = false, configured = true, onClose = {}, modifier = Modifier) }
         }
     }
 
     @Test fun sendDisplaysFormattedAnswerAndConversationCanBeDeleted() {
         show()
-        compose.onNodeWithText(text(R.string.gradey_ai_new_chat)).performScrollTo().performClick()
+        // The surface opens directly on a new chat.
+        compose.onNodeWithTag("gradeyAIWelcome").assertIsDisplayed()
         compose.onNode(hasSetTextAction()).performTextInput("Explain fractions")
         compose.onNodeWithContentDescription(text(R.string.gradey_ai_send)).performClick()
         compose.onNodeWithText("First step").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText(text(R.string.ai_copy)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription(text(R.string.gradey_ai_message_copy)).performScrollTo().assertIsDisplayed()
         val output = java.io.File(InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null), "ai-chat.png")
         output.outputStream().use { compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("cp ${output.absolutePath} /sdcard/Download/gradey-ai-chat.png").use { descriptor ->
             java.io.FileInputStream(descriptor.fileDescriptor).readBytes()
         }
-        compose.onNodeWithContentDescription(text(R.string.gradey_ai_options)).performClick()
+        compose.onNodeWithContentDescription(text(R.string.gradey_ai_history_open)).performClick()
+        compose.onNodeWithTag("gradeyAIConversation-one").performTouchInput { longClick() }
         compose.onNodeWithText(text(R.string.gradey_ai_conversation_delete_action)).performClick()
-        compose.onNodeWithText(text(R.string.ai_delete), useUnmergedTree = true).performClick()
-        compose.onNodeWithText(text(R.string.gradey_ai_new_chat)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("gradeyAIEmptyConversations").assertIsDisplayed()
     }
 
     @Test fun stopEndsStreamingAndKeepsRecoveryAvailable() {
         client.hold = true
         show()
-        compose.onNodeWithText(text(R.string.gradey_ai_new_chat)).performScrollTo().performClick()
         compose.onNode(hasSetTextAction()).performTextInput("Help me revise")
         compose.onNodeWithContentDescription(text(R.string.gradey_ai_send)).performClick()
         compose.onNodeWithContentDescription(text(R.string.gradey_ai_stop)).performClick()

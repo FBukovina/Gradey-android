@@ -3,10 +3,12 @@ package com.bukovinafilip.gradey.feature.subjects
 import androidx.compose.runtime.Immutable
 import com.bukovinafilip.gradey.domain.AbsenceOverrideProjection
 import com.bukovinafilip.gradey.domain.GradeBand
+import com.bukovinafilip.gradey.domain.GradeCalculationIssue
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.domain.GradeSimulation
 import com.bukovinafilip.gradey.domain.MarkWeightSource
 import com.bukovinafilip.gradey.domain.PreparedGradeCalculation
+import com.bukovinafilip.gradey.domain.PreparedGradeMark
 import com.bukovinafilip.gradey.domain.ResolvedMarkWeight
 import com.bukovinafilip.gradey.domain.SchoolInsightState
 import com.bukovinafilip.gradey.domain.SchoolSubjectInsights
@@ -23,6 +25,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.abs
@@ -30,6 +33,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.round
 
 // MARK: - Subject list
 
@@ -184,6 +188,10 @@ internal class MarkEntry(
     val date: LocalDate?,
     val instant: Instant?,
     val chip: MarkChip?,
+    /** Short date ("12. 11.", with the year outside this year), or the raw date when it cannot be parsed. */
+    val dateText: String?,
+    /** Relative date ("2 days ago") for marks from the last seven days, shown in brand green. */
+    val recentText: String?,
 )
 
 private fun String?.trimmedOrNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
@@ -206,18 +214,34 @@ internal fun markDate(raw: String?): LocalDate? {
     return runCatching { LocalDate.parse(value.take(10)) }.getOrNull()
 }
 
+/** Days from [date] to [today]: 0 today, positive in the past (iOS `MarkRow.isRecent` uses seven days). */
+internal fun daysAgo(date: LocalDate, today: LocalDate): Long = ChronoUnit.DAYS.between(date, today)
+
 /**
  * iOS `SubjectDetailViewModel.sortedMarks`: one row per mark identity, newest first, ties by id.
- * [untitled] is the localized caption fallback used to filter repeated type notes.
+ * [untitled] is the localized caption fallback used to filter repeated type notes. Date labels are
+ * built here, once per data change, so rows only read strings: [formatDate] gives the short date and
+ * [formatRecent] the relative label for a mark fewer than seven days old (argument: days ago).
  */
-internal fun markEntries(subject: Subject, prepared: PreparedGradeCalculation, locale: Locale, untitled: String, zone: ZoneId): List<MarkEntry> {
+internal fun markEntries(
+    subject: Subject,
+    prepared: PreparedGradeCalculation,
+    locale: Locale,
+    untitled: String,
+    zone: ZoneId,
+    today: LocalDate,
+    formatDate: (LocalDate) -> String,
+    formatRecent: (Long) -> String,
+): List<MarkEntry> {
     val weights = prepared.resolvedWeights
     return subject.marks.groupBy { it.identity() }.map { (key, records) ->
         val mark = records.first()
-        val caption = mark.caption.trimmedOrNull() ?: mark.theme.trimmedOrNull()
         val rawCaption = mark.caption.trimmedOrNull()
         val rawTheme = mark.theme.trimmedOrNull()
+        val caption = rawCaption ?: rawTheme
         val topic = if (rawCaption != null && rawTheme != null && rawCaption != rawTheme) rawTheme else null
+        val date = markDate(mark.markDate)
+        val age = date?.let { daysAgo(it, today) }
         MarkEntry(
             key = key,
             markText = mark.markText,
@@ -225,9 +249,11 @@ internal fun markEntries(subject: Subject, prepared: PreparedGradeCalculation, l
             caption = caption,
             topic = topic,
             typeNote = typeLabel(mark.typeNote, caption ?: untitled),
-            date = markDate(mark.markDate),
+            date = date,
             instant = markInstant(mark.markDate, zone),
             chip = markChip(mark, weights[key], locale),
+            dateText = date?.let(formatDate) ?: mark.markDate?.substringBefore('T')?.trim()?.takeIf { it.isNotEmpty() },
+            recentText = age?.takeIf { it < 7 }?.let(formatRecent),
         )
     }.sortedWith(compareByDescending<MarkEntry> { it.instant ?: Instant.MIN }.thenBy { it.key })
 }
@@ -242,6 +268,23 @@ private fun markChip(mark: Mark, weight: ResolvedMarkWeight?, locale: Locale): M
         MarkWeightSource.FALLBACK -> null
     }
 }
+
+// MARK: - Try a mark
+
+/**
+ * iOS `SubjectDetailViewModel.refreshTheoreticalAverage`: the school's own what-if prediction is asked
+ * for only when the school allows it and every recorded weight fits its integer 1–10 payload; otherwise
+ * the local estimate stands alone.
+ */
+internal fun canAskSchoolPrediction(subject: Subject, prepared: PreparedGradeCalculation): Boolean =
+    subject.markPredictionEnabled && prepared.canSimulate &&
+        GradeCalculationIssue.CONFLICTING_DUPLICATE_IDS !in prepared.issues &&
+        GradeCalculationIssue.INVALID_WEIGHTS !in prepared.issues &&
+        subject.marks.all { mark -> mark.weight?.let { it.isFinite() && it in 1.0..10.0 && it == round(it) } ?: true }
+
+/** A school prediction for the exact input it was asked about, so a stale answer is never shown. */
+@Immutable
+internal data class SchoolPrediction(val markText: String, val weight: Int, val revision: String, val average: Double)
 
 // MARK: - Average chart
 
@@ -276,7 +319,7 @@ internal class AverageChartData(
  */
 internal fun averageChartData(prepared: PreparedGradeCalculation): AverageChartData? {
     val dated = prepared.marks.mapNotNull { mark -> mark.date?.let { mark to it.toEpochDay() } }
-        .sortedWith(compareBy<Pair<com.bukovinafilip.gradey.domain.PreparedGradeMark, Long>> { it.second }.thenBy { it.first.id })
+        .sortedWith(compareBy<Pair<PreparedGradeMark, Long>> { it.second }.thenBy { it.first.id })
     if (dated.isEmpty()) return null
     var totalWeight = 0.0
     var weightedSum = 0.0

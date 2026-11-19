@@ -90,17 +90,11 @@ import kotlinx.coroutines.launch
 /** Width of the weekly/permanent title menu, centred under the title. */
 private val KindMenuWidth = 200.dp
 
-/** Subject tiles shrink long text down to 60 % (iOS `minimumScaleFactor(0.6)`). */
-private val TileAutoSize = TextAutoSize.StepBased(
-    minFontSize = GradeyType.subheadlineBold.fontSize * 0.6f,
-    maxFontSize = GradeyType.subheadlineBold.fontSize,
-)
+/** Subject tiles shrink long text down to 60 % (iOS `minimumScaleFactor(0.6)`); bounds come from the type scale. */
+private val TileAutoSize = TextAutoSize.StepBased(GradeyType.subheadlineBold.fontSize * 0.6f, GradeyType.subheadlineBold.fontSize)
 
 /** The week title shrinks down to 70 % before it truncates (iOS `minimumScaleFactor(0.7)`). */
-private val WeekTitleAutoSize = TextAutoSize.StepBased(
-    minFontSize = GradeyType.headline.fontSize * 0.7f,
-    maxFontSize = GradeyType.headline.fontSize,
-)
+private val WeekTitleAutoSize = TextAutoSize.StepBased(GradeyType.headline.fontSize * 0.7f, GradeyType.headline.fontSize)
 
 @Immutable
 private data class LessonSelection(val lesson: ScheduledLesson, val day: ScheduledDay)
@@ -189,6 +183,7 @@ fun TimetableScreen(
     val openLesson: (ScheduledLesson) -> Unit = remember(selectedDay) {
         { lesson -> selectedDay?.let { selection = LessonSelection(lesson, it) } }
     }
+    val selectDay: (LocalDate) -> Unit = remember(monday, kind, schoolScope) { { date -> selectedDate = date.toString() } }
     val listState = rememberLazyListState()
 
     Column(modifier.fillMaxSize()) {
@@ -221,7 +216,7 @@ fun TimetableScreen(
                 selectedDate = selectedLocalDate,
                 today = if (isPermanent) null else today,
                 showDates = !isPermanent,
-                onSelect = { selectedDate = it.toString() },
+                onSelect = selectDay,
             )
         }
         Hairline()
@@ -610,16 +605,17 @@ private fun LessonRow(
             LessonTimeRail(lesson, isCurrent, canceled)
             LessonTile(lesson.tileText, canceled, accent)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                // Subject and change chip share the first baseline (iOS `.firstTextBaseline`).
+                Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
                     Text(
                         subject,
-                        Modifier.weight(1f),
+                        Modifier.weight(1f).alignByBaseline(),
                         style = GradeyType.headline.struck(canceled),
                         color = if (canceled) secondary else MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (changeLabel != null) StatusChip(changeLabel, color = changeColor)
+                    if (changeLabel != null) StatusChip(changeLabel, Modifier.alignByBaseline(), color = changeColor)
                 }
                 // A cancelled hour has no room or teacher worth reading; the school's note matters more.
                 val room = lesson.roomDisplay

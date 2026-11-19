@@ -96,7 +96,7 @@ internal fun AverageHistoryChart(data: AverageChartData, lineColor: Color, modif
     val xLabels = remember(data, axisDates, xStyle, measurer) { data.xTicks.map { measurer.measure(axisDates.format(LocalDate.ofEpochDay(it)), xStyle) } }
     val trailingInset = remember(yLabels, density) { (yLabels.maxOfOrNull { it.size.width } ?: 0) + with(density) { LabelGap.roundToPx() } }
 
-    val chartDescription = stringResource(R.string.subjects_average_over_time) + ": " +
+    val chartDescription = stringResource(R.string.subjects_detail_chart_title) + ": " +
         GradeMath.formattedAverage(data.points.first().value, locale) + " → " + GradeMath.formattedAverage(data.points.last().value, locale)
     val grid = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
     val rule = tokens.secondaryLabel.copy(alpha = tokens.secondaryLabel.alpha * 0.5f)
@@ -173,7 +173,7 @@ internal fun AverageHistoryChart(data: AverageChartData, lineColor: Color, modif
                             close()
                         }
                     }
-                    val areaBrush = Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.18f), Color.Transparent), startY = 0f, endY = plotBottom)
+                    val areaBrush = Brush.verticalGradient(listOf(lineColor.copy(alpha = 0.18f), lineColor.copy(alpha = 0f)), startY = 0f, endY = plotBottom)
                     val dots = data.marks.map { mark ->
                         val radius = min(7.0 + mark.weight * 1.4, 16.0).toFloat() / 2f * density.density
                         Triple(Offset(xFor(mark.day.toDouble()), yFor(mark.value)), radius, mark.band.staticColor(isDark))

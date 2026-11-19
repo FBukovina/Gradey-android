@@ -39,6 +39,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -59,7 +60,6 @@ import com.bukovinafilip.gradey.domain.AbsenceTimeline
 import com.bukovinafilip.gradey.domain.normalizedAbsenceThreshold
 import com.bukovinafilip.gradey.model.AbsenceCounts
 import com.bukovinafilip.gradey.model.AbsenceDayOverride
-import com.bukovinafilip.gradey.model.AbsenceOverridePauseReason
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.Subject
 import com.bukovinafilip.gradey.model.TimetableWeek
@@ -93,18 +93,14 @@ private enum class AbsenceMode(val label: Int) {
     Months(R.string.absence_segment_months),
 }
 
-/**
- * Space between the parts of the screen (iOS `LazyVStack(spacing: Spacing.md)`). The list itself
- * has no item spacing because the Subjects, Days and Months rows are one lazy item each and, as on
- * iOS, touch each other with only a hairline between them.
- */
-private val SectionGap = GradeySpacing.md
-
 /** At most four category chips per row, then "+n" (iOS `categoryChips`). */
 private const val MaxChips = 4
 
 /** Width of the trailing hour total so totals line up (iOS `minWidth: 28`). */
 private val TotalColumnWidth = 28.dp
+
+/** Height of the months chart (iOS `.frame(height: 160)`). */
+private val ChartHeight = 160.dp
 
 /**
  * The Absence tab (iOS `AbsenceView`): total hours, the Plan absence entry, then the absence by
@@ -136,6 +132,7 @@ fun AbsenceScreen(
     var editingDate by remember(overrideScope) { mutableStateOf<String?>(null) }
     var pendingSave by remember(overrideScope) { mutableStateOf<AbsenceDayOverride?>(null) }
     var confirmReset by remember { mutableStateOf(false) }
+    // The editor closes once the saved correction comes back from storage (iOS `didSave`).
     LaunchedEffect(overrides, pendingSave) {
         val pending = pendingSave
         if (pending != null && overrides.any { it.id == pending.id && it.savedAtEpochMillis == pending.savedAtEpochMillis }) {
@@ -159,6 +156,7 @@ fun AbsenceScreen(
     val monthRows = remember(timeline, formatters) {
         timeline.months.map { month -> AbsenceCountRowModel("month-${month.month}", formatters.monthTitle(month.month), month.counts, null) }
     }
+    val chartMonths = remember(timeline) { continuousMonths(timeline.months) }
     val projection = remember(rawResponse, overrides, overrideScope) {
         overrideScope?.let { AbsenceOverrideProjection.project(rawResponse, overrides, it) }
     }
@@ -171,7 +169,14 @@ fun AbsenceScreen(
         val saved = projection?.reconciledOverrides.orEmpty()
         val keys = uniqueKeys(saved.map { "correction-${it.id}" })
         saved.mapIndexed { index, entry ->
-            SavedCorrectionModel(keys[index], entry.dateKey, formatters.dayTitle(entry.dateKey), entry.pauseReason, entry.hiddenAllocationIDs.size, entry.dateKey in correctableSet)
+            val unitKeys = uniqueKeys(entry.hiddenAllocations.map { it.id })
+            SavedCorrectionModel(
+                key = keys[index], dateKey = entry.dateKey, title = formatters.dayTitle(entry.dateKey), pauseReason = entry.pauseReason,
+                hidden = entry.hiddenAllocations.mapIndexed { unit, allocation ->
+                    HiddenUnitModel(unitKeys[unit], allocation.subjectName, AbsenceCategory.of(allocation.category))
+                },
+                editable = entry.dateKey in correctableSet,
+            )
         }
     }
 
@@ -192,10 +197,13 @@ fun AbsenceScreen(
         editingKey?.let { key -> rawResponse.absences.singleOrNull { AbsenceOverrideProjection.dateKey(it.date) == key } }
     }
     if (correctionDay != null && editingKey != null && overrideScope != null && onSaveOverride != null) {
+        val existing = remember(overrides, editingKey) { overrides.firstOrNull { it.dateKey == editingKey } }
+        val lessons = remember(correctionTimetable, editingKey) {
+            correctionTimetable?.days?.firstOrNull { AbsenceOverrideProjection.dateKey(it.date.orEmpty()) == editingKey }?.lessons.orEmpty()
+        }
         AbsenceOverrideEditor(
             rawResponse = rawResponse, day = correctionDay, dayTitle = formatters.dayTitle(editingKey), scope = overrideScope,
-            existing = overrides.firstOrNull { it.dateKey == editingKey }, availableSubjects = availableSubjects,
-            lessons = correctionTimetable?.days?.firstOrNull { AbsenceOverrideProjection.dateKey(it.date.orEmpty()) == editingKey }?.lessons.orEmpty(),
+            existing = existing, availableSubjects = availableSubjects, lessons = lessons,
             isSaving = isRefreshing, errorMessage = correctionError, palette = palette,
             onSave = { pendingSave = it; onSaveOverride(it) },
             onDismiss = { editingDate = null; pendingSave = null },
@@ -216,7 +224,7 @@ fun AbsenceScreen(
             modifier = Modifier.weight(1f).testTag("absenceList"),
             state = listState,
             topPadding = GradeySpacing.md,
-            itemSpacing = 0.dp,
+            itemSpacing = AbsenceItemSpacing,
         ) {
             item(key = "header", contentType = "header") { AbsenceHeader(timeline.total.total, summary) }
             if (projection != null && projection.activeOverrides.isNotEmpty()) {
@@ -235,6 +243,11 @@ fun AbsenceScreen(
                     )
                 }
             }
+            if (correctionsEnabled && correctionError != null && editingKey == null) {
+                item(key = "correctionError", contentType = "notice") {
+                    NoticeLabel(text = correctionError, icon = HugeIcons.Alert02, color = GradeyColors.Poor, bold = false)
+                }
+            }
             if (onPlanAbsence != null) {
                 item(key = "plan", contentType = "plan") { PlanAbsenceRow(onPlanAbsence) }
             }
@@ -243,12 +256,12 @@ fun AbsenceScreen(
                     options = AbsenceMode.entries.map { stringResource(it.label) },
                     selectedIndex = mode.ordinal,
                     onSelect = { mode = AbsenceMode.entries[it] },
-                    modifier = Modifier.fillMaxWidth().padding(top = SectionGap).testTag("absenceSegmentedControl"),
+                    modifier = Modifier.fillMaxWidth().testTag("absenceSegmentedControl"),
                 )
             }
             if (isRefreshing) item(key = "refreshing", contentType = "refreshing") { RefreshingRow() }
             when (mode) {
-                AbsenceMode.Subjects -> subjectItems(subjects, subjectKeys, formatters)
+                AbsenceMode.Subjects -> subjectItems(subjects, subjectKeys)
                 AbsenceMode.Days -> countItems(
                     prefix = "days", rows = dayRows, total = timeline.total, palette = palette,
                     emptyText = R.string.absence_days_empty,
@@ -256,9 +269,7 @@ fun AbsenceScreen(
                 )
                 AbsenceMode.Months -> {
                     if (monthRows.size >= 2) {
-                        item(key = "months-chart", contentType = "chart") {
-                            AbsenceMonthsChartSection(timeline.months, palette, formatters)
-                        }
+                        item(key = "months-chart", contentType = "chart") { AbsenceMonthsChartSection(chartMonths, palette, formatters) }
                     }
                     countItems(
                         prefix = "months", rows = monthRows, total = timeline.total, palette = palette,
@@ -278,10 +289,10 @@ fun AbsenceScreen(
 
     if (confirmReset && onResetOverrides != null) {
         GradeyDialog(
-            title = stringResource(R.string.absence_restore_school_records_bd7cd),
-            text = stringResource(R.string.absence_remove_all_local_attendance_corrections_for_this_school_accoun_ce530),
+            title = stringResource(R.string.absence_override_restore_all),
+            text = stringResource(R.string.absence_override_restore_all_message),
             onDismiss = { confirmReset = false },
-            confirmLabel = stringResource(R.string.absence_restore_all_9eca7),
+            confirmLabel = stringResource(R.string.absence_override_restore_all),
             onConfirm = { confirmReset = false; onResetOverrides() },
             dismissLabel = stringResource(R.string.absence_cancel_77dfd),
             destructive = true,
@@ -291,7 +302,7 @@ fun AbsenceScreen(
 
 // MARK: - Header and entries
 
-/** "Total absence", 52 dp hours in Brand.primary and the category summary (iOS `AbsenceHeader`). */
+/** "Total absence", 52 sp hours in Brand.primary and the category summary (iOS `AbsenceHeader`). */
 @Composable
 private fun AbsenceHeader(total: Int, summary: String) {
     val secondary = MaterialTheme.gradeyColors.secondaryLabel
@@ -307,15 +318,16 @@ private fun AbsenceHeader(total: Int, summary: String) {
     )
 }
 
+/** Icon and caption in one colour (iOS `GradelyLabel` in caption type). */
 @Composable
-private fun NoticeLabel(text: String, icon: String, color: Color, modifier: Modifier = Modifier) {
+internal fun NoticeLabel(text: String, icon: String, color: Color, modifier: Modifier = Modifier, bold: Boolean = true) {
     Row(
-        modifier.fillMaxWidth().padding(top = SectionGap, start = GradeySpacing.xs, end = GradeySpacing.xs),
+        modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs),
     ) {
         GradeyIcon(icon, size = 13.dp, tint = color)
-        Text(text, style = GradeyType.captionSemibold, color = color)
+        Text(text, Modifier.weight(1f), style = if (bold) GradeyType.captionSemibold else GradeyType.caption, color = color)
     }
 }
 
@@ -323,7 +335,7 @@ private fun NoticeLabel(text: String, icon: String, color: Color, modifier: Modi
 @Composable
 private fun PlanAbsenceRow(onPlanAbsence: () -> Unit) {
     PlainRow(
-        modifier = Modifier.padding(top = SectionGap).testTag("absencePredictorOpenButton"),
+        modifier = Modifier.testTag("absencePredictorOpenButton"),
         onClick = onPlanAbsence,
         showDivider = false,
     ) {
@@ -336,11 +348,12 @@ private fun PlanAbsenceRow(onPlanAbsence: () -> Unit) {
     }
 }
 
+/** Spinner and "Refreshing…" in the middle (iOS refreshing row). */
 @Composable
 private fun RefreshingRow() {
     val secondary = MaterialTheme.gradeyColors.secondaryLabel
     Row(
-        Modifier.fillMaxWidth().padding(top = SectionGap, bottom = GradeySpacing.xs),
+        Modifier.fillMaxWidth().padding(vertical = GradeySpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm, Alignment.CenterHorizontally),
     ) {
@@ -349,10 +362,14 @@ private fun RefreshingRow() {
     }
 }
 
-/** Icon and secondary text for an empty list (iOS `EmptyAbsenceSection`). */
+/** Calendar icon and secondary text for an empty list (iOS `EmptyAbsenceSection`). */
 @Composable
 internal fun EmptyAbsenceRow(text: String, modifier: Modifier = Modifier) {
-    PlainRow(modifier, showDivider = false) {
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+    ) {
         GradeyIcon(HugeIcons.CalendarCheckIn02, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
         Text(text, Modifier.weight(1f), style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel)
     }
@@ -360,22 +377,15 @@ internal fun EmptyAbsenceRow(text: String, modifier: Modifier = Modifier) {
 
 // MARK: - Subjects
 
-private fun LazyListScope.subjectItems(
-    subjects: List<AbsenceSubjectSummary>,
-    keys: List<String>,
-    formatters: AbsenceFormatters,
-) {
+private fun LazyListScope.subjectItems(subjects: List<AbsenceSubjectSummary>, keys: List<String>) {
     if (subjects.isEmpty()) {
         item(key = "subjects-empty", contentType = "empty") {
-            EmptyAbsenceRow(stringResource(R.string.absence_subjects_empty), Modifier.padding(top = SectionGap).testTag("absenceSubjectsEmpty"))
+            EmptyAbsenceRow(stringResource(R.string.absence_subjects_empty), Modifier.testTag("absenceSubjectsEmpty"))
         }
         return
     }
     itemsIndexed(subjects, key = { index, _ -> keys[index] }, contentType = { _, _ -> "subjectRow" }) { index, subject ->
-        SubjectRiskRow(
-            subject,
-            Modifier.then(if (index == 0) Modifier.padding(top = SectionGap) else Modifier).testTag("absenceRow-${keys[index]}"),
-        )
+        SubjectRiskRow(subject, Modifier.joinedListRow().testTag("absenceRow-${keys[index]}"))
     }
 }
 
@@ -411,7 +421,7 @@ private fun SubjectRiskRow(subject: AbsenceSubjectSummary, modifier: Modifier = 
                         withStyle(GradeyType.captionSemibold.toSpanStyle().copy(color = status.second)) { append(status.first) }
                     }
                 },
-                style = GradeyType.caption, color = secondary,
+                style = GradeyType.caption.tabular(), color = secondary,
             )
         }
     }
@@ -438,16 +448,14 @@ private fun LazyListScope.countItems(
     editableDates: Set<String>,
 ) {
     if (rows.isEmpty()) {
-        item(key = "$prefix-empty", contentType = "empty") {
-            EmptyAbsenceRow(stringResource(emptyText), Modifier.padding(top = SectionGap))
-        }
+        item(key = "$prefix-empty", contentType = "empty") { EmptyAbsenceRow(stringResource(emptyText)) }
         return
     }
     item(key = "$prefix-total", contentType = "countRow") {
         AbsenceCountRow(
             title = stringResource(R.string.absence_total_b2592), counts = total,
             categories = AbsenceCategory.nonZero(total), isTotal = true, palette = palette,
-            modifier = Modifier.padding(top = SectionGap).testTag("absenceRow-total"),
+            modifier = Modifier.joinedListRow().testTag("absenceRow-total"),
         )
     }
     items(rows, key = { it.key }, contentType = { "countRow" }) { row ->
@@ -455,7 +463,7 @@ private fun LazyListScope.countItems(
         val editable = onEditDay != null && date != null && date in editableDates
         AbsenceCountRow(
             title = row.title, counts = row.counts, categories = row.categories, isTotal = false, palette = palette,
-            modifier = Modifier.testTag("absenceRow-${row.key}"),
+            modifier = Modifier.joinedListRow().testTag("absenceRow-${row.key}"),
             onClick = if (editable) ({ onEditDay?.invoke(date!!) }) else null,
             onClickLabel = if (editable) stringResource(R.string.absence_override_edit_hint) else null,
         )
@@ -489,6 +497,7 @@ private fun AbsenceCountRow(
     }
 }
 
+/** "N 3" in the category colour for every category with hours (iOS `categoryChips`). */
 @Composable
 private fun CategoryChips(counts: AbsenceCounts, categories: List<AbsenceCategory>, palette: AbsencePalette) {
     if (categories.isEmpty()) return
@@ -510,6 +519,7 @@ private fun CategoryChips(counts: AbsenceCounts, categories: List<AbsenceCategor
 
 // MARK: - Months chart
 
+/** Title, stacked month bars and the category legend (iOS `AbsenceMonthsChartCard`). */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AbsenceMonthsChartSection(months: List<AbsenceMonthSummary>, palette: AbsencePalette, formatters: AbsenceFormatters) {
@@ -517,8 +527,8 @@ private fun AbsenceMonthsChartSection(months: List<AbsenceMonthSummary>, palette
         AbsenceCategory.entries.filter { category -> months.any { category.value(it.counts) > 0 } }
     }
     Column(
-        Modifier.fillMaxWidth().padding(top = SectionGap, bottom = SectionGap),
-        verticalArrangement = Arrangement.spacedBy(SectionGap),
+        Modifier.fillMaxWidth().padding(bottom = GradeySpacing.md),
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
         PlainSectionTitle(stringResource(R.string.absence_months_chart))
         AbsenceMonthsChart(months, palette, formatters, Modifier.padding(horizontal = GradeySpacing.xs))
@@ -542,7 +552,8 @@ private class MonthsChartModel(val ticks: List<Pair<Int, TextLayoutResult>>, val
 
 /**
  * Stacked bars of hours per month in category order, narrow month letters below, about three
- * gridlines with values on the trailing edge (iOS `AbsenceMonthsChart`, 160 pt tall).
+ * gridlines with values on the trailing edge (iOS `AbsenceMonthsChart`, 160 pt tall). Text is
+ * measured once per data set; the canvas only draws.
  */
 @Composable
 private fun AbsenceMonthsChart(
@@ -573,13 +584,12 @@ private fun AbsenceMonthsChart(
     val spoken = remember(months, formatters, chartTitle) {
         months.joinToString(prefix = "$chartTitle: ", separator = ", ") { "${formatters.monthName(it.month)} ${it.counts.total}" }
     }
-    Canvas(modifier.fillMaxWidth().height(160.dp).semantics { contentDescription = spoken }) {
+    Canvas(modifier.fillMaxWidth().height(ChartHeight).semantics { contentDescription = spoken }) {
         val gap = 6.dp.toPx()
         val yLabelWidth = model.ticks.maxOf { it.second.size.width }
         val xLabelHeight = model.bars.maxOfOrNull { it.label.size.height } ?: 0
-        val firstLabelHalf = (model.ticks.firstOrNull()?.second?.size?.height ?: 0) / 2f
+        val plotTop = (model.ticks.firstOrNull()?.second?.size?.height ?: 0) / 2f
         val plotRight = size.width - yLabelWidth - gap
-        val plotTop = firstLabelHalf
         val plotBottom = size.height - xLabelHeight - gap
         val plotHeight = (plotBottom - plotTop).coerceAtLeast(1f)
         val stroke = 1.dp.toPx()
@@ -607,19 +617,9 @@ private fun AbsenceMonthsChart(
 
 // MARK: - Attendance corrections
 
-@Immutable
-private data class SavedCorrectionModel(
-    val key: String,
-    val dateKey: String,
-    val title: String,
-    val pauseReason: AbsenceOverridePauseReason?,
-    val hiddenCount: Int,
-    val editable: Boolean,
-)
-
 /**
- * Local corrections kept from Gradey Android 0.4: pick a recorded day, then review or restore each
- * saved correction, or restore every school record at once.
+ * Local corrections kept from Gradey Android 0.4: pick a recorded day, then edit or restore each
+ * saved correction (iOS `HiddenAbsencesView` rows), or restore every school record at once.
  */
 private fun LazyListScope.correctionItems(
     hiddenCount: Int,
@@ -633,11 +633,11 @@ private fun LazyListScope.correctionItems(
 ) {
     item(key = "corrections-header", contentType = "correctionsHeader") {
         var choosingDay by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth().padding(top = GradeySpacing.xl)) {
+        Column(Modifier.fillMaxWidth().padding(top = AbsenceItemSpacing)) {
             PlainSectionTitle(stringResource(R.string.absence_attendance_corrections_4cc6e))
             SectionFooter(
-                if (hiddenCount > 0) stringResource(R.string.absence_hidden_units, hiddenCount)
-                else stringResource(R.string.absence_make_a_local_correction_while_keeping_your_school_s_original_r_9d10c),
+                if (hiddenCount > 0) pluralStringResource(R.plurals.absence_hidden_units, hiddenCount, hiddenCount)
+                else stringResource(R.string.absence_override_local_only),
             )
             Box(Modifier.padding(top = GradeySpacing.xs)) {
                 PlainLink(
@@ -662,49 +662,65 @@ private fun LazyListScope.correctionItems(
         }
     }
     items(saved, key = { it.key }, contentType = { "correctionRow" }) { correction ->
-        SavedCorrectionRow(correction, isLoading, onEdit, onRestore)
+        SavedCorrectionRow(correction, isLoading, onEdit, onRestore, Modifier.joinedListRow())
     }
     if (onReset != null) {
         item(key = "corrections-reset", contentType = "correctionsReset") {
             DestructiveLink(
-                stringResource(R.string.absence_restore_all_school_records_8b60b), onClick = onReset, enabled = !isLoading,
-                modifier = Modifier.padding(top = GradeySpacing.sm),
+                stringResource(R.string.absence_override_restore_all), onClick = onReset, enabled = !isLoading,
+                modifier = Modifier.testTag("absenceHiddenRestoreAll"),
             )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** One corrected day: its date, the review state, the hidden units and Edit · Restore (iOS `dayRow`). */
 @Composable
 private fun SavedCorrectionRow(
     correction: SavedCorrectionModel,
     isLoading: Boolean,
     onEdit: (String) -> Unit,
     onRestore: ((String) -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
     val reason = correction.pauseReason
-    PlainRow(verticalAlignment = Alignment.Top) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(correction.title, style = GradeyType.subheadlineSemibold, color = MaterialTheme.colorScheme.onSurface)
+    val editDescription = stringResource(R.string.absence_override_edit_title) + ", " + correction.title
+    val restoreDescription = stringResource(R.string.absence_override_restore) + ", " + correction.title
+    PlainRow(modifier, verticalAlignment = Alignment.Top) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            Text(correction.title, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
             if (reason != null) {
-                Text(
-                    stringResource(R.string.absence_needs_review, reason.localizedDescription()),
-                    style = GradeyType.caption, color = GradeyColors.Average,
-                )
-            } else {
-                Text(
-                    stringResource(R.string.absence_hidden_locally, correction.hiddenCount),
-                    style = GradeyType.caption, color = MaterialTheme.gradeyColors.secondaryLabel,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    NoticeLabel(stringResource(R.string.absence_override_needs_review), HugeIcons.Alert02, GradeyColors.Average)
+                    Text(reason.localizedDescription(), style = GradeyType.caption, color = secondary)
+                }
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            if (correction.hidden.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                    correction.hidden.forEach { unit ->
+                        androidx.compose.runtime.key(unit.key) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                                Text(unit.subjectName, Modifier.weight(1f).alignByBaseline(), style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
+                                Text(stringResource(unit.category.label), Modifier.alignByBaseline(), style = GradeyType.subheadline, color = secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.lg)) {
                 if (correction.editable) {
-                    PlainLink(stringResource(R.string.absence_review_e29a7), onClick = { onEdit(correction.dateKey) }, enabled = !isLoading, showsArrow = false)
+                    PlainLink(
+                        stringResource(R.string.absence_override_edit_short), onClick = { onEdit(correction.dateKey) },
+                        enabled = !isLoading, showsArrow = false,
+                        modifier = Modifier.semantics { contentDescription = editDescription }.testTag("absenceHiddenEdit-${correction.dateKey}"),
+                    )
                 }
                 if (onRestore != null) {
                     PlainLink(
-                        stringResource(R.string.absence_restore_school_record_a0dd4), onClick = { onRestore(correction.dateKey) },
+                        stringResource(R.string.absence_override_restore_short), onClick = { onRestore(correction.dateKey) },
                         enabled = !isLoading, showsArrow = false,
+                        modifier = Modifier.semantics { contentDescription = restoreDescription }.testTag("absenceHiddenRestore-${correction.dateKey}"),
                     )
                 }
             }

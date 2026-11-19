@@ -85,6 +85,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Currency
+import java.util.Locale
 
 /** iOS treats a cached timetable older than 15 minutes as stale. */
 private const val TimetableStaleMillis = 15 * 60 * 1000L
@@ -297,7 +298,7 @@ private fun TodayLessonChip(lesson: ScheduledLesson, state: LessonChipState, onC
         ) {
             Text(lesson.hour.caption, style = GradeyType.caption2Bold.tabular(), color = foreground.copy(alpha = foreground.alpha * 0.8f), maxLines = 1)
             Text(
-                shortLessonSubject(lesson), style = GradeyType.subheadlineBold.struck(state == LessonChipState.CANCELLED),
+                remember(lesson) { shortLessonSubject(lesson) }, style = GradeyType.subheadlineBold.struck(state == LessonChipState.CANCELLED),
                 color = foreground, maxLines = 1,
             )
         }
@@ -359,12 +360,10 @@ internal fun RecentMarksSection(
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val marks = remember(subjects) { recentMarks(subjects) }
-    // Day and month only ("31. 5."), with the year when it isn't the current one (iOS `shortDate`).
-    val dates = remember(marks, locale) {
+    val shortDate = remember(locale) { ShortDateFormat(locale) }
+    val dates = remember(marks, shortDate) {
         val currentYear = LocalDate.now(SchoolTimeZone).year
-        val dayMonth = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)
-        val dayMonthYear = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dMyyyy"), locale)
-        marks.associate { mark -> mark.id to (mark.date?.format(if (mark.date.year == currentYear) dayMonth else dayMonthYear) ?: "–") }
+        marks.associate { mark -> mark.id to (mark.date?.let { shortDate.format(it, currentYear) } ?: "–") }
     }
     TodaySection(
         title = stringResource(R.string.today_recent_marks),
@@ -380,6 +379,14 @@ internal fun RecentMarksSection(
             }
         }
     }
+}
+
+/** Day and month only ("31. 5."), with the year when it isn't the current one (iOS `SchoolDateFormatting.shortDate`). */
+private class ShortDateFormat(locale: Locale) {
+    private val dayMonth = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dM"), locale)
+    private val dayMonthYear = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "dMyyyy"), locale)
+
+    fun format(date: LocalDate, currentYear: Int): String = date.format(if (date.year == currentYear) dayMonth else dayMonthYear)
 }
 
 @Composable
@@ -412,6 +419,8 @@ internal fun PlannerSection(
     onOpenItem: ((String) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val locale = LocalConfiguration.current.locales[0]
+    val formats = remember(locale) { PlannerDateFormat(locale) }
     val clock = rememberSchoolTime()
     // Recomputed on every clock tick, but only a changed preview recomposes the section.
     val preview by remember(items, schoolScope) { derivedStateOf { TodayOverview.planner(items, schoolScope, clock.value.toInstant()) } }
@@ -423,9 +432,17 @@ internal fun PlannerSection(
     ) {
         if (preview.isEmpty()) TodayInfoRow(HugeIcons.CheckList, stringResource(R.string.today_nothing_planned), MaterialTheme.gradeyColors.secondaryLabel)
         preview.forEach { item ->
-            key(item.id) { TodayPlannerRow(item) { onOpenItem?.invoke(item.id) ?: onOpenPlanner() } }
+            key(item.id) { TodayPlannerRow(item, formats) { onOpenItem?.invoke(item.id) ?: onOpenPlanner() } }
         }
     }
+}
+
+/** Abbreviated month for the date tile and the short time in the detail line (iOS `TodayPlannerRow.dateStyle`). */
+private class PlannerDateFormat(private val locale: Locale) {
+    private val month = DateTimeFormatter.ofPattern("LLL", locale)
+    val time: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
+
+    fun month(date: LocalDate): String = date.format(month).uppercase(locale).trimEnd('.')
 }
 
 private fun PlannerItemType.titleRes(): Int = when (this) {
@@ -437,17 +454,15 @@ private fun PlannerItemType.titleRes(): Int = when (this) {
 }
 
 @Composable
-private fun TodayPlannerRow(item: PersonalPlannerItem, onClick: () -> Unit) {
-    val locale = LocalConfiguration.current.locales[0]
+private fun TodayPlannerRow(item: PersonalPlannerItem, formats: PlannerDateFormat, onClick: () -> Unit) {
     val type = stringResource(item.type.titleRes())
     val undated = stringResource(R.string.today_planner_undated)
     val date = remember(item) { PersonalPlanner.orderingDate(item) }
-    val month = remember(date, locale) { date?.format(DateTimeFormatter.ofPattern("LLL", locale))?.uppercase(locale)?.trimEnd('.') }
-    val detail = remember(item, type, undated, locale) {
+    val month = remember(date, formats) { date?.let(formats::month) }
+    val detail = remember(item, date, type, undated, formats) {
         val hasTime = item.dueTime != null || (item.dueDate == null && item.lesson?.startEpochMillis != null)
-        val time = if (hasTime) PersonalPlanner.orderingInstant(item)?.atZone(PersonalPlanner.zone(item))
-            ?.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)) else null
-        listOfNotNull(type, item.subject?.name?.trim(), if (PersonalPlanner.orderingDate(item) == null) undated else null, time)
+        val time = if (hasTime) PersonalPlanner.orderingInstant(item)?.atZone(PersonalPlanner.zone(item))?.format(formats.time) else null
+        listOfNotNull(type, item.subject?.name?.trim(), if (date == null) undated else null, time)
             .filter { it.isNotBlank() }.joinToString(" · ")
     }
     val tint = if (item.type == PlannerItemType.TEST || item.type == PlannerItemType.PRESENTATION) GradeyColors.Average else MaterialTheme.colorScheme.primary
@@ -474,11 +489,10 @@ internal fun LunchSection(menu: StravaCZMenu?, onOpenMeals: (() -> Unit)?, modif
     val clock = rememberSchoolTime()
     val today by remember { derivedStateOf { clock.value.toLocalDate() } }
     val meal = remember(menu, today) { todayMeal(menu, today) }
-    val price = remember(meal, locale) {
-        meal?.price?.let { value ->
-            NumberFormat.getCurrencyInstance(locale).apply { currency = Currency.getInstance("CZK"); maximumFractionDigits = 0 }.format(value)
-        }
+    val currency = remember(locale) {
+        NumberFormat.getCurrencyInstance(locale).apply { currency = Currency.getInstance("CZK"); maximumFractionDigits = 0 }
     }
+    val price = remember(meal, currency) { meal?.price?.let(currency::format) }
     TodaySection(title = stringResource(R.string.today_lunch), modifier = modifier.testTag("today-lunch")) {
         if (meal != null) TodayInfoRow(
             HugeIcons.Restaurant02, meal.description?.takeIf { it.isNotBlank() } ?: meal.title,

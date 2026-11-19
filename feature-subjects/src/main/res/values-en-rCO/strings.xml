@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subjects_subjects_title">marks</string>
+    <string name="subjects_subjects_loading">loading marks…</string>
+    <string name="subjects_refreshing">refreshing…</string>
+    <string name="subjects_subjects_empty_title">no marks yet</string>
+    <string name="subjects_subjects_empty_message">refresh to see if school dropped your subjects and marks</string>
+    <string name="subjects_error_title">oops</string>
+    <string name="subjects_action_retry">try again</string>
+    <string name="subjects_action_refresh">refresh</string>
+    <string name="subjects_gradey_ai_title">Gradey AI</string>
+    <string name="subjects_settings_title">settings</string>
+    <string name="subjects_back">back</string>
+    <string name="subjects_marks_hero_average">overall average</string>
+    <string name="subjects_marks_directory_title">subjects</string>
+    <string name="subjects_marks_sort_label">sort</string>
+    <string name="subjects_marks_sort_focus">priority</string>
+    <string name="subjects_marks_sort_average">average</string>
+    <string name="subjects_marks_row_absence_percent">%.0f%% absent</string>
+    <string name="subjects_absence_title">absence</string>
+    <string name="subjects_absence_override_adjusted">edited on this device</string>
+    <string name="subjects_new_mark">new mark</string>
+    <string name="subjects_mark_untitled">untitled</string>
+    <string name="subjects_detail_intelligence_subject_unavailable">this subject\'s gone</string>
+    <string name="subjects_detail_intelligence_school_average">average from your school</string>
+    <string name="subjects_detail_intelligence_calculated_average">based on your marks</string>
+    <string name="subjects_detail_absence_percent">absence %.1f %%</string>
+    <string name="subjects_marks_section">marks</string>
+    <string name="subjects_detail_weight_decimal">weight %s×</string>
+    <string name="subjects_detail_weight_estimated_decimal">est. weight %s×</string>
+    <string name="subjects_detail_calculator_section">try a mark</string>
+    <string name="subjects_detail_calculator_mark_placeholder">mark, e.g. 2+</string>
+    <string name="subjects_detail_weight">weight %d</string>
+    <string name="subjects_detail_weight_decrease">lower the weight</string>
+    <string name="subjects_detail_weight_increase">raise the weight</string>
+    <string name="subjects_detail_calculator_better">%.2f better, W</string>
+    <string name="subjects_detail_calculator_worse">%.2f worse, L</string>
+    <string name="subjects_detail_calculator_same">no change</string>
+    <string name="subjects_detail_simulator_result">estimated average: %.2f</string>
+    <string name="subjects_detail_simulator_unavailable">simulations need number marks. points and odd scales don\'t convert.</string>
+    <string name="subjects_detail_intelligence_average_mismatch">your school\'s average doesn\'t match Gradey\'s math. this simulation uses Gradey\'s number.</string>
+    <string name="subjects_detail_intelligence_partial_grades">some records can\'t be counted reliably, so they\'re left out</string>
+    <string name="subjects_detail_intelligence_modifier_estimate">Gradey turns plus and minus marks into numbers. your school might do the math differently.</string>
+    <string name="subjects_detail_intelligence_assumed_weights">unknown weights count as 1, so this is an estimate ngl</string>
+    <string name="subjects_detail_intelligence_inferred_weights">some weights are guessed from school data</string>
+    <string name="subjects_detail_chart_title">average over time</string>
+    <string name="subjects_detail_chart_source_local">computed from marks</string>
+    <string name="subjects_average">average</string>
+    <string name="subjects_average_worsened">average dipped by %.2f</string>
+    <string name="subjects_average_improved">average up by %.2f, W</string>
+    <plurals name="subjects_marks_hero_subject_count">
+        <item quantity="one">%d subject</item>
+        <item quantity="other">%d subjects</item>
+    </plurals>
+    <plurals name="subjects_subject_mark_count">
+        <item quantity="one">%d mark</item>
+        <item quantity="other">%d marks</item>
+    </plurals>
+</resources>

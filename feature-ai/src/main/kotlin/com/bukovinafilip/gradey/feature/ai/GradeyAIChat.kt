@@ -3,6 +3,7 @@ package com.bukovinafilip.gradey.feature.ai
 import android.content.ClipData
 import android.text.format.DateFormat
 import android.text.format.DateUtils
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,9 +61,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -97,40 +101,58 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Date
 
-private val ChatMaxWidth = 760.dp
+/** Welcome column width (iOS `frame(maxWidth: 720)`). */
+private val WelcomeMaxWidth = 720.dp
+/** Assistant replies stop at this width (iOS `frame(maxWidth: 640)`). */
+private val ReplyMaxWidth = 640.dp
+/** User bubbles stop at this width and always leave [BubbleInset] free on the leading side. */
+private val BubbleMaxWidth = 560.dp
+private val BubbleInset = 48.dp
+/** 20 dp side padding of the chat column (iOS `padding(.horizontal, 20)`). */
+private val ChatPadding = 20.dp
+private const val MaxDraftLength = 2_000
+private const val CopiedMillis = 1_600L
 
 /**
  * The chat itself (iOS `GradeyAIChatScreen`). A new chat shows the welcome state, an open one its
  * messages. The dock at the bottom keeps what will be shared, its Compute cost and the composer together.
  */
 @Composable
-internal fun AIChatScreen(state: AIState, controller: GradeyAIController, opening: Boolean, onUpgrade: (() -> Unit)?) {
+internal fun AIChatScreen(
+    state: AIState,
+    controller: GradeyAIController,
+    opening: Boolean,
+    onUpgrade: (() -> Unit)?,
+    hasEarlyAccess: Boolean = false,
+) {
     val status = state.status
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 opening && state.messages.isEmpty() -> Column(Modifier.fillMaxSize()) {
-                    PausedBanner(status, Modifier.padding(horizontal = 20.dp))
+                    PausedBanner(status, Modifier.padding(horizontal = ChatPadding))
                     Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         AIStatusState(stringResource(R.string.gradey_ai_loading), Modifier.testTag("gradeyAIOpeningConversation"))
                     }
                 }
                 state.messages.isEmpty() -> LazyColumn(
-                    Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = GradeySpacing.lg),
+                    Modifier.fillMaxSize().aiScrollEdgeFade(),
+                    contentPadding = PaddingValues(horizontal = ChatPadding, vertical = GradeySpacing.lg),
                     verticalArrangement = Arrangement.spacedBy(GradeySpacing.xl, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (status?.enabled == false) item(key = "paused") { PausedBanner(status, Modifier.widthIn(max = 720.dp)) }
-                    item(key = "welcome") { Welcome(state, controller, Modifier.widthIn(max = 720.dp)) }
+                    if (status?.enabled == false) item(key = "paused", contentType = "paused") {
+                        PausedBanner(status, Modifier.widthIn(max = WelcomeMaxWidth))
+                    }
+                    item(key = "welcome", contentType = "welcome") { Welcome(state, controller, Modifier.widthIn(max = WelcomeMaxWidth)) }
                 }
                 else -> Column(Modifier.fillMaxSize()) {
-                    PausedBanner(status, Modifier.padding(horizontal = 20.dp))
-                    MessageList(state, controller, Modifier.weight(1f))
+                    PausedBanner(status, Modifier.padding(horizontal = ChatPadding))
+                    MessageList(state.messages, canRetry = state.pending != null && !state.busy && status?.enabled == true, controller, Modifier.weight(1f))
                 }
             }
         }
-        Dock(state, controller, onUpgrade)
+        Dock(state, controller, onUpgrade, hasEarlyAccess)
     }
 }
 
@@ -145,6 +167,7 @@ private fun PausedBanner(status: AIStatus?, modifier: Modifier = Modifier) {
 
 // MARK: - Welcome
 
+/** 64 dp orb, gradient "Ask Gradey AI", one secondary line, and the chosen action when it is not a plain reply. */
 @Composable
 private fun Welcome(state: AIState, controller: GradeyAIController, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().testTag("gradeyAIWelcome"), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xl)) {
@@ -163,14 +186,18 @@ private fun Welcome(state: AIState, controller: GradeyAIController, modifier: Mo
     }
 }
 
-/** The chosen action with its starter prompt (iOS `focusedAction`). */
+/** The chosen action with its subject or test, a reset ×, and its starter prompt (iOS `focusedAction`). */
 @Composable
 private fun FocusedAction(state: AIState, controller: GradeyAIController) {
+    val haptics = LocalHapticFeedback.current
     val action = state.selection.action
     val prompt = stringResource(action.promptResource)
     val canStart = !state.busy && state.status?.canAfford(action) == true &&
         (action != AIAction.SUBJECT || state.selection.subjectID != null) && (action != AIAction.TEST || state.selection.eventID != null)
-    Column(Modifier.fillMaxWidth().aiSurface(RoundedCornerShape(PanelCorner)).padding(GradeySpacing.lg), verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg)) {
+    Column(
+        Modifier.fillMaxWidth().aiSurface(RoundedCornerShape(GradeyRadius.card)).padding(GradeySpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.lg),
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
             Box(Modifier.size(38.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {
                 BrandGradientIcon(action.icon, size = 18.dp)
@@ -180,8 +207,9 @@ private fun FocusedAction(state: AIState, controller: GradeyAIController) {
                 state.selectedContextName?.let { Text(it, style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel) }
             }
             val resetLabel = stringResource(R.string.gradey_ai_action_reply)
+            // A 44 dp target whose 30 dp circle sits in the card's top-trailing corner, like iOS.
             Box(
-                Modifier.size(GradeyMetrics.minTouch).clip(CircleShape)
+                Modifier.offset(x = 7.dp, y = (-7).dp).size(GradeyMetrics.minTouch).clip(CircleShape)
                     .clickable(enabled = !state.busy, role = Role.Button) { controller.selectAction(AIAction.REPLY) }
                     .semantics { contentDescription = resetLabel }.testTag("gradeyAIResetActionButton"),
                 contentAlignment = Alignment.Center,
@@ -191,80 +219,133 @@ private fun FocusedAction(state: AIState, controller: GradeyAIController) {
                 }
             }
         }
-        Row(
-            Modifier.fillMaxWidth().aiSurface(RoundedCornerShape(GradeyRadius.card))
-                .clickable(enabled = canStart, role = Role.Button) { controller.send(prompt = prompt) }
-                .padding(horizontal = GradeySpacing.lg, vertical = 14.dp).testTag("gradeyAIStarterPrompts"),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
-        ) {
-            BrandGradientIcon(HugeIcons.Sparkles, size = 15.dp)
-            Text(prompt, Modifier.weight(1f), style = GradeyType.subheadlineMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (canStart) 1f else 0.45f))
-            GradeyIcon(HugeIcons.ArrowUpRight01, size = 14.dp, tint = MaterialTheme.gradeyColors.secondaryLabel)
+        if (action == AIAction.TOMORROW && state.context != null) LocalTomorrow(state.context)
+        Column(Modifier.fillMaxWidth().testTag("gradeyAIStarterPrompts"), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            StarterPrompt(prompt, enabled = canStart) {
+                haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+                controller.send(prompt = prompt)
+            }
         }
+    }
+}
+
+/**
+ * Tomorrow's lessons and events from the information already loaded for the action, shown without
+ * spending Compute (iOS `localTomorrowSummary`).
+ */
+@Composable
+private fun LocalTomorrow(context: Map<String, Any?>) {
+    val cancelled = stringResource(R.string.gradey_ai_lesson_cancelled)
+    val empty = stringResource(R.string.gradey_ai_context_tomorrow_empty)
+    val summary = remember(context, cancelled, empty) {
+        val lessons = (context["timetable"] as? List<*>).orEmpty().filterIsInstance<Map<*, *>>().map { lesson ->
+            val suffix = if (lesson["changeKind"] == "cancelled") " ($cancelled)" else ""
+            "${lesson["beginsAt"] ?: ""}–${lesson["endsAt"] ?: ""}  ${lesson["subject"] ?: ""}$suffix"
+        }
+        val events = (context["events"] as? List<*>).orEmpty().filterIsInstance<Map<*, *>>().mapNotNull { it["title"] as? String }
+        (lessons + events).ifEmpty { null }?.joinToString("\n") ?: empty
+    }
+    Column(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f), RoundedCornerShape(GradeyRadius.md))
+            .padding(GradeySpacing.md).semantics(mergeDescendants = true) { }.testTag("gradeyAILocalTomorrow"),
+        verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs),
+    ) {
+        Text(stringResource(R.string.gradey_ai_context_local_tomorrow), style = GradeyType.captionSemibold, color = MaterialTheme.colorScheme.primary)
+        Text(summary, style = GradeyType.footnote.tabular(), color = MaterialTheme.gradeyColors.secondaryLabel)
+    }
+}
+
+/** One starter row: gradient sparkle, the prompt in subheadline medium, and an up-right arrow. */
+@Composable
+private fun StarterPrompt(prompt: String, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().aiSurface(RoundedCornerShape(GradeyRadius.card))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = GradeySpacing.lg, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
+    ) {
+        BrandGradientIcon(HugeIcons.Sparkles, size = 15.dp)
+        Text(
+            prompt, Modifier.weight(1f), style = GradeyType.subheadlineMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.45f),
+        )
+        GradeyIcon(HugeIcons.ArrowUpRight01, size = 14.dp, tint = MaterialTheme.gradeyColors.secondaryLabel)
     }
 }
 
 // MARK: - Messages
 
+/**
+ * The conversation: 22 dp between turns, 20 dp sides, 760 dp column. It scrolls to the end only when
+ * a message is added (keyed on the message count), never per streamed chunk; the first positioning
+ * jumps without animation. Completed replies share one parsed-markdown cache.
+ */
 @Composable
-private fun MessageList(state: AIState, controller: GradeyAIController, modifier: Modifier = Modifier) {
+private fun MessageList(messages: List<AIMessage>, canRetry: Boolean, controller: GradeyAIController, modifier: Modifier = Modifier) {
     val list = rememberLazyListState()
-    val count = state.messages.size
-    val streamedLength = state.messages.lastOrNull()?.takeIf { it.status == "streaming" }?.text?.length ?: 0
-    // A new message scrolls into view with an animation; streamed text only keeps the end in view.
-    LaunchedEffect(count) { if (count > 0) list.animateScrollToItem(count) }
-    LaunchedEffect(streamedLength) { if (streamedLength > 0 && !list.isScrollInProgress) list.scrollToItem(count) }
-    val canRetry = state.pending != null && !state.busy && state.status?.enabled == true
+    val markdownCache = remember { AIMarkdownCache() }
+    val positioned = remember { booleanArrayOf(false) }
+    val count = messages.size
+    LaunchedEffect(count) {
+        if (count == 0) return@LaunchedEffect
+        if (positioned[0]) list.animateScrollToItem(count) else { list.scrollToItem(count); positioned[0] = true }
+    }
+    val onRetry = remember(controller) { { controller.send(retry = true) } }
     LazyColumn(
-        modifier.fillMaxWidth().testTag("gradeyAIMessageList"),
+        modifier.fillMaxWidth().aiScrollEdgeFade().testTag("gradeyAIMessageList"),
         state = list,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = GradeySpacing.lg),
+        contentPadding = PaddingValues(horizontal = ChatPadding, vertical = GradeySpacing.lg),
         verticalArrangement = Arrangement.spacedBy(22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        items(state.messages, key = { it.id }, contentType = { it.role }) { message ->
-            Box(Modifier.widthIn(max = ChatMaxWidth).fillMaxWidth()) {
+        items(messages, key = { it.id }, contentType = { it.role }) { message ->
+            Box(Modifier.widthIn(max = GradeyMetrics.contentMaxWidth).fillMaxWidth().testTag("gradeyAIMessage-${message.id}")) {
                 if (message.role == "user") UserBubble(message.text, Modifier.align(Alignment.CenterEnd))
-                else AssistantReply(message, canRetry, onRetry = { controller.send(retry = true) })
+                else AssistantReply(message, canRetry, onRetry, markdownCache)
             }
         }
         item(key = "bottom", contentType = "bottom") { Spacer(Modifier.height(1.dp)) }
     }
 }
 
-/** Compact tinted bubble with a small tail corner (iOS `GradeyAIUserBubble`). */
+/**
+ * Compact tinted bubble with a small tail corner (iOS `GradeyAIUserBubble`): primary @28 % → secondary
+ * @18 % (×0.72 in light), a 1 dp primary ring, at most 560 dp and never closer than 48 dp to the leading edge.
+ */
 @Composable
 private fun UserBubble(text: String, modifier: Modifier = Modifier) {
     val dark = MaterialTheme.gradeyColors.isDark
-    val strength = if (dark) 1f else 0.72f
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(topStart = BubbleCorner, topEnd = BubbleCorner, bottomEnd = BubbleTail, bottomStart = BubbleCorner)
-    val fill = remember(colors.primary, colors.secondary, strength) {
+    val shape = remember { RoundedCornerShape(topStart = BubbleCorner, topEnd = BubbleCorner, bottomEnd = BubbleTail, bottomStart = BubbleCorner) }
+    val fill = remember(colors.primary, colors.secondary, dark) {
+        val strength = if (dark) 1f else 0.72f
         Brush.linearGradient(listOf(colors.primary.copy(alpha = 0.28f * strength), colors.secondary.copy(alpha = 0.18f * strength)))
     }
-    SelectionContainer(modifier.padding(start = 48.dp).widthIn(max = 560.dp)) {
+    SelectionContainer(modifier.padding(start = BubbleInset).widthIn(max = BubbleMaxWidth)) {
         Text(
             text,
             Modifier.background(fill, shape).border(1.dp, colors.primary.copy(alpha = if (dark) 0.32f else 0.22f), shape)
-                .padding(horizontal = 16.dp, vertical = 11.dp),
+                .padding(horizontal = GradeySpacing.lg, vertical = 11.dp),
             style = GradeyType.body, color = colors.onSurface,
         )
     }
 }
 
-/** Unboxed reply next to the orb, then the AI disclosure and message actions (iOS `GradeyAIAssistantReply`). */
+/** Unboxed reply next to the 28 dp orb, then the AI disclosure and message actions (iOS `GradeyAIAssistantReply`). */
 @Composable
-private fun AssistantReply(message: AIMessage, canRetry: Boolean, onRetry: () -> Unit) {
+private fun AssistantReply(message: AIMessage, canRetry: Boolean, onRetry: () -> Unit, markdownCache: AIMarkdownCache) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
         AIOrb(28.dp, Modifier.padding(top = 1.dp))
-        Column(Modifier.weight(1f, fill = false).widthIn(max = 640.dp), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+        Column(Modifier.weight(1f, fill = false).widthIn(max = ReplyMaxWidth), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
             if (message.text.isEmpty()) when (message.status) {
                 "streaming" -> ThinkingIndicator(Modifier.padding(top = 3.dp))
                 "failed" -> Text(
                     stringResource(R.string.gradey_ai_error_could_not_complete), Modifier.padding(top = GradeySpacing.xs),
                     style = GradeyType.subheadline, color = MaterialTheme.gradeyColors.secondaryLabel,
                 )
-            } else SelectionContainer { AIMarkdownText(message.text) }
+            } else SelectionContainer {
+                AIMarkdownText(message.text, cache = markdownCache, complete = message.status == "complete")
+            }
             ReplyFooter(message, canRetry, onRetry)
         }
     }
@@ -297,43 +378,58 @@ private fun ReplyFooter(message: AIMessage, canRetry: Boolean, onRetry: () -> Un
     }
 }
 
+/** Copies the reply; the icon turns into a primary tick for 1.6 s. */
 @Composable
 private fun CopyButton(text: String) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
-    LaunchedEffect(copied) { if (copied) { delay(1_500); copied = false } }
+    LaunchedEffect(copied) { if (copied) { delay(CopiedMillis); copied = false } }
     val label = stringResource(if (copied) R.string.gradey_ai_message_copied else R.string.gradey_ai_message_copy)
+    val clipLabel = stringResource(R.string.gradey_ai_title)
     Box(
         Modifier.size(width = GradeyMetrics.minTouch, height = 30.dp).clip(RoundedCornerShape(GradeyRadius.xs))
             .clickable(role = Role.Button) {
-                scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Gradey AI", text))); copied = true }
-            }.semantics { contentDescription = label },
+                scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(clipLabel, text))); copied = true }
+            }.semantics { contentDescription = label }.testTag("gradeyAICopyMessageButton"),
         contentAlignment = Alignment.Center,
     ) {
-        GradeyIcon(
-            if (copied) HugeIcons.Tick02 else HugeIcons.Copy01, size = 15.dp,
-            tint = if (copied) MaterialTheme.colorScheme.primary else MaterialTheme.gradeyColors.secondaryLabel,
-        )
+        Crossfade(copied, animationSpec = tween(150), label = "copied") { done ->
+            GradeyIcon(
+                if (done) HugeIcons.Tick02 else HugeIcons.Copy01, size = 15.dp,
+                tint = if (done) MaterialTheme.colorScheme.primary else MaterialTheme.gradeyColors.secondaryLabel,
+            )
+        }
     }
 }
 
 // MARK: - Dock
 
+/**
+ * Upgrade CTA, context bar, composer and quota line. Only the dock pads for the keyboard and the
+ * navigation bar. Each part gets just the values it shows, so streamed chunks don't recompose it.
+ */
 @Composable
-private fun Dock(state: AIState, controller: GradeyAIController, onUpgrade: (() -> Unit)?) {
+private fun Dock(state: AIState, controller: GradeyAIController, onUpgrade: (() -> Unit)?, hasEarlyAccess: Boolean) {
+    val status = state.status
+    val unavailable = remember(state.context) { (state.context?.get("unavailableSections") as? List<*>)?.filterIsInstance<String>().orEmpty() }
     Box(
         Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom)),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
-            Modifier.widthIn(max = ChatMaxWidth).fillMaxWidth().padding(horizontal = 16.dp, vertical = GradeySpacing.sm),
+            Modifier.widthIn(max = GradeyMetrics.contentMaxWidth).fillMaxWidth().padding(horizontal = GradeySpacing.lg, vertical = GradeySpacing.sm),
             verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
         ) {
-            if (onUpgrade != null && state.status?.remaining == 0) UpgradeRow(onUpgrade)
-            ContextBar(state, controller)
-            Composer(state, controller)
-            QuotaLine(state)
+            if (onUpgrade != null && status?.remaining == 0) UpgradeRow(onUpgrade)
+            ContextBar(
+                selection = state.selection, cost = status?.cost(state.selection.action), contextName = state.selectedContextName,
+                busy = state.busy, sending = state.sending, subjects = state.availableSubjects, events = state.availableEvents,
+                unavailableSections = unavailable, notesLocked = state.currentChat != null, purposeCompatible = state.purposeCompatible,
+                showsRecovery = state.recovery != null && !state.sending, notice = state.notice, controller = controller,
+            )
+            Composer(draft = state.draft, sending = state.sending, canSend = state.canSend, controller = controller)
+            QuotaLine(remaining = status?.remaining, dailyLimit = status?.dailyLimit, resetAt = status?.resetAt, draftLength = state.draftLength, hasEarlyAccess = hasEarlyAccess)
         }
     }
 }
@@ -358,53 +454,66 @@ private fun UpgradeRow(onUpgrade: () -> Unit) {
 
 /** What will be shared, what it costs, and a refresh for the selected school information. */
 @Composable
-private fun ContextBar(state: AIState, controller: GradeyAIController) {
+private fun ContextBar(
+    selection: AISelection,
+    cost: Int?,
+    contextName: String?,
+    busy: Boolean,
+    sending: Boolean,
+    subjects: List<Pair<String, String>>,
+    events: List<AIPlannerEvent>,
+    unavailableSections: List<String>,
+    notesLocked: Boolean,
+    purposeCompatible: Boolean,
+    showsRecovery: Boolean,
+    notice: String?,
+    controller: GradeyAIController,
+) {
     val context = LocalContext.current
     val secondary = MaterialTheme.gradeyColors.secondaryLabel
-    val cost = state.status?.cost(state.selection.action)
     Column(Modifier.fillMaxWidth().testTag("gradeyAIContextStatus"), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-            ContextMenuChip(state, controller, Modifier.weight(1f, fill = false))
-            Spacer(Modifier.weight(1f))
+            // The chip takes the room it needs; the cost and refresh stay at the trailing edge.
+            Box(Modifier.weight(1f)) { ContextMenuChip(selection.action, contextName, busy, subjects, events, controller) }
             Text(
                 if (cost == null) stringResource(R.string.gradey_ai_compute_action_unavailable) else stringResource(R.string.gradey_ai_compute_action_cost, cost),
-                style = GradeyType.caption.tabular(), color = secondary, maxLines = 2, textAlign = TextAlign.End,
+                Modifier.widthIn(max = 180.dp), style = GradeyType.caption.tabular(), color = secondary, maxLines = 2, textAlign = TextAlign.End,
             )
             val refreshLabel = stringResource(R.string.gradey_ai_context_refresh)
-            val refreshing = state.busy && !state.sending
+            val refreshing = busy && !sending
+            val canRefresh = !busy && selection.action != AIAction.REPLY
             Box(
                 Modifier.size(GradeyMetrics.minTouch).clip(CircleShape)
-                    .clickable(enabled = !state.busy && state.selection.action != AIAction.REPLY, role = Role.Button, onClick = controller::refreshContext)
+                    .clickable(enabled = canRefresh, role = Role.Button, onClick = controller::refreshContext)
                     .semantics { contentDescription = refreshLabel }.testTag("gradeyAIContextRefreshButton"),
                 contentAlignment = Alignment.Center,
             ) {
                 if (refreshing) CircularProgressIndicator(Modifier.size(15.dp), color = secondary, strokeWidth = 2.dp)
-                else GradeyIcon(HugeIcons.Refresh04, size = 15.dp, tint = secondary.copy(alpha = if (state.selection.action == AIAction.REPLY) 0.4f else 1f))
+                else GradeyIcon(HugeIcons.Refresh04, size = 15.dp, tint = secondary.copy(alpha = if (canRefresh) 1f else 0.4f))
             }
         }
-        val unavailable = remember(state.context) { (state.context?.get("unavailableSections") as? List<*>)?.filterIsInstance<String>().orEmpty() }
-        if (unavailable.isNotEmpty()) Row(Modifier.padding(horizontal = GradeySpacing.xs), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (unavailableSections.isNotEmpty()) Row(Modifier.padding(horizontal = GradeySpacing.xs), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             GradeyIcon(HugeIcons.Alert02, size = 12.dp, tint = MaterialTheme.gradeyColors.orange)
-            val sections = unavailable.map { stringResource(aiSectionResource(it)) }.joinToString()
+            val sections = unavailableSections.map { stringResource(aiSectionResource(it)) }.joinToString()
             Text(stringResource(R.string.gradey_ai_context_stale, sections), style = GradeyType.caption, color = secondary)
         }
-        if (state.selection.action == AIAction.TEST && state.selection.eventID != null) SettingsToggleRow(
+        if (selection.action == AIAction.TEST && selection.eventID != null) SettingsToggleRow(
             title = stringResource(R.string.gradey_ai_context_include_notes), subtitle = null,
-            checked = state.selection.includeNotes, enabled = !state.busy && state.currentChat == null,
+            checked = selection.includeNotes, enabled = !busy && !notesLocked,
             onChange = controller::includeEventNotes,
         )
-        if (!state.purposeCompatible) Text(
+        if (!purposeCompatible) Text(
             stringResource(R.string.gradey_ai_context_new_purpose), Modifier.padding(horizontal = GradeySpacing.xs),
             style = GradeyType.caption, color = secondary,
         )
-        if (state.recovery != null && !state.sending) Row(
+        if (showsRecovery) Row(
             Modifier.padding(horizontal = GradeySpacing.xs), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
         ) {
             Text(stringResource(R.string.gradey_ai_compute_pending), Modifier.weight(1f), style = GradeyType.caption, color = secondary)
-            PlainLink(stringResource(R.string.gradey_ai_compute_check_request), controller::recover, enabled = !state.busy, showsArrow = false)
+            PlainLink(stringResource(R.string.gradey_ai_compute_check_request), controller::recover, enabled = !busy, showsArrow = false)
         }
-        state.notice?.let { notice ->
+        if (notice != null) {
             Text(localizedAIMessage(context, notice), Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.caption, color = secondary)
         }
     }
@@ -412,26 +521,37 @@ private fun ContextBar(state: AIState, controller: GradeyAIController) {
 
 private enum class ContextMenuLevel { ROOT, SUBJECTS, TESTS }
 
-/** Capsule that names the current action and opens the action menu (iOS `contextMenu`). */
+/**
+ * Capsule that names the current action and opens the action menu (iOS `contextMenu`): Reply,
+ * Tomorrow, Study priorities, Week summary, then Subject help and Test preparation submenus.
+ */
 @Composable
-private fun ContextMenuChip(state: AIState, controller: GradeyAIController, modifier: Modifier = Modifier) {
+private fun ContextMenuChip(
+    action: AIAction,
+    contextName: String?,
+    busy: Boolean,
+    subjects: List<Pair<String, String>>,
+    events: List<AIPlannerEvent>,
+    controller: GradeyAIController,
+) {
     var level by remember { mutableStateOf<ContextMenuLevel?>(null) }
-    val action = state.selection.action
     val title = stringResource(action.titleResource)
-    val name = state.selectedContextName
-    val menuLabel = listOfNotNull(stringResource(R.string.gradey_ai_context_choose_action), title, name).joinToString()
+    val menuLabel = listOfNotNull(stringResource(R.string.gradey_ai_context_choose_action), title, contextName).joinToString()
     val tokens = MaterialTheme.gradeyColors
-    Box(modifier) {
+    Box {
         Row(
             Modifier.heightIn(min = 36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                .clickable(enabled = !state.busy, role = Role.Button) { level = ContextMenuLevel.ROOT }
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .clickable(enabled = !busy, role = Role.Button) { level = ContextMenuLevel.ROOT }
+                .padding(horizontal = GradeySpacing.md, vertical = GradeySpacing.sm)
                 .semantics { contentDescription = menuLabel }.testTag("gradeyAIContextSelectionMenu"),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             BrandGradientIcon(action.icon, size = 14.dp)
             Text(title, style = GradeyType.footnoteBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-            if (name != null) Text(name, Modifier.weight(1f, fill = false), style = GradeyType.footnote, color = tokens.secondaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (contextName != null) Text(
+                contextName, Modifier.weight(1f, fill = false), style = GradeyType.footnote, color = tokens.secondaryLabel,
+                maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
             GradeyIcon(HugeIcons.ArrowDown01, size = 12.dp, tint = tokens.secondaryLabel)
         }
         DropdownMenu(expanded = level != null, onDismissRequest = { level = null }, containerColor = tokens.secondaryGroupedBackground) {
@@ -441,32 +561,42 @@ private fun ContextMenuChip(state: AIState, controller: GradeyAIController, modi
                 trailingIcon = if (submenu) ({ GradeyIcon(HugeIcons.ArrowRight01, size = 13.dp, tint = tokens.secondaryLabel) }) else null,
             )
             when (level) {
-                ContextMenuLevel.SUBJECTS -> state.availableSubjects.forEach { (id, subject) ->
+                ContextMenuLevel.SUBJECTS -> subjects.forEach { (id, subject) ->
                     entry(subject) { level = null; controller.selectAction(AIAction.SUBJECT, subjectID = id) }
                 }
-                ContextMenuLevel.TESTS -> state.availableEvents.forEach { event ->
+                ContextMenuLevel.TESTS -> events.forEach { event ->
                     entry(event.title) { level = null; controller.selectAction(AIAction.TEST, subjectID = event.subjectID, eventID = event.id) }
                 }
                 else -> {
                     listOf(AIAction.REPLY, AIAction.TOMORROW, AIAction.PRIORITIES, AIAction.WEEK).forEach { item ->
                         entry(stringResource(item.titleResource)) { level = null; controller.selectAction(item) }
                     }
-                    entry(stringResource(AIAction.SUBJECT.titleResource), enabled = state.availableSubjects.isNotEmpty(), submenu = true) { level = ContextMenuLevel.SUBJECTS }
-                    entry(stringResource(AIAction.TEST.titleResource), enabled = state.availableEvents.isNotEmpty(), submenu = true) { level = ContextMenuLevel.TESTS }
+                    entry(stringResource(AIAction.SUBJECT.titleResource), enabled = subjects.isNotEmpty(), submenu = true) { level = ContextMenuLevel.SUBJECTS }
+                    entry(stringResource(AIAction.TEST.titleResource), enabled = events.isNotEmpty(), submenu = true) { level = ContextMenuLevel.TESTS }
                 }
             }
         }
     }
 }
 
-/** Pill composer with the round send / stop button; the ring turns primary while it has focus. */
+/**
+ * Pill composer (radius 26, secondary grouped fill, 18/6/6 padding) with the round send / stop button;
+ * the ring turns primary @60 % while it has focus. Sending gives a light haptic tick.
+ */
 @Composable
-private fun Composer(state: AIState, controller: GradeyAIController) {
+private fun Composer(draft: String, sending: Boolean, canSend: Boolean, controller: GradeyAIController) {
     val keyboard = LocalSoftwareKeyboardController.current
+    val haptics = LocalHapticFeedback.current
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(PanelCorner)
     val primary = MaterialTheme.colorScheme.primary
-    val send = { if (state.canSend) { keyboard?.hide(); controller.send() } }
+    val send = {
+        if (canSend) {
+            haptics.performHapticFeedback(HapticFeedbackType.ContextClick)
+            keyboard?.hide()
+            controller.send()
+        }
+    }
     Row(
         Modifier.fillMaxWidth().aiSurface(shape)
             .then(if (focused) Modifier.border(1.dp, primary.copy(alpha = 0.6f), shape) else Modifier)
@@ -474,16 +604,17 @@ private fun Composer(state: AIState, controller: GradeyAIController) {
         verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
     ) {
         BasicTextField(
-            value = state.draft, onValueChange = controller::draft,
-            modifier = Modifier.weight(1f).padding(vertical = 9.dp).onFocusChanged { focused = it.isFocused }.testTag("gradeyAIComposer"),
-            enabled = !state.sending, minLines = 1, maxLines = 6,
+            value = draft, onValueChange = controller::draft,
+            modifier = Modifier.weight(1f).heightIn(min = 38.dp).padding(vertical = 9.dp)
+                .onFocusChanged { focused = it.isFocused }.testTag("gradeyAIComposer"),
+            enabled = !sending, minLines = 1, maxLines = 6,
             textStyle = GradeyType.body.copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(primary),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Send),
             keyboardActions = KeyboardActions(onSend = { send() }),
             decorationBox = { inner ->
                 Box {
-                    if (state.draft.isEmpty()) Text(
+                    if (draft.isEmpty()) Text(
                         stringResource(R.string.gradey_ai_composer_placeholder), style = GradeyType.body,
                         color = MaterialTheme.gradeyColors.tertiaryLabel, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
@@ -491,46 +622,59 @@ private fun Composer(state: AIState, controller: GradeyAIController) {
                 }
             },
         )
-        if (state.sending) ComposerButton(HugeIcons.Stop, stringResource(R.string.gradey_ai_stop), enabled = true, onClick = controller::stop, tag = "gradeyAIStopButton")
-        else ComposerButton(HugeIcons.ArrowUp01, stringResource(R.string.gradey_ai_send), enabled = state.canSend, onClick = send, tag = "gradeyAISendButton")
+        if (sending) ComposerButton(HugeIcons.Stop, stringResource(R.string.gradey_ai_stop), enabled = true, onClick = controller::stop, tag = "gradeyAIStopButton")
+        else ComposerButton(HugeIcons.ArrowUp01, stringResource(R.string.gradey_ai_send), enabled = canSend, onClick = send, tag = "gradeyAISendButton")
     }
 }
 
-/** 38 dp gradient circle; a disabled button loses its colour and fades to 35 % (iOS `GradeyAIComposerButton`). */
+/**
+ * 38 dp gradient circle, the same size as on iOS so the composer keeps its height; a disabled button
+ * loses its colour and fades to 35 % (iOS `GradeyAIComposerButton`).
+ */
 @Composable
 private fun ComposerButton(icon: String, label: String, enabled: Boolean, onClick: () -> Unit, tag: String) {
     val alpha by animateFloatAsState(if (enabled) 1f else 0.35f, tween(150), label = "composerButton")
-    val disabledFill = MaterialTheme.gradeyColors.secondaryLabel
+    val fill = if (enabled) MaterialTheme.colorScheme.brandGradient else SolidColor(MaterialTheme.gradeyColors.secondaryLabel)
     Box(
-        Modifier.size(GradeyMetrics.minTouch).clip(CircleShape).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label }.testTag(tag),
+        Modifier.size(38.dp).clip(CircleShape).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label }.testTag(tag)
+            .graphicsLayer { this.alpha = alpha }.background(fill, CircleShape),
         contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier.size(38.dp).graphicsLayer { this.alpha = alpha }
-                .then(if (enabled) Modifier.background(MaterialTheme.colorScheme.brandGradient, CircleShape) else Modifier.background(disabledFill, CircleShape)),
-            contentAlignment = Alignment.Center,
-        ) { GradeyIcon(icon, size = 16.dp, tint = GradeyColors.OnAccent) }
-    }
+    ) { GradeyIcon(icon, size = 16.dp, tint = GradeyColors.OnAccent) }
 }
 
+/** "x of y Compute remaining · Resets at …" in caption2 medium, tabular and centred; a counter past 1,800 characters. */
 @Composable
-private fun QuotaLine(state: AIState) {
+private fun QuotaLine(remaining: Int?, dailyLimit: Int?, resetAt: Long?, draftLength: Int, hasEarlyAccess: Boolean) {
     val context = LocalContext.current
-    val status = state.status
-    val empty = (status?.remaining ?: 0) == 0
+    val resetTime = remember(context, resetAt) { resetAt?.let { DateFormat.getTimeFormat(context).format(Date(it)) } }
+    val empty = (remaining ?: 0) == 0
     val text = listOfNotNull(
-        status?.let { stringResource(R.string.gradey_ai_compute_remaining, it.remaining, it.dailyLimit) },
-        status?.resetAt?.let { stringResource(R.string.gradey_ai_limit_resets, DateFormat.getTimeFormat(context).format(Date(it))) },
+        if (remaining != null && dailyLimit != null) stringResource(R.string.gradey_ai_compute_remaining, remaining, dailyLimit) else null,
+        resetTime?.let { stringResource(R.string.gradey_ai_limit_resets, it) },
     ).joinToString(" · ")
-    Row(Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.sm), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-        Text(
-            text, Modifier.weight(1f).testTag("gradeyAIRemainingMessages"), style = GradeyType.caption2Medium.tabular(),
-            color = if (empty) GradeyColors.Poor else MaterialTheme.gradeyColors.secondaryLabel, textAlign = TextAlign.Center,
-        )
-        if (state.draftLength > 1_800) Text(
-            "${state.draftLength}/2000", style = GradeyType.caption2.tabular(),
-            color = if (state.draftLength > 2_000) GradeyColors.Poor else MaterialTheme.gradeyColors.secondaryLabel,
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.sm),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
+    ) {
+        Row(
+            Modifier.weight(1f).semantics(mergeDescendants = true) { }.testTag("gradeyAIRemainingMessages"),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        ) {
+            if (hasEarlyAccess) Text(
+                stringResource(R.string.gradey_ai_early_access_badge),
+                Modifier.background(MaterialTheme.colorScheme.brandGradient, CircleShape).padding(horizontal = 7.dp, vertical = 2.dp)
+                    .testTag("gradeyAIEarlyAccessBadge"),
+                style = GradeyType.caption2Bold, color = GradeyColors.OnAccent, maxLines = 1,
+            )
+            Text(
+                text, Modifier.weight(1f, fill = false), style = GradeyType.caption2Medium.tabular(),
+                color = if (empty) GradeyColors.Poor else MaterialTheme.gradeyColors.secondaryLabel, textAlign = TextAlign.Center,
+            )
+        }
+        if (draftLength > 1_800) Text(
+            "$draftLength/$MaxDraftLength", style = GradeyType.caption2.tabular(),
+            color = if (draftLength > MaxDraftLength) GradeyColors.Poor else MaterialTheme.gradeyColors.secondaryLabel,
         )
     }
 }
@@ -541,7 +685,7 @@ private enum class DangerousAction { DELETE_ALL, REVOKE }
 
 /**
  * Past chats and the data controls (iOS `GradeyAIHistorySheet`). A chat is deleted from its long-press
- * action; delete-all and revoke-consent each ask first.
+ * (or accessibility) action after a confirmation; delete-all and revoke-consent each ask first.
  */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -560,7 +704,10 @@ internal fun AIHistorySheet(
     var dangerous by remember { mutableStateOf<DangerousAction?>(null) }
     val deleteLabel = stringResource(R.string.gradey_ai_conversation_delete_action)
     GradeySheet(onDismiss) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+        Row(
+            Modifier.fillMaxWidth().padding(top = GradeySpacing.md),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
+        ) {
             Text(
                 stringResource(R.string.gradey_ai_conversations_title), Modifier.weight(1f).semantics { heading() },
                 style = GradeyType.display(30), color = MaterialTheme.colorScheme.onSurface,
@@ -631,19 +778,24 @@ internal fun AIHistorySheet(
     }
 }
 
+/** Chat row on primary @5–16 % with a gradient ring (@60 % for the open chat, @12 % otherwise). */
 @Composable
 private fun ConversationRow(chat: AIChat, current: Boolean, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val tokens = MaterialTheme.gradeyColors
     val shape = RoundedCornerShape(TileCorner)
     val fill = colors.primary.copy(alpha = if (tokens.isDark) (if (current) 0.16f else 0.08f) else (if (current) 0.12f else 0.05f))
+    val ring = remember(colors.primary, colors.secondary, current) {
+        val alpha = if (current) 0.6f else 0.12f
+        Brush.linearGradient(listOf(colors.primary.copy(alpha = alpha), colors.secondary.copy(alpha = alpha)))
+    }
     val updated = remember(chat.updatedAt) {
         if (chat.updatedAt <= 0) null
         else DateUtils.getRelativeTimeSpanString(chat.updatedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
     }
     Row(
-        Modifier.fillMaxWidth().clip(shape).background(fill).border(1.dp, colors.primary.copy(alpha = if (current) 0.6f else 0.12f), shape)
-            .then(modifier).padding(horizontal = 14.dp, vertical = 12.dp),
+        Modifier.fillMaxWidth().clip(shape).background(fill).border(1.dp, ring, shape)
+            .then(modifier).padding(horizontal = 14.dp, vertical = GradeySpacing.md),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
         Box(Modifier.size(32.dp).background(colors.primary.copy(alpha = if (current) 0.16f else 0.08f), CircleShape), contentAlignment = Alignment.Center) {

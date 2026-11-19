@@ -4,16 +4,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import com.bukovinafilip.gradey.domain.AbsenceDaySummary
+import com.bukovinafilip.gradey.domain.AbsenceMonthSummary
 import com.bukovinafilip.gradey.domain.AbsenceOverrideProjection
 import com.bukovinafilip.gradey.domain.AbsenceTimeline
 import com.bukovinafilip.gradey.model.AbsenceCounts
 import com.bukovinafilip.gradey.model.AbsenceOverrideCategory
+import com.bukovinafilip.gradey.model.AbsenceOverridePauseReason
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.PlannedAbsence
 import com.bukovinafilip.gradey.model.TimetableWeek
 import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.gradeyColors
 import java.math.RoundingMode
 import java.text.DecimalFormat
@@ -34,6 +39,21 @@ import kotlin.math.roundToInt
 
 /** The school's time zone; "today" and past plans follow it, like the domain planner. */
 internal val SchoolZone: ZoneId = ZoneId.of("Europe/Prague")
+
+/** Space between the parts of the absence screens (iOS `LazyVStack(spacing: Spacing.md)`). */
+internal val AbsenceItemSpacing = GradeySpacing.md
+
+/**
+ * For a `PlainRow` that is one lazy item of a list. The screens keep [AbsenceItemSpacing] between
+ * their parts, but on iOS the rows of one list touch with only a hairline between them
+ * (`LazyVStack(spacing: 0)`). The row reports itself that much shorter, so its own bottom padding
+ * fills the gap to the next item; it still draws and takes touches at its full height.
+ */
+internal fun Modifier.joinedListRow(): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val overlap = AbsenceItemSpacing.roundToPx().coerceAtMost(placeable.height)
+    layout(placeable.width, placeable.height - overlap) { placeable.place(0, 0) }
+}
 
 /**
  * iOS `AbsenceCategory`: the order, the one-letter symbol on chips and the label of every
@@ -76,6 +96,7 @@ internal enum class AbsenceCategory(val symbol: String, val label: Int, val shor
 /**
  * Category colours (iOS `AbsenceCategory.color`): unresolved Brand.primary, excused, school events
  * and remote learning Brand.secondary, unexcused poor red, late average amber, left early orange.
+ * Built once per theme by [rememberAbsencePalette].
  */
 @Immutable
 internal class AbsencePalette(private val colors: List<Color>) {
@@ -107,20 +128,26 @@ private val OneDecimal = DecimalFormat("0.0", DecimalFormatSymbols.getInstance(L
     roundingMode = RoundingMode.HALF_UP
 }
 
-/** "12.5" for percentages (iOS `%.1f`). */
-internal fun formatOneDecimal(value: Double): String = OneDecimal.format(value)
+/** "12.5" for subject percentages (iOS `%.1f`). */
+internal fun formatOneDecimal(value: Double): String = synchronized(OneDecimal) { OneDecimal.format(value) }
 
 /**
- * Date texts of the absence screens, built once per locale (iOS `SchoolDateFormatting`).
+ * Date and number texts of the absence screens, built once per locale (iOS `SchoolDateFormatting`).
  * Month and weekday names come from the stand-alone forms, so Czech reads "listopad 2026".
  */
 @Immutable
 internal class AbsenceFormatters(locale: Locale, private val today: LocalDate) {
     private val weekdaysShort = DayOfWeek.entries.map { it.getDisplayName(TextStyle.SHORT_STANDALONE, locale).ifDigits { it.getDisplayName(TextStyle.SHORT, locale) } }
+    private val weekdaysNarrow = DayOfWeek.entries.map { it.getDisplayName(TextStyle.NARROW_STANDALONE, locale).ifDigits { it.getDisplayName(TextStyle.NARROW, locale) } }
     private val weekdaysLong = DayOfWeek.entries.map { it.getDisplayName(TextStyle.FULL_STANDALONE, locale).ifDigits { it.getDisplayName(TextStyle.FULL, locale) } }
     private val monthsLong = Month.entries.map { it.getDisplayName(TextStyle.FULL_STANDALONE, locale).ifDigits { it.getDisplayName(TextStyle.FULL, locale) } }
     private val monthsNarrow = Month.entries.map { month ->
         month.getDisplayName(TextStyle.NARROW_STANDALONE, locale).ifDigits { month.getDisplayName(TextStyle.NARROW, locale) }
+    }
+
+    /** `String.localizedStringWithFormat("%.1f", …)`: one decimal with the language's separator. */
+    private val localizedOneDecimal = DecimalFormat("0.0", DecimalFormatSymbols.getInstance(locale)).apply {
+        roundingMode = RoundingMode.HALF_UP
     }
 
     /** "31. 5.", with the year when it is not the current one. */
@@ -134,10 +161,14 @@ internal class AbsenceFormatters(locale: Locale, private val today: LocalDate) {
     fun dayTitle(dateKey: String): String = parseDate(dateKey)?.let(::dayTitle) ?: dateKey
 
     /** "Monday 10. 2." for the selected planner day. */
-    fun longDayTitle(date: LocalDate): String = "${weekdaysLong[date.dayOfWeek.ordinal]} ${shortDate(date)}"
+    fun longDayTitle(date: LocalDate): String = "${weekdaysLong[date.dayOfWeek.ordinal]} ${shortDate(date)}".replaceFirstChar { it.uppercaseChar() }
 
-    /** "Mon 10" for a planner day segment. */
-    fun segmentTitle(date: LocalDate): String = "${weekdaysShort[date.dayOfWeek.ordinal]} ${date.dayOfMonth}"
+    /** "Mon 10" for a planner day segment; "M 10" when the week has more than five days. */
+    fun segmentTitle(date: LocalDate, compact: Boolean): String =
+        "${(if (compact) weekdaysNarrow else weekdaysShort)[date.dayOfWeek.ordinal]} ${date.dayOfMonth}"
+
+    /** "10. 11. – 14. 11." for the planner week. */
+    fun range(first: LocalDate, last: LocalDate): String = "${shortDate(first)} – ${shortDate(last)}"
 
     /** "November 2026" (iOS `.month(.wide).year()`). */
     fun monthTitle(month: YearMonth): String = "${monthsLong[month.monthValue - 1]} ${month.year}"
@@ -147,6 +178,9 @@ internal class AbsenceFormatters(locale: Locale, private val today: LocalDate) {
 
     /** "N" under a chart bar (iOS `.month(.narrow)`). */
     fun narrowMonth(month: YearMonth): String = monthsNarrow[month.monthValue - 1]
+
+    /** "4,5" in Czech, "4.5" in English. */
+    fun oneDecimal(value: Double): String = synchronized(localizedOneDecimal) { localizedOneDecimal.format(value) }
 
     private inline fun String.ifDigits(fallback: () -> String): String = if (isEmpty() || all(Char::isDigit)) fallback() else this
 }
@@ -164,6 +198,21 @@ internal data class AbsenceCountRowModel(
     val dateKey: String?,
     val categories: List<AbsenceCategory> = AbsenceCategory.nonZero(counts),
 )
+
+/** A saved local correction as the corrections section lists it (iOS `HiddenAbsencesView.dayRow`). */
+@Immutable
+internal data class SavedCorrectionModel(
+    val key: String,
+    val dateKey: String,
+    val title: String,
+    val pauseReason: AbsenceOverridePauseReason?,
+    val hidden: List<HiddenUnitModel>,
+    val editable: Boolean,
+)
+
+/** One hidden attendance unit: its subject and category. */
+@Immutable
+internal data class HiddenUnitModel(val key: String, val subjectName: String, val category: AbsenceCategory)
 
 /**
  * "Unresolved 6 · Excused 15 · Late 1 · Limit 25 %" (iOS `AbsenceHeader.summary`). Each item keeps
@@ -192,6 +241,20 @@ internal fun displayedAbsenceDays(response: AbsenceResponse, rawResponse: Absenc
 }
 
 /**
+ * Every month from the first to the last recorded one, empty months included, in time order: the
+ * chart's x axis strides by month (Swift Charts `AxisMarks(values: .stride(by: .month))`).
+ */
+internal fun continuousMonths(months: List<AbsenceMonthSummary>): List<AbsenceMonthSummary> {
+    if (months.isEmpty()) return months
+    val byMonth = months.associateBy { it.month }
+    val last = months.maxOf { it.month }
+    return generateSequence(months.minOf { it.month }) { it.plusMonths(1) }
+        .takeWhile { !it.isAfter(last) }
+        .map { byMonth[it] ?: AbsenceMonthSummary(it, AbsenceCounts()) }
+        .toList()
+}
+
+/**
  * Y-axis values of the months chart, about [desiredCount] steps of 1, 2 or 5 × 10ⁿ from zero to
  * the first step at or above [maxValue] (Swift Charts `.automatic(desiredCount: 3)`).
  */
@@ -199,7 +262,7 @@ internal fun absenceAxisTicks(maxValue: Int, desiredCount: Int = 3): List<Int> {
     if (maxValue <= 0) return listOf(0, 1)
     val rough = maxValue.toDouble() / desiredCount
     val magnitude = 10.0.pow(floor(log10(rough)))
-    val nice = when (val residual = rough / magnitude) {
+    val nice = when (rough / magnitude) {
         in 0.0..1.0 -> 1.0
         in 1.0..2.0 -> 2.0
         in 2.0..5.0 -> 5.0

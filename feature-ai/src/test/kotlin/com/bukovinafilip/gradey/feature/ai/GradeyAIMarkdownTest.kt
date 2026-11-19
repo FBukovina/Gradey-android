@@ -16,4 +16,23 @@ class GradeyAIMarkdownTest {
         val blocks = AIMarkdown.blocks("```python\nprint(2)")
         assertThat(blocks).containsExactly(MarkdownBlock.Code("print(2)", "python"))
     }
+
+    @Test fun consecutiveItemsRenderAsOneListAndKeepTheirNumbers() {
+        val rendered = AIMarkdown.render("Plan:\n- **Read** notes\n- Practise\n\nThen\n\n1. Check")
+        assertThat(rendered).hasSize(4)
+        val bullets = rendered[1] as RenderedBlock.ItemList
+        assertThat(bullets.items.map { it.text.text to it.number }).containsExactly("Read notes" to null, "Practise" to null).inOrder()
+        assertThat((rendered[3] as RenderedBlock.ItemList).items.single().number).isEqualTo("1.")
+    }
+
+    @Test fun cacheKeepsCompletedRepliesAndDropsTheOldest() {
+        val cache = AIMarkdownCache(capacity = 2)
+        val first = AIMarkdown.render("one")
+        cache.put("one", first)
+        cache.put("two", AIMarkdown.render("two"))
+        assertThat(cache["one"]).isSameInstanceAs(first)
+        cache.put("three", AIMarkdown.render("three"))
+        assertThat(cache["two"]).isNull()
+        assertThat(cache["one"]).isSameInstanceAs(first)
+    }
 }

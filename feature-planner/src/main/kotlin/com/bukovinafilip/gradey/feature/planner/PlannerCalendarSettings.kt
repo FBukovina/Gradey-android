@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -32,12 +33,10 @@ import com.bukovinafilip.gradey.domain.PlannerCalendarMirror
 import com.bukovinafilip.gradey.domain.PlannerCalendarReport
 import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.PlannerWritableCalendar
-import com.bukovinafilip.gradey.ui.GradeyColors
 import com.bukovinafilip.gradey.ui.GradeyDialog
 import com.bukovinafilip.gradey.ui.GradeyMetrics
 import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyType
-import com.bukovinafilip.gradey.ui.Hairline
 import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.InlineNotice
 import com.bukovinafilip.gradey.ui.LoadingState
@@ -85,24 +84,25 @@ internal fun PlannerCalendarSettings(item: PersonalPlannerItem, mirror: PlannerC
         else permission.launch(CalendarPermissions)
     }
     val hasDate = PersonalPlanner.orderingDate(item) != null
+    val synced = item.calendarID != null
+    // iOS `planner.calendar.section`: the toggle, then one caption that explains sync or asks for a date.
     SettingsGroup(title = stringResource(R.string.planner_calendar_sync_title)) {
         SettingsToggleRow(
             title = stringResource(R.string.planner_calendar_sync_toggle), subtitle = null,
-            checked = item.calendarID != null, enabled = enabled && !loading && (item.calendarID != null || hasDate),
+            checked = synced, enabled = enabled && !loading && (synced || hasDate),
             onChange = { requested -> if (requested) requestSelection() else onChange(item.copy(calendarID = null, calendarTitle = null)) },
+            modifier = Modifier.testTag("plannerCalendarToggle"),
         )
-        if (item.calendarID != null) {
+        if (synced) {
             SettingsRowDivider(leadingInset = GradeySpacing.xs)
             SettingsValueRow(
                 stringResource(R.string.planner_calendar_change), item.calendarTitle ?: stringResource(R.string.planner_calendar_selected),
                 onClick = ::requestSelection, enabled = enabled && !loading,
             )
         }
-        Hairline(Modifier.padding(horizontal = GradeySpacing.xs))
-        Column(Modifier.padding(top = GradeySpacing.sm), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-            SettingsNote(stringResource(R.string.planner_calendar_sync_explanation))
-            if (!hasDate) SettingsNote(stringResource(R.string.planner_calendar_date_required))
-            if (item.calendarID != null) SettingsNote(stringResource(R.string.planner_calendar_after_save))
+        Column(Modifier.padding(top = GradeySpacing.xs), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            SettingsNote(stringResource(if (hasDate) R.string.planner_calendar_sync_explanation else R.string.planner_calendar_date_required))
+            if (synced && hasDate) SettingsNote(stringResource(R.string.planner_calendar_after_save))
             if (loading) LoadingState()
             if (denied) InlineNotice(stringResource(R.string.planner_calendar_permission)) {
                 PlainLink(stringResource(R.string.planner_calendar_settings), {

@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -23,10 +25,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.bukovinafilip.gradey.ui.GradeyRadius
@@ -34,6 +36,7 @@ import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.brandGradient
 import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.tabular
 
 internal sealed interface MarkdownBlock {
     data class Heading(val text: String, val level: Int) : MarkdownBlock
@@ -99,7 +102,7 @@ internal object AIMarkdown {
             append(value.substring(index, match.range.first))
             // Inline emphasis inside a reply; the surrounding block keeps its GradeyType style.
             pushStyle(when (match.groupValues[1]) {
-                "**", "__" -> SpanStyle(fontWeight = FontWeight.Bold)
+                "**", "__" -> SpanStyle(fontWeight = GradeyType.headline.fontWeight)
                 "*", "_" -> SpanStyle(fontStyle = FontStyle.Italic)
                 else -> SpanStyle(fontFamily = FontFamily.Monospace)
             })
@@ -109,15 +112,46 @@ internal object AIMarkdown {
         append(value.substring(index))
     }
 
-    /** Parses blocks and their inline spans in one pass, so a finished reply is never parsed again. */
-    fun render(markdown: String): List<RenderedBlock> = blocks(markdown).map { block ->
-        when (block) {
-            is MarkdownBlock.Heading -> RenderedBlock.Heading(inline(block.text), block.level)
-            is MarkdownBlock.Paragraph -> RenderedBlock.Paragraph(inline(block.text))
-            is MarkdownBlock.Item -> RenderedBlock.Item(inline(block.text), block.marker.takeUnless { it == MarkdownBullet })
-            is MarkdownBlock.Code -> RenderedBlock.Code(block.text, block.language)
+    /**
+     * Parses blocks and their inline spans in one pass, so a finished reply is never parsed again.
+     * Consecutive items form one list, spaced 7 dp apart like iOS.
+     */
+    fun render(markdown: String): List<RenderedBlock> {
+        val result = mutableListOf<RenderedBlock>()
+        val items = mutableListOf<RenderedBlock.Item>()
+        fun flushItems() {
+            if (items.isNotEmpty()) result += RenderedBlock.ItemList(items.toList())
+            items.clear()
         }
+        for (block in blocks(markdown)) {
+            if (block is MarkdownBlock.Item) {
+                items += RenderedBlock.Item(inline(block.text), block.marker.takeUnless { it == MarkdownBullet })
+                continue
+            }
+            flushItems()
+            result += when (block) {
+                is MarkdownBlock.Heading -> RenderedBlock.Heading(inline(block.text), block.level)
+                is MarkdownBlock.Paragraph -> RenderedBlock.Paragraph(inline(block.text))
+                is MarkdownBlock.Code -> RenderedBlock.Code(block.text, block.language)
+                is MarkdownBlock.Item -> error("Handled above")
+            }
+        }
+        flushItems()
+        return result
     }
+}
+
+/**
+ * Rendered replies by text. A completed reply that scrolls out of the list and back is taken from
+ * here instead of being parsed again; streaming text is never stored.
+ */
+internal class AIMarkdownCache(private val capacity: Int = 64) {
+    private val entries = object : LinkedHashMap<String, List<RenderedBlock>>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<RenderedBlock>>?) = size > capacity
+    }
+
+    operator fun get(text: String): List<RenderedBlock>? = entries[text]
+    fun put(text: String, blocks: List<RenderedBlock>) { if (entries[text] !== blocks) entries[text] = blocks }
 }
 
 @Immutable
@@ -125,19 +159,25 @@ internal sealed interface RenderedBlock {
     @Immutable data class Heading(val text: AnnotatedString, val level: Int) : RenderedBlock
     @Immutable data class Paragraph(val text: AnnotatedString) : RenderedBlock
     /** [number] is null for a bullet item. */
-    @Immutable data class Item(val text: AnnotatedString, val number: String?) : RenderedBlock
+    @Immutable data class Item(val text: AnnotatedString, val number: String?)
+    @Immutable data class ItemList(val items: List<Item>) : RenderedBlock
     @Immutable data class Code(val text: String, val language: String) : RenderedBlock
 }
 
-/** Assistant reply body (iOS `GradeyAIMarkdownText`): body text, display headings and gradient bullets. */
+/**
+ * Assistant reply body (iOS `GradeyAIMarkdownText`): body text, display headings and gradient bullets.
+ * The text is parsed once per value; with a [cache], a [complete] reply is stored and reused when its
+ * row is composed again, so finished replies are never re-parsed while the list scrolls.
+ */
 @Composable
-internal fun AIMarkdownText(text: String, modifier: Modifier = Modifier) {
-    val blocks = remember(text) { AIMarkdown.render(text) }
+internal fun AIMarkdownText(text: String, modifier: Modifier = Modifier, cache: AIMarkdownCache? = null, complete: Boolean = false) {
+    val blocks = remember(text) { cache?.get(text) ?: AIMarkdown.render(text) }
+    if (complete && cache != null) SideEffect { cache.put(text, blocks) }
     val onSurface = MaterialTheme.colorScheme.onSurface
     val body = remember(onSurface) { GradeyType.body.copy(color = onSurface, lineHeight = ReplyLineHeight) }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         blocks.forEachIndexed { index, block ->
-            androidx.compose.runtime.key(index) {
+            key(index) {
                 when (block) {
                     is RenderedBlock.Heading -> Text(
                         block.text,
@@ -146,7 +186,9 @@ internal fun AIMarkdownText(text: String, modifier: Modifier = Modifier) {
                         color = onSurface,
                     )
                     is RenderedBlock.Paragraph -> Text(block.text, style = body)
-                    is RenderedBlock.Item -> MarkdownItem(block, body)
+                    is RenderedBlock.ItemList -> Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        block.items.forEachIndexed { itemIndex, item -> key(itemIndex) { MarkdownItem(item, body) } }
+                    }
                     is RenderedBlock.Code -> MarkdownCode(block)
                 }
             }
@@ -154,14 +196,15 @@ internal fun AIMarkdownText(text: String, modifier: Modifier = Modifier) {
     }
 }
 
+/** iOS `lineSpacing(3)` on 17 pt body text. */
 private val ReplyLineHeight = 1.45.em
 
 @Composable
-private fun MarkdownItem(item: RenderedBlock.Item, body: androidx.compose.ui.text.TextStyle) {
+private fun MarkdownItem(item: RenderedBlock.Item, body: TextStyle) {
     val lift = with(LocalDensity.current) { 2.dp.roundToPx() }
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         if (item.number != null) {
-            Text(item.number, Modifier.alignByBaseline(), style = GradeyType.bodyMedium.copy(color = MaterialTheme.colorScheme.primary))
+            Text(item.number, Modifier.alignByBaseline(), style = GradeyType.bodyMedium.copy(color = MaterialTheme.colorScheme.primary).tabular())
         } else {
             val gradient = MaterialTheme.colorScheme.brandGradient
             // The dot sits just above the first baseline, like iOS's `●` with a 2 pt baseline offset.

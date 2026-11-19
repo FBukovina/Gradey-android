@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -81,6 +82,7 @@ import java.util.Base64
  * chat that opens on a new conversation. Past chats and data controls live in the History sheet.
  * The surface draws its own background and handles the system bars; [onClose] leaves it.
  * [onUpgrade] opens the Support options when today's Compute is used up (the CTA is hidden when null).
+ * [hasEarlyAccess] shows the early-access pill next to the Compute allowance (iOS `GradeyAIEarlyAccessBadge`).
  */
 @Composable
 fun GradeyAIRoute(
@@ -100,6 +102,7 @@ fun GradeyAIRoute(
     initialRequestKey: String? = null,
     insightStore: SchoolInsightStore? = null,
     onUpgrade: (() -> Unit)? = null,
+    hasEarlyAccess: Boolean = false,
 ) {
     val activityContext = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
@@ -137,7 +140,7 @@ fun GradeyAIRoute(
     DisposableEffect(controller, activityContext) {
         onDispose { if (activityContext.findActivity()?.isChangingConfigurations != true) controller.stop() }
     }
-    GradeyAIScreen(state, controller, isDemo, client?.isConfigured == true, onClose, modifier, onUpgrade)
+    GradeyAIScreen(state, controller, isDemo, client?.isConfigured == true, onClose, modifier, onUpgrade, hasEarlyAccess)
 }
 
 @Composable
@@ -149,6 +152,7 @@ internal fun GradeyAIScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     onUpgrade: (() -> Unit)? = null,
+    hasEarlyAccess: Boolean = false,
 ) {
     val status = state.status
     val available = configured && !isDemo
@@ -163,7 +167,8 @@ internal fun GradeyAIScreen(
 
     Column(
         modifier.fillMaxSize().background(MaterialTheme.gradeyColors.groupedBackground)
-            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .testTag("gradeyAIView"),
     ) {
         AITopBar(
             title = chatTitle, hasConsent = hasConsent, canStartNewChat = canStartNewChat,
@@ -180,18 +185,25 @@ internal fun GradeyAIScreen(
                         message = stringResource(if (isDemo) R.string.ai_demo_message else R.string.ai_setup_message),
                     )
                 }
-                status == null && state.busy -> CenteredState(bottomInset) { AIStatusState(stringResource(R.string.gradey_ai_loading)) }
-                status == null -> CenteredState(bottomInset) {
+                status == null && state.busy -> CenteredState(bottomInset.testTag("gradeyAILoading")) {
+                    AIStatusState(stringResource(R.string.gradey_ai_loading))
+                }
+                status == null -> CenteredState(bottomInset.testTag("gradeyAIUnavailable")) {
                     val context = LocalContext.current
                     AIStatusState(
                         title = stringResource(R.string.gradey_ai_load_failed_title),
                         message = state.error?.let { localizedAIMessage(context, it) } ?: stringResource(R.string.gradey_ai_load_failed_message),
                         icon = HugeIcons.Alert02,
-                        action = { GradeyPrimaryButton(stringResource(R.string.ai_retry), controller::refresh, icon = HugeIcons.Refresh04) },
+                        action = {
+                            GradeyPrimaryButton(
+                                stringResource(R.string.ai_retry), controller::refresh, Modifier.testTag("gradeyAIRetryLoadButton"),
+                                icon = HugeIcons.Refresh04,
+                            )
+                        },
                     )
                 }
                 status.consentRequired -> AIConsentScreen(status, state.busy, controller::acceptConsent)
-                else -> AIChatScreen(state, controller, opening = openingChatID != null, onUpgrade = onUpgrade)
+                else -> AIChatScreen(state, controller, opening = openingChatID != null, onUpgrade = onUpgrade, hasEarlyAccess = hasEarlyAccess)
             }
         }
     }
@@ -237,7 +249,7 @@ private fun AITopBar(
         Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = GradeySpacing.md, bottom = GradeySpacing.sm),
         contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.fillMaxWidth().padding(horizontal = 44.dp * 2 + GradeySpacing.sm * 2), contentAlignment = Alignment.Center) {
+        Box(Modifier.fillMaxWidth().padding(horizontal = GradeyMetrics.minTouch * 2 + GradeySpacing.sm * 2), contentAlignment = Alignment.Center) {
             if (title != null) {
                 Text(
                     title, Modifier.semantics { heading() }, style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface,
@@ -254,10 +266,14 @@ private fun AITopBar(
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
-            if (hasConsent) AICircleButton(HugeIcons.MessageMultiple01, stringResource(R.string.gradey_ai_history_open), onHistory)
+            if (hasConsent) AICircleButton(
+                HugeIcons.MessageMultiple01, stringResource(R.string.gradey_ai_history_open), onHistory, Modifier.testTag("gradeyAIHistoryButton"),
+            )
             Spacer(Modifier.weight(1f))
-            if (hasConsent) AICircleButton(HugeIcons.Edit02, stringResource(R.string.gradey_ai_new_chat), onNewChat, enabled = canStartNewChat)
-            AICircleButton(HugeIcons.Cancel01, stringResource(R.string.gradey_ai_close), onClose)
+            if (hasConsent) AICircleButton(
+                HugeIcons.Edit02, stringResource(R.string.gradey_ai_new_chat), onNewChat, Modifier.testTag("gradeyAINewChatButton"), enabled = canStartNewChat,
+            )
+            AICircleButton(HugeIcons.Cancel01, stringResource(R.string.gradey_ai_close), onClose, Modifier.testTag("modalDismissButton"))
         }
     }
 }
@@ -278,7 +294,7 @@ private fun AIErrorBanner(error: String?, onDismiss: () -> Unit) {
             val message = error ?: lastError
             if (message != null) AIBanner(
                 AIBannerKind.ERROR, localizedAIMessage(context, message),
-                Modifier.widthIn(max = GradeyMetrics.contentMaxWidth), onDismiss = onDismiss,
+                Modifier.widthIn(max = GradeyMetrics.contentMaxWidth).testTag("gradeyAIInlineError"), onDismiss = onDismiss,
             )
         }
     }
@@ -295,7 +311,7 @@ private fun AIConsentScreen(status: AIStatus, busy: Boolean, onAccept: () -> Uni
     val itemWidth = Modifier.widthIn(max = GradeyMetrics.narrowContentMaxWidth).fillMaxWidth()
     Column(Modifier.fillMaxSize()) {
         LazyColumn(
-            Modifier.weight(1f).fillMaxWidth(),
+            Modifier.weight(1f).fillMaxWidth().testTag("gradeyAIConsentView"),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = GradeySpacing.md, bottom = GradeySpacing.xl),
             verticalArrangement = Arrangement.spacedBy(GradeySpacing.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -324,7 +340,10 @@ private fun AIConsentScreen(status: AIStatus, busy: Boolean, onAccept: () -> Uni
             }
             item(key = "disclosures") {
                 Column(itemWidth.aiSurface(RoundedCornerShape(PanelCorner))) {
-                    DisclosureRow(HugeIcons.Sparkles, R.string.gradey_ai_consent_system_title, R.string.gradey_ai_consent_system_message)
+                    DisclosureRow(
+                        HugeIcons.Sparkles, R.string.gradey_ai_consent_system_title, R.string.gradey_ai_consent_system_message,
+                        Modifier.testTag("gradeyAIAIActDisclosure"),
+                    )
                     DisclosureDivider()
                     DisclosureRow(HugeIcons.Analytics01, R.string.gradey_ai_consent_school_data_title, R.string.gradey_ai_consent_selected_context)
                     DisclosureDivider()
@@ -347,7 +366,7 @@ private fun AIConsentScreen(status: AIStatus, busy: Boolean, onAccept: () -> Uni
         ) {
             GradeyPrimaryButton(
                 stringResource(R.string.gradey_ai_consent_action), onAccept,
-                Modifier.widthIn(max = GradeyMetrics.narrowContentMaxWidth),
+                Modifier.widthIn(max = GradeyMetrics.narrowContentMaxWidth).testTag("gradeyAIConsentButton"),
                 enabled = status.termsVersion.isNotBlank(), loading = busy,
             )
         }
@@ -355,9 +374,9 @@ private fun AIConsentScreen(status: AIStatus, busy: Boolean, onAccept: () -> Uni
 }
 
 @Composable
-private fun DisclosureRow(icon: String, title: Int, message: Int) {
+private fun DisclosureRow(icon: String, title: Int, message: Int, modifier: Modifier = Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 16.dp).semantics(mergeDescendants = true) { },
+        modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = GradeySpacing.lg).semantics(mergeDescendants = true) { },
         horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
     ) {
         Box(Modifier.size(36.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), CircleShape), contentAlignment = Alignment.Center) {

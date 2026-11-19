@@ -1,22 +1,20 @@
 package com.bukovinafilip.gradey.feature.timetable
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.PersonalPlanner
@@ -26,15 +24,15 @@ import com.bukovinafilip.gradey.model.ScheduledDay
 import com.bukovinafilip.gradey.model.ScheduledLesson
 import com.bukovinafilip.gradey.ui.DisclosureIcon
 import com.bukovinafilip.gradey.ui.GradeyIcon
-import com.bukovinafilip.gradey.ui.GradeyMetrics
 import com.bukovinafilip.gradey.ui.GradeyPrimaryButton
 import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyType
-import com.bukovinafilip.gradey.ui.Hairline
 import com.bukovinafilip.gradey.ui.HugeIcons
+import com.bukovinafilip.gradey.ui.PlainRow
 import com.bukovinafilip.gradey.ui.SchoolTimeZone
 import com.bukovinafilip.gradey.ui.SectionHeader
 import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.tabular
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -56,7 +54,7 @@ internal fun attachedPlannerItems(
         .thenBy { it.createdAtEpochMillis }.thenBy { it.id })
 }
 
-/** Green caption under a lesson naming its first Planner item, "+N" for more (iOS lesson card). */
+/** Green caption-semibold label under a lesson naming its first Planner item, "+N" for more (iOS `LessonCard`). */
 @Composable
 internal fun TimetablePlannerBadge(items: List<PersonalPlannerItem>, modifier: Modifier = Modifier) {
     val first = items.firstOrNull() ?: return
@@ -76,8 +74,9 @@ internal fun TimetablePlannerBadge(items: List<PersonalPlannerItem>, modifier: M
 }
 
 /**
- * The Planner part of the lesson sheet: an uppercase header, the lesson's unfinished items separated
- * by hairlines, then the gradient "Add to Planner" button (iOS `LessonDetailSheet.plannerSection`).
+ * The Planner part of the lesson sheet: the uppercase "PLANNER" header, the lesson's unfinished
+ * items as plain rows with a hairline above each, then the gradient "Add to Planner" button
+ * (iOS `LessonDetailSheet.plannerSection`, without its card).
  */
 @Composable
 internal fun LessonPlannerSection(
@@ -90,25 +89,26 @@ internal fun LessonPlannerSection(
         SectionHeader(stringResource(R.string.timetable_planner_title), Modifier.padding(horizontal = GradeySpacing.xs))
         if (items.isNotEmpty()) {
             Column(Modifier.fillMaxWidth()) {
-                items.forEachIndexed { index, item ->
-                    if (index > 0) Hairline()
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .testTag("timetable-planner-item-${item.id}")
-                            .then(if (onOpen != null) Modifier.clickable(role = Role.Button) { onOpen(item.id) } else Modifier)
-                            .heightIn(min = GradeyMetrics.minTouch)
-                            .padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.md),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
-                    ) {
-                        PlannerItemSummary(item, Modifier.weight(1f))
-                        if (onOpen != null) DisclosureIcon()
+                items.forEach { item ->
+                    key(item.id) {
+                        PlainRow(
+                            modifier = Modifier.testTag("timetable-planner-item-${item.id}"),
+                            onClick = onOpen?.let { open -> { open(item.id) } },
+                            horizontalSpacing = GradeySpacing.sm,
+                        ) {
+                            PlannerItemSummary(item, Modifier.weight(1f))
+                            if (onOpen != null) DisclosureIcon()
+                        }
                     }
                 }
             }
         }
         if (onAdd != null) {
-            GradeyPrimaryButton(stringResource(R.string.timetable_planner_add), onAdd, icon = HugeIcons.Add01)
+            GradeyPrimaryButton(
+                stringResource(R.string.timetable_planner_add), onAdd,
+                Modifier.padding(top = GradeySpacing.xs).testTag("lessonAddPlannerButton"),
+                icon = HugeIcons.Add01,
+            )
         }
     }
 }
@@ -142,7 +142,7 @@ private fun PlannerItemSummary(item: PersonalPlannerItem, modifier: Modifier = M
         if (schedule != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
                 GradeyIcon(HugeIcons.Clock01, size = 12.dp, tint = secondary)
-                Text(schedule, style = GradeyType.caption.copy(fontFeatureSettings = "tnum"), color = secondary)
+                Text(schedule, style = GradeyType.caption.tabular(), color = secondary)
             }
         }
     }

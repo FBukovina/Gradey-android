@@ -402,7 +402,7 @@ private fun PlannerRow(
                     horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
                 ) {
                     PlannerItemSummary(row, Modifier.weight(1f))
-                    GradeyIcon(HugeIcons.ArrowRight01, size = 13.dp, tint = tokens.tertiaryLabel, contentDescription = stringResource(R.string.planner_edit_1_s, item.title))
+                    GradeyIcon(HugeIcons.ArrowRight01, size = 14.dp, tint = tokens.tertiaryLabel, contentDescription = stringResource(R.string.planner_edit_1_s, item.title))
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = tokens.secondaryGroupedBackground) {
                     DropdownMenuItem(

@@ -24,15 +24,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -44,6 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.ui.GradeyColors
 import com.bukovinafilip.gradey.ui.GradeyIcon
+import com.bukovinafilip.gradey.ui.GradeyMetrics
 import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.HugeIcons
@@ -70,11 +76,32 @@ internal fun Modifier.aiSurface(shape: Shape): Modifier {
     return this.clip(shape).background(fill, shape).border(1.dp, ring, shape)
 }
 
+/**
+ * Softens where scrolling content meets the top bar and the dock (iOS `gradeyAIScrollEdgeFade`):
+ * a 14 dp fade at the top and 22 dp at the bottom. The masks are built once per size.
+ */
+internal fun Modifier.aiScrollEdgeFade(top: Dp = 14.dp, bottom: Dp = 22.dp): Modifier =
+    this.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+        .drawWithCache {
+            val opaque = GradeyColors.Black
+            val clear = GradeyColors.Black.copy(alpha = 0f)
+            val topHeight = top.toPx().coerceAtMost(size.height / 2)
+            val bottomHeight = bottom.toPx().coerceAtMost(size.height / 2)
+            val bottomStart = size.height - bottomHeight
+            val topMask = Brush.verticalGradient(listOf(clear, opaque), startY = 0f, endY = topHeight)
+            val bottomMask = Brush.verticalGradient(listOf(opaque, clear), startY = bottomStart, endY = size.height)
+            onDrawWithContent {
+                drawContent()
+                drawRect(topMask, size = Size(size.width, topHeight), blendMode = BlendMode.DstIn)
+                drawRect(bottomMask, topLeft = Offset(0f, bottomStart), size = Size(size.width, bottomHeight), blendMode = BlendMode.DstIn)
+            }
+        }
+
 /** 44 dp round top-bar button on the secondary grouped fill (iOS `GradeyAICircleButton`). */
 @Composable
 internal fun AICircleButton(icon: String, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Box(
-        modifier.size(44.dp).clip(CircleShape).background(MaterialTheme.gradeyColors.secondaryGroupedBackground)
+        modifier.size(GradeyMetrics.minTouch).clip(CircleShape).background(MaterialTheme.gradeyColors.secondaryGroupedBackground)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
@@ -119,7 +146,8 @@ internal fun AIBanner(kind: AIBannerKind, message: String, modifier: Modifier = 
             val label = stringResource(R.string.gradey_ai_done)
             Box(
                 Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                    .clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = label },
+                    .clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = label }
+                    .testTag("gradeyAIErrorDismissButton"),
                 contentAlignment = Alignment.Center,
             ) { GradeyIcon(HugeIcons.Cancel01, size = 12.dp, tint = tokens.secondaryLabel) }
         }
@@ -140,6 +168,7 @@ internal fun ThinkingIndicator(modifier: Modifier = Modifier) {
     val gradient = MaterialTheme.colorScheme.brandGradient
     val phase = if (reduceMotion) null else {
         val transition = rememberInfiniteTransition(label = "thinking")
+        // sin(t · 5 − index · 0.8): one full wave every 2π / 5 s, like iOS.
         transition.animateFloat(
             0f, (2 * PI).toFloat(),
             infiniteRepeatable(tween((2 * PI / 5 * 1000).toInt(), easing = LinearEasing), RepeatMode.Restart),
@@ -190,11 +219,4 @@ internal fun AIStatusState(
         }
         if (action != null) Box(Modifier.widthIn(max = 280.dp)) { action() }
     }
-}
-
-/** Transparent → background fade behind pinned bottom controls (iOS `GradeyAIBottomFade`). */
-@Composable
-internal fun bottomFadeColors(): List<Color> {
-    val base = MaterialTheme.gradeyColors.groupedBackground
-    return remember(base) { listOf(base.copy(alpha = 0f), base.copy(alpha = 0.92f), base) }
 }

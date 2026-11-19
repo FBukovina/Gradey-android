@@ -1,5 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="timetable_planner_attached">Plánovač pro tuto hodinu</string>
+    <string name="timetable_planner_title">Plánovač</string>
+    <string name="timetable_planner_add">Přidat do plánovače</string>
     <string name="timetable_planner_multiple">%1$s +%2$d</string>
     <string name="timetable_planner_homework">Domácí úkol</string>
     <string name="timetable_planner_test">Test</string>

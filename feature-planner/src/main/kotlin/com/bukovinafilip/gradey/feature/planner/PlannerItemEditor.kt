@@ -23,10 +23,12 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -34,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,7 +70,6 @@ import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.InlineNotice
 import com.bukovinafilip.gradey.ui.PlainLink
-import com.bukovinafilip.gradey.ui.SegmentedControl
 import com.bukovinafilip.gradey.ui.SettingsGroup
 import com.bukovinafilip.gradey.ui.SettingsNote
 import com.bukovinafilip.gradey.ui.SettingsRowDivider
@@ -121,6 +123,10 @@ internal fun PlannerItemEditor(
     val enabled = !busy && !finding
     val canSave = enabled && item.title.isNotBlank()
     DisposableEffect(item.id) { onDispose { onFindingChanged(false) } }
+    // Like iOS `interactiveDismissDisabled(isSaving)`: a swipe, scrim tap or back press waits for the save.
+    val saving by rememberUpdatedState(busy)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true, confirmValueChange = { it != SheetValue.Hidden || !saving })
+    fun close() { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } }
 
     val locale = LocalConfiguration.current.locales[0]
     val is24Hour = DateFormat.is24HourFormat(LocalContext.current)
@@ -130,7 +136,7 @@ internal fun PlannerItemEditor(
         val collator = Collator.getInstance(locale)
         (subjects + listOfNotNull(item.subject)).distinctBy { "${it.scope}\u0000${it.id}" }.sortedWith(compareBy(collator) { it.name })
     }
-    val today = LocalDate.now(PersonalPlanner.zone(item))
+    val today = remember(item.timeZoneID) { LocalDate.now(PersonalPlanner.zone(item)) }
     fun findNextLesson(lookup: suspend (PersonalPlannerItem) -> Instant?) {
         onFindingChanged(true)
         nextMessage = null
@@ -145,9 +151,9 @@ internal fun PlannerItemEditor(
         }
     }
 
-    GradeySheet(onDismiss = { if (!busy) onDismiss() }) {
+    GradeySheet(onDismiss = { if (busy) scope.launch { sheetState.show() } else onDismiss() }, sheetState = sheetState) {
         Box(Modifier.fillMaxWidth().heightIn(min = GradeyMetrics.minTouch)) {
-            PlainLink(stringResource(R.string.planner_cancel), onDismiss, Modifier.align(Alignment.CenterStart), enabled = !busy, showsArrow = false)
+            PlainLink(stringResource(R.string.planner_cancel), ::close, Modifier.align(Alignment.CenterStart), enabled = !busy, showsArrow = false)
             Text(
                 stringResource(if (existing) R.string.planner_edit_item else R.string.planner_new_item),
                 Modifier.align(Alignment.Center).padding(horizontal = 76.dp).semantics { heading() },
@@ -162,13 +168,8 @@ internal fun PlannerItemEditor(
             error?.let { message -> item(key = "error") { InlineNotice(message) } }
             item(key = "details") {
                 SettingsGroup(title = stringResource(R.string.planner_details)) {
-                    Column(Modifier.padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.md), verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
-                        SegmentedControl(
-                            options = PlannerItemType.entries.map { stringResource(plannerTypeTitle(it)) },
-                            selectedIndex = PlannerItemType.entries.indexOf(item.type),
-                            onSelect = { index -> if (enabled) onChange(item.copy(type = PlannerItemType.entries[index])) },
-                            modifier = Modifier.fillMaxWidth().testTag("plannerTypePicker"),
-                        )
+                    TypePicker(item.type, enabled) { onChange(item.copy(type = it)) }
+                    Column(Modifier.padding(horizontal = GradeySpacing.xs).padding(top = GradeySpacing.xs, bottom = GradeySpacing.md), verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
                         BrandTextField(
                             item.title, { onChange(item.copy(title = it.take(300))) },
                             Modifier.fillMaxWidth().testTag("plannerTitleField"),
@@ -303,6 +304,32 @@ internal fun PlannerItemEditor(
 private fun parseTime(raw: String): LocalTime? = runCatching { LocalTime.parse(raw) }.getOrNull()
 
 // MARK: - Rows
+
+/**
+ * Type menu (iOS `LabeledContent` with a menu picker). Five types do not fit a segmented control at
+ * phone width, so this follows iOS rather than truncating every label.
+ */
+@Composable
+private fun TypePicker(selected: PlannerItemType, enabled: Boolean, onSelect: (PlannerItemType) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val primary = MaterialTheme.colorScheme.primary
+    Box {
+        SettingsValueRow(
+            stringResource(R.string.planner_type), stringResource(plannerTypeTitle(selected)),
+            Modifier.testTag("plannerTypePicker"), onClick = { open = true }, enabled = enabled,
+        )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = MaterialTheme.gradeyColors.secondaryGroupedBackground) {
+            PlannerItemType.entries.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(plannerTypeTitle(type)), style = GradeyType.body) },
+                    leadingIcon = { GradeyIcon(plannerTypeIcon(type), size = 18.dp, tint = primary) },
+                    trailingIcon = if (type == selected) ({ GradeyIcon(HugeIcons.Tick02, size = 16.dp, tint = primary) }) else null,
+                    onClick = { open = false; onSelect(type) },
+                )
+            }
+        }
+    }
+}
 
 /** Subject menu (iOS `LabeledContent` with a menu picker). */
 @Composable
