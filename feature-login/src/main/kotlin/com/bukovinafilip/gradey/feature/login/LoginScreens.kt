@@ -1,9 +1,13 @@
 package com.bukovinafilip.gradey.feature.login
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -60,6 +65,7 @@ import com.bukovinafilip.gradey.ui.InlineNotice
 import com.bukovinafilip.gradey.ui.LoadingState
 import com.bukovinafilip.gradey.ui.PlainLink
 import com.bukovinafilip.gradey.ui.PlainRow
+import com.bukovinafilip.gradey.ui.SectionHeader
 import com.bukovinafilip.gradey.ui.SegmentedControl
 import com.bukovinafilip.gradey.ui.gradeyColors
 
@@ -80,10 +86,30 @@ private fun SignInColumn(title: String, subtitle: String, modifier: Modifier = M
     }
 }
 
+private enum class LoginStage { SCHOOL, CREDENTIALS }
+
+/** "School › Sign in": the two stages of linking a school, the current one in the brand colour. */
+@Composable
+private fun StageTrail(stage: LoginStage) {
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+        Text(
+            stringResource(R.string.login_stage_school), style = if (stage == LoginStage.SCHOOL) GradeyType.captionBold else GradeyType.caption,
+            color = if (stage == LoginStage.SCHOOL) primary else secondary,
+        )
+        GradeyIcon(HugeIcons.ArrowRight01, size = 10.dp, tint = MaterialTheme.gradeyColors.tertiaryLabel)
+        Text(
+            stringResource(R.string.login_stage_credentials), style = if (stage == LoginStage.CREDENTIALS) GradeyType.captionBold else GradeyType.caption,
+            color = if (stage == LoginStage.CREDENTIALS) primary else secondary,
+        )
+    }
+}
+
 /**
- * The school step of onboarding (iOS 2.8.1 `LoginView`): Bakaláři or EduPage on a segmented control,
- * the school search, then address, username and password. A full-screen surface that handles the
- * system bars and the keyboard itself.
+ * The school step of onboarding (iOS 2.8.1 `LoginView`), in two stages: choose the school — system
+ * on a segmented control, the school search, or the address typed by hand — then sign in to it.
+ * A full-screen surface that handles the system bars and the keyboard itself.
  */
 @Composable
 fun SchoolLoginScreen(
@@ -105,10 +131,14 @@ fun SchoolLoginScreen(
 ) {
     var provider by rememberSaveable(initialProvider) { mutableStateOf(initialProvider ?: availableProviders.firstOrNull() ?: SchoolProvider.BAKALARI) }
     var school by rememberSaveable(initialSchoolURL) { mutableStateOf(initialSchoolURL.orEmpty()) }
+    var stage by rememberSaveable(isReconnecting, initialSchoolURL) {
+        mutableStateOf(if (isReconnecting || !initialSchoolURL.isNullOrBlank()) LoginStage.CREDENTIALS else LoginStage.SCHOOL)
+    }
     var username by rememberSaveable { mutableStateOf("") }
     var password by remember(initialProvider, initialSchoolURL) { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var directoryQuery by rememberSaveable { mutableStateOf("") }
+    var guideOpen by rememberSaveable { mutableStateOf(false) }
     val directoryResults = remember(directoryQuery, directorySchools) {
         if (directoryQuery.trim().length < 2) emptyList() else SchoolDirectorySearch.results(directoryQuery, directorySchools)
     }
@@ -123,56 +153,119 @@ fun SchoolLoginScreen(
             onLogin(provider, school.trim(), username.trim(), password)
         }
     }
+    val canChangeSchool = !isReconnecting && !isLoading
+    BackHandler(enabled = stage == LoginStage.CREDENTIALS && canChangeSchool) { stage = LoginStage.SCHOOL }
     val secondary = MaterialTheme.gradeyColors.secondaryLabel
-    SignInColumn(
-        title = stringResource(if (isReconnecting) R.string.login_reconnect_school_14a5a else R.string.login_link_your_school_100dd),
-        subtitle = stringResource(
-            if (isReconnecting) R.string.login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d
-            else R.string.login_your_marks_timetable_and_absences_together_in_one_place_saved__2edfe,
-        ),
+    val eduPage = provider == SchoolProvider.EDU_PAGE
+
+    if (stage == LoginStage.SCHOOL) SignInColumn(
+        title = stringResource(R.string.login_choose_school_title), subtitle = stringResource(R.string.login_choose_school_body),
         modifier = modifier.testTag("schoolLogin"),
     ) {
+        StageTrail(stage)
         accountPicker?.invoke()
-        if (availableProviders.size > 1 && !isReconnecting) SegmentedControl(
-            options = availableProviders.map { it.displayName }, selectedIndex = availableProviders.indexOf(provider).coerceAtLeast(0),
-            onSelect = { if (!isLoading) provider = availableProviders[it] }, modifier = Modifier.fillMaxWidth().testTag("schoolProviderPicker"),
-        )
-        if (provider == SchoolProvider.BAKALARI && !isReconnecting && onLoadDirectory != null) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+        if (availableProviders.size > 1) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            SectionHeader(stringResource(R.string.login_school_system), Modifier.padding(horizontal = GradeySpacing.xs))
+            SegmentedControl(
+                options = availableProviders.map { it.displayName }, selectedIndex = availableProviders.indexOf(provider).coerceAtLeast(0),
+                onSelect = { if (!isLoading) provider = availableProviders[it] }, modifier = Modifier.fillMaxWidth().testTag("schoolProviderPicker"),
+            )
+        }
+        if (!eduPage && onLoadDirectory != null) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
             BrandTextField(
-                value = directoryQuery, onValueChange = { directoryQuery = it }, modifier = Modifier.fillMaxWidth(),
-                label = stringResource(R.string.login_find_your_school_77687), placeholder = stringResource(R.string.login_for_example_gymn_zium_brno_1c7e4),
-                enabled = !isLoading, imeAction = ImeAction.Search, onImeAction = { focusManager.clearFocus() }, leadingIcon = HugeIcons.Search01,
+                value = directoryQuery, onValueChange = { directoryQuery = it }, modifier = Modifier.fillMaxWidth().testTag("schoolSearch"),
+                placeholder = stringResource(R.string.login_search_schools), enabled = !isLoading,
+                imeAction = ImeAction.Search, onImeAction = { focusManager.clearFocus() }, leadingIcon = HugeIcons.Search01,
             )
             if (directoryLoading) LoadingState()
             if (directoryResults.isNotEmpty()) Column {
                 directoryResults.forEach { result ->
                     androidx.compose.runtime.key(result.id) {
-                        PlainRow(onClick = { school = result.schoolURL; directoryQuery = result.name; focusManager.clearFocus() }, enabled = !isLoading) {
+                        PlainRow(
+                            onClick = { school = result.schoolURL; directoryQuery = result.name; focusManager.clearFocus(); stage = LoginStage.CREDENTIALS },
+                            enabled = !isLoading,
+                        ) {
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(result.name, style = GradeyType.subheadlineBold, color = MaterialTheme.colorScheme.onSurface)
-                                Text(result.town, style = GradeyType.caption, color = secondary)
+                                Text(
+                                    stringResource(R.string.login_school_result_detail, result.trimmedTown, result.trimmedSchoolURL.removePrefix("https://").removePrefix("http://")),
+                                    style = GradeyType.caption, color = secondary, maxLines = 2,
+                                )
                             }
                             DisclosureIcon()
                         }
                     }
                 }
             }
-            if (directoryQuery.trim().length >= 2 && directoryResults.isEmpty() && !directoryLoading) Text(
-                stringResource(R.string.login_no_matching_school_found_you_can_enter_its_bakal_i_address_bel_2a6b5),
-                Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.caption, color = secondary,
+            if (directoryQuery.trim().length >= 2 && directoryResults.isEmpty() && !directoryLoading && directoryError == null) Text(
+                stringResource(R.string.login_no_schools_found), Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.caption, color = secondary,
             )
             if (directoryError != null) InlineNotice(
-                stringResource(R.string.login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df),
-                color = MaterialTheme.gradeyColors.orange,
-            ) { PlainLink(stringResource(R.string.login_try_school_search_again_fc765), onLoadDirectory, enabled = !directoryLoading, showsArrow = false) }
+                stringResource(R.string.login_school_search_is_unavailable_you_can_still_enter_the_address_b_a82df), color = MaterialTheme.gradeyColors.orange,
+            ) { PlainLink(stringResource(R.string.login_retry), onLoadDirectory, enabled = !directoryLoading, showsArrow = false) }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+        Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+            if (!eduPage && onLoadDirectory != null) Text(
+                stringResource(R.string.login_manual_address), Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.footnote, color = secondary,
+            )
             BrandTextField(
                 value = school, onValueChange = { school = it }, modifier = Modifier.fillMaxWidth().testTag("schoolAddress"),
-                label = stringResource(if (provider == SchoolProvider.EDU_PAGE) R.string.login_edupage_school_6060b else R.string.login_school_address_a2e60),
-                placeholder = if (provider == SchoolProvider.EDU_PAGE) "school.edupage.org" else "bakalari.your-school.cz",
-                enabled = !isLoading, keyboardType = KeyboardType.Uri, imeAction = ImeAction.Next, onImeAction = { focusManager.moveFocus(FocusDirection.Down) },
+                label = stringResource(if (eduPage) R.string.login_edupage_url else R.string.login_school_url),
+                placeholder = if (eduPage) "my-school.edupage.org" else "https://bakalari.school.cz",
+                enabled = !isLoading, keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done,
+                onImeAction = { if (school.isNotBlank()) { focusManager.clearFocus(); stage = LoginStage.CREDENTIALS } },
             )
+            if (eduPage) Text(stringResource(R.string.login_edupage_hint), Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.caption, color = secondary)
+            else PlainRow(
+                Modifier.animateContentSize(tween(250)), onClick = { guideOpen = !guideOpen }, verticalAlignment = Alignment.Top, showDivider = false,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                    Text(stringResource(R.string.login_url_guide_title), style = GradeyType.subheadlineSemibold, color = MaterialTheme.colorScheme.primary)
+                    if (guideOpen) {
+                        listOf(R.string.login_url_guide_step1, R.string.login_url_guide_step2, R.string.login_url_guide_step3, R.string.login_url_guide_step4)
+                            .forEachIndexed { index, step ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm)) {
+                                    Text("${index + 1}.", style = GradeyType.footnoteBold, color = secondary)
+                                    Text(stringResource(step), Modifier.weight(1f), style = GradeyType.footnote, color = secondary)
+                                }
+                            }
+                        Text(stringResource(R.string.login_url_guide_example), style = GradeyType.footnoteBold, color = secondary)
+                    }
+                }
+                GradeyIcon(
+                    HugeIcons.ArrowDown01, Modifier.padding(top = GradeySpacing.xs).graphicsLayer { rotationZ = if (guideOpen) 180f else 0f },
+                    size = 13.dp, tint = MaterialTheme.gradeyColors.tertiaryLabel,
+                )
+            }
+        }
+        GradeyPrimaryButton(
+            stringResource(R.string.login_continue_to_sign_in), { focusManager.clearFocus(); stage = LoginStage.CREDENTIALS },
+            Modifier.testTag("schoolContinue"), enabled = !isLoading && school.isNotBlank(),
+        )
+        Column {
+            onOpenHelp?.let { help -> PlainLink(stringResource(R.string.login_help_signing_in), { focusManager.clearFocus(); help() }) }
+            if (onBack != null) PlainLink(stringResource(R.string.login_back_b52b3), onBack, enabled = !isLoading, color = secondary, showsArrow = false)
+        }
+    } else SignInColumn(
+        title = stringResource(if (isReconnecting) R.string.login_reconnect_school_14a5a else R.string.login_credentials_title),
+        subtitle = stringResource(
+            if (isReconnecting) R.string.login_sign_in_to_the_same_school_account_to_restore_its_connection_a_6194d else R.string.login_credentials_body,
+        ),
+        modifier = modifier.testTag("schoolCredentials"),
+    ) {
+        if (!isReconnecting) StageTrail(stage)
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = GradeySpacing.xs), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
+        ) {
+            GradeyIcon(HugeIcons.University, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(provider.displayName, style = GradeyType.captionSemibold, color = secondary)
+                Text(school.trim(), style = GradeyType.subheadlineBold, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
+            }
+            if (canChangeSchool) PlainLink(stringResource(R.string.login_change_school), { stage = LoginStage.SCHOOL }, showsArrow = false)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
             BrandTextField(
                 value = username, onValueChange = { username = it }, modifier = Modifier.fillMaxWidth().testTag("schoolUsername"),
                 label = stringResource(R.string.login_username_84c29), enabled = !isLoading,
@@ -190,10 +283,6 @@ fun SchoolLoginScreen(
                         contentAlignment = Alignment.Center,
                     ) { GradeyIcon(if (passwordVisible) HugeIcons.ViewOff else HugeIcons.View, size = 17.dp, tint = secondary) }
                 },
-            )
-            Text(
-                stringResource(R.string.login_your_school_password_stays_encrypted_on_this_device_61039),
-                Modifier.padding(horizontal = GradeySpacing.xs), style = GradeyType.caption, color = secondary,
             )
         }
         errorMessage?.let { InlineNotice(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
@@ -225,26 +314,30 @@ fun SchoolVerificationScreen(
     var code by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    BackHandler(enabled = !isLoading, onBack = onBack)
     SignInColumn(
         title = stringResource(R.string.login_connect_edupage_17a62),
-        subtitle = stringResource(if (step is SchoolLoginStep.TwoFactor) R.string.login_verify_your_sign_in_29777 else R.string.login_choose_a_student_6d1fa),
+        subtitle = stringResource(
+            if (step is SchoolLoginStep.TwoFactor) R.string.login_complete_verification_using_your_edupage_account_98a6c else R.string.login_choose_a_student_6d1fa,
+        ),
         modifier = modifier.testTag("schoolVerification"),
     ) {
         when (step) {
             is SchoolLoginStep.TwoFactor -> {
-                Text(stringResource(R.string.login_complete_verification_using_your_edupage_account_98a6c), style = GradeyType.subheadline, color = secondary)
-                if (step.prompt.supportsCode) {
+                if (step.prompt.supportsCode) Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+                    SectionHeader(stringResource(R.string.login_code_section), Modifier.padding(horizontal = GradeySpacing.xs))
                     BrandTextField(
                         value = code, onValueChange = { code = it.trim() }, modifier = Modifier.fillMaxWidth(),
-                        label = stringResource(R.string.login_verification_code_80f2f), enabled = !isLoading, keyboardType = KeyboardType.NumberPassword,
+                        placeholder = stringResource(R.string.login_verification_code_80f2f), enabled = !isLoading, keyboardType = KeyboardType.NumberPassword,
                         onImeAction = { if (code.isNotBlank()) onSubmitCode(code) },
                     )
                     GradeyPrimaryButton(stringResource(R.string.login_verify_code_91a22), { onSubmitCode(code) }, enabled = !isLoading && code.isNotBlank(), loading = isLoading)
                 }
                 if (step.prompt.supportsDeviceApproval) Column {
+                    SectionHeader(stringResource(R.string.login_device_section), Modifier.padding(horizontal = GradeySpacing.xs))
                     Text(
                         stringResource(R.string.login_approve_the_request_in_edupage_then_check_approval_here_41b93),
-                        Modifier.padding(bottom = GradeySpacing.xs), style = GradeyType.subheadline, color = secondary,
+                        Modifier.padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.sm), style = GradeyType.subheadline, color = secondary,
                     )
                     PlainLink(stringResource(R.string.login_check_approval_81ddf), onCheckApproval, enabled = !isLoading)
                     PlainLink(stringResource(R.string.login_resend_approval_request_03ff9), onResend, enabled = !isLoading, showsArrow = false)
@@ -269,7 +362,7 @@ fun SchoolVerificationScreen(
         errorMessage?.let { InlineNotice(it, Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
         Column {
             onOpenHelp?.let { help -> PlainLink(stringResource(R.string.login_help_verification), { focusManager.clearFocus(); help() }) }
-            PlainLink(stringResource(R.string.login_back_to_school_login_9573e), onBack, enabled = !isLoading, color = secondary, showsArrow = false)
+            PlainLink(stringResource(R.string.login_back_b52b3), onBack, enabled = !isLoading, color = secondary, showsArrow = false)
         }
     }
 }

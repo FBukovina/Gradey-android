@@ -35,7 +35,6 @@
     <string name="absence_estimate_assumes_each_selected_lesson_adds_one_missed_and_one__6c504">Odhad počítá s jednou zameškanou a jednou odučenou hodinou navíc za každou vybranou hodinu. Ostatní budoucí hodiny nezahrnuje.</string>
     <string name="absence_excused_6c2a9">Omluvená</string>
     <string name="absence_hidden_locally">Místně skryto %1$d záznamů</string>
-    <string name="absence_hidden_units">Z výpočtů v Gradey je skryto %1$d zaznamenaných jednotek docházky.</string>
     <string name="absence_hide_entire_day_16a85">Skrýt celý den</string>
     <string name="absence_hide_from_my_calculations_83a1d">Skrýt z mých výpočtů</string>
     <string name="absence_hours_5aede">hodin</string>
@@ -140,4 +139,37 @@
     <string name="absence_settings">Nastavení</string>
     <string name="absence_percentage">%s %%</string>
     <string name="absence_category_value">%1$s: %2$d</string>
+    <string name="absence_override_choose_subject">Vyberte předmět</string>
+    <string name="absence_override_edit_short">Upravit</string>
+    <string name="absence_override_edit_title">Upravit absenci</string>
+    <string name="absence_override_lessons_title">Zameškané hodiny</string>
+    <string name="absence_override_local_only">Uloženo na tomto zařízení. Záznamy školy se nemění.</string>
+    <string name="absence_override_mixed_categories">Tento den obsahuje více kategorií. Počty přiřazených kategorií musí odpovídat záznamu školy.</string>
+    <string name="absence_override_put_all_back">Vrátit vše</string>
+    <string name="absence_override_put_back">Vrátit</string>
+    <string name="absence_override_remove">Odebrat</string>
+    <string name="absence_override_remove_day">Odebrat celý den</string>
+    <string name="absence_override_remove_hint">Odeberte hodiny, které se nemají počítat. Gradey přepočítá součty.</string>
+    <string name="absence_override_removed">Odebráno z absence</string>
+    <string name="absence_override_restore">Obnovit absenci</string>
+    <string name="absence_override_restore_all">Obnovit všechny absence</string>
+    <string name="absence_override_restore_all_message">Odstranit všechny místní úpravy absence tohoto účtu a použít nejnovější záznamy školy.</string>
+    <string name="absence_override_restore_short">Obnovit</string>
+    <string name="absence_override_result_count">Celkem v Gradey</string>
+    <string name="absence_override_subject">Předmět</string>
+    <string name="absence_predictor_added_hours">+%d h</string>
+    <string name="absence_predictor_baseline_unavailable">Pro výpočet procenta absence v tomto předmětu zatím není dost spolehlivých dat.</string>
+    <string name="absence_predictor_edit">Upravit plán</string>
+    <string name="absence_predictor_ok_added">Omluvená absence navíc:</string>
+    <string name="absence_predictor_title">Odhad absence</string>
+    <string name="absence_predictor_total">Celkem hodin</string>
+    <string name="absence_predictor_absent_change">Absence %1$d → %2$d</string>
+    <string name="absence_predictor_percent_change">%1$s %% → %2$s %%</string>
+    <string name="absence_save">Uložit</string>
+    <plurals name="absence_hidden_units">
+        <item quantity="one">Z výpočtů v Gradey je skrytá %d hodina.</item>
+        <item quantity="few">Z výpočtů v Gradey jsou skryté %d hodiny.</item>
+        <item quantity="many">Z výpočtů v Gradey je skryto %d hodiny.</item>
+        <item quantity="other">Z výpočtů v Gradey je skryto %d hodin.</item>
+    </plurals>
 </resources>

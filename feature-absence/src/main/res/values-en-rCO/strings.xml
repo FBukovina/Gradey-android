@@ -49,4 +49,35 @@
     <string name="absence_settings">settings</string>
     <string name="absence_percentage">%s %%</string>
     <string name="absence_category_value">%1$s: %2$d</string>
+    <string name="absence_override_choose_subject">pick a subject</string>
+    <string name="absence_override_edit_short">edit</string>
+    <string name="absence_override_edit_title">edit absence</string>
+    <string name="absence_override_lessons_title">missed lessons</string>
+    <string name="absence_override_local_only">saved on this device. school records don\'t change.</string>
+    <string name="absence_override_mixed_categories">this day has more than one category. your counts have to match the school record.</string>
+    <string name="absence_override_put_all_back">put all back</string>
+    <string name="absence_override_put_back">put back</string>
+    <string name="absence_override_remove">remove</string>
+    <string name="absence_override_remove_day">remove whole day</string>
+    <string name="absence_override_remove_hint">remove lessons that shouldn\'t count. Gradey redoes the math.</string>
+    <string name="absence_override_removed">removed from absence</string>
+    <string name="absence_override_restore">bring absence back</string>
+    <string name="absence_override_restore_all">bring all absences back</string>
+    <string name="absence_override_restore_all_message">remove every edit for this account and use the latest school records</string>
+    <string name="absence_override_restore_short">bring back</string>
+    <string name="absence_override_result_count">total in Gradey</string>
+    <string name="absence_override_subject">subject</string>
+    <string name="absence_predictor_added_hours">+%d h</string>
+    <string name="absence_predictor_baseline_unavailable">not enough solid data to work out an absence percentage for this subject yet</string>
+    <string name="absence_predictor_edit">edit plan</string>
+    <string name="absence_predictor_ok_added">extra excused absence:</string>
+    <string name="absence_predictor_title">absence estimate</string>
+    <string name="absence_predictor_total">total hours</string>
+    <string name="absence_predictor_absent_change">absent %1$d → %2$d</string>
+    <string name="absence_predictor_percent_change">%1$s %% → %2$s %%</string>
+    <string name="absence_save">save</string>
+    <plurals name="absence_hidden_units">
+        <item quantity="one">%d lesson is hidden from your gradey totals.</item>
+        <item quantity="other">%d lessons are hidden from your gradey totals.</item>
+    </plurals>
 </resources>

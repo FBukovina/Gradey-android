@@ -49,4 +49,37 @@
     <string name="absence_settings">nastavení</string>
     <string name="absence_percentage">%s %%</string>
     <string name="absence_category_value">%1$s: %2$d</string>
+    <string name="absence_override_choose_subject">vyber předmět</string>
+    <string name="absence_override_edit_short">upravit</string>
+    <string name="absence_override_edit_title">upravit absenci</string>
+    <string name="absence_override_lessons_title">zameškaný hodiny</string>
+    <string name="absence_override_local_only">uloženo v tomhle zařízení. záznamy školy se nemění.</string>
+    <string name="absence_override_mixed_categories">tenhle den má víc kategorií. počty musí sedět se záznamem školy.</string>
+    <string name="absence_override_put_all_back">vrátit všechno</string>
+    <string name="absence_override_put_back">vrátit</string>
+    <string name="absence_override_remove">odebrat</string>
+    <string name="absence_override_remove_day">odebrat celý den</string>
+    <string name="absence_override_remove_hint">odeber hodiny, co se nemaj počítat. Gradey ti to přepočítá.</string>
+    <string name="absence_override_removed">odebráno z absence</string>
+    <string name="absence_override_restore">vrátit absenci</string>
+    <string name="absence_override_restore_all">vrátit všechny absence</string>
+    <string name="absence_override_restore_all_message">smazat všechny úpravy tohohle účtu a vzít nejnovější záznamy školy</string>
+    <string name="absence_override_restore_short">vrátit</string>
+    <string name="absence_override_result_count">celkem v Gradey</string>
+    <string name="absence_override_subject">předmět</string>
+    <string name="absence_predictor_added_hours">+%d h</string>
+    <string name="absence_predictor_baseline_unavailable">na procento absence v tomhle předmětu zatím není dost spolehlivejch dat</string>
+    <string name="absence_predictor_edit">upravit plán</string>
+    <string name="absence_predictor_ok_added">omluvená absence navíc:</string>
+    <string name="absence_predictor_title">odhad absence</string>
+    <string name="absence_predictor_total">celkem hodin</string>
+    <string name="absence_predictor_absent_change">absence %1$d → %2$d</string>
+    <string name="absence_predictor_percent_change">%1$s %% → %2$s %%</string>
+    <string name="absence_save">uložit</string>
+    <plurals name="absence_hidden_units">
+        <item quantity="one">z výpočtů v gradey je skrytá %d hodina.</item>
+        <item quantity="few">z výpočtů v gradey jsou skryté %d hodiny.</item>
+        <item quantity="many">z výpočtů v gradey je skryto %d hodiny.</item>
+        <item quantity="other">z výpočtů v gradey je skryto %d hodin.</item>
+    </plurals>
 </resources>

@@ -35,7 +35,6 @@
     <string name="absence_estimate_assumes_each_selected_lesson_adds_one_missed_and_one__6c504">Estimate assumes each selected lesson adds one missed and one taught lesson. It excludes other future lessons.</string>
     <string name="absence_excused_6c2a9">Excused</string>
     <string name="absence_hidden_locally">%1$d units hidden locally</string>
-    <string name="absence_hidden_units">%1$d recorded units hidden from your Gradey calculations.</string>
     <string name="absence_hide_entire_day_16a85">Hide entire day</string>
     <string name="absence_hide_from_my_calculations_83a1d">Hide from my calculations</string>
     <string name="absence_hours_5aede">hours</string>
@@ -140,4 +139,35 @@
     <string name="absence_settings">Settings</string>
     <string name="absence_percentage">%s %%</string>
     <string name="absence_category_value">%1$s: %2$d</string>
+    <string name="absence_override_choose_subject">Choose subject</string>
+    <string name="absence_override_edit_short">Edit</string>
+    <string name="absence_override_edit_title">Edit absence</string>
+    <string name="absence_override_lessons_title">Missed lessons</string>
+    <string name="absence_override_local_only">Saved on this device. School records stay unchanged.</string>
+    <string name="absence_override_mixed_categories">This day contains more than one category. The assigned category counts must match the school record.</string>
+    <string name="absence_override_put_all_back">Put all back</string>
+    <string name="absence_override_put_back">Put back</string>
+    <string name="absence_override_remove">Remove</string>
+    <string name="absence_override_remove_day">Remove whole day</string>
+    <string name="absence_override_remove_hint">Remove lessons that shouldn\'t count. Gradey recalculates your totals.</string>
+    <string name="absence_override_removed">Removed from absence</string>
+    <string name="absence_override_restore">Restore absence</string>
+    <string name="absence_override_restore_all">Restore all absences</string>
+    <string name="absence_override_restore_all_message">Remove all local absence edits for this account and use the latest school records.</string>
+    <string name="absence_override_restore_short">Restore</string>
+    <string name="absence_override_result_count">Total in Gradey</string>
+    <string name="absence_override_subject">Subject</string>
+    <string name="absence_predictor_added_hours">+%d h</string>
+    <string name="absence_predictor_baseline_unavailable">Not enough reliable data to calculate an absence percentage for this subject.</string>
+    <string name="absence_predictor_edit">Edit plan</string>
+    <string name="absence_predictor_ok_added">Additional excused absence:</string>
+    <string name="absence_predictor_title">Absence estimate</string>
+    <string name="absence_predictor_total">Total hours</string>
+    <string name="absence_predictor_absent_change">Absent %1$d → %2$d</string>
+    <string name="absence_predictor_percent_change">%1$s %% → %2$s %%</string>
+    <string name="absence_save">Save</string>
+    <plurals name="absence_hidden_units">
+        <item quantity="one">%d lesson is hidden from your Gradey totals.</item>
+        <item quantity="other">%d lessons are hidden from your Gradey totals.</item>
+    </plurals>
 </resources>
