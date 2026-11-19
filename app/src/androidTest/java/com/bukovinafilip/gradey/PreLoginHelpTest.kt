@@ -36,7 +36,7 @@ class PreLoginHelpTest {
         val labels = listOf(AuthR.string.auth_help_signing_in, LoginR.string.login_help_signing_in, LoginR.string.login_help_verification)
         compose.setContent {
             GradeyTheme {
-                val modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                val modifier = Modifier.fillMaxSize()
                 when (stage) {
                     0 -> GradeyIdLoginScreen(
                         isLoading = true, isConfigured = false, onGoogleSignIn = { signInSubmissions++ },

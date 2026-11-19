@@ -38,7 +38,7 @@ class AccountDemoExitTest {
         compose.runOnIdle { assertEquals(1, signOutCalls) }
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
-        compose.onNodeWithText("Add school").assertIsNotEnabled()
+        compose.onNodeWithTag("settingsLinkSchool").assertIsNotEnabled()
         compose.onAllNodesWithText("School URL").assertCountEquals(0)
     }
 
@@ -56,6 +56,6 @@ class AccountDemoExitTest {
         compose.onAllNodesWithText("Connect my school").assertCountEquals(0)
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
-        compose.onNodeWithText("Add school").assertIsNotEnabled()
+        compose.onNodeWithTag("settingsLinkSchool").assertIsNotEnabled()
     }
 }

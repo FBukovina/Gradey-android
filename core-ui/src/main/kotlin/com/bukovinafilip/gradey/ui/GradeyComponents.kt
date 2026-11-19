@@ -41,6 +41,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -901,7 +902,7 @@ fun SettingsActionRow(
 fun SettingsToggleRow(title: String, subtitle: String?, checked: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, icon: String? = null) {
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .clickable(enabled = enabled, role = Role.Switch) { onChange(!checked) }
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = GradeySpacing.xs, vertical = GradeySpacing.sm),
         horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md), verticalAlignment = Alignment.CenterVertically,
     ) {

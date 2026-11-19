@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -85,34 +86,30 @@ class DemoAppFlowTest {
         compose.onNodeWithTag("todayHero").assertIsDisplayed()
     }
 
-    @Test fun navigationSearchAndActivityRecreationPreserveTheSelectedScreen() {
-        compose.onNodeWithContentDescription("Marks").performClick()
-        compose.onNodeWithContentDescription("Search subjects").performTextInput("cesky")
-        compose.onNodeWithContentDescription("Open Český jazyk").assertExists()
-        compose.onAllNodesWithText("Matematika").assertCountEquals(0)
+    @Test fun navigationAndActivityRecreationPreserveTheSelectedScreen() {
+        compose.onNodeWithTag("tab-subjects").performClick()
+        compose.onNodeWithTag("subjectsList").assertExists()
 
         // Activity recreation exercises the same retained ViewModel/saved Compose state as rotation.
         compose.activityRule.scenario.recreate()
 
         compose.waitUntil(10_000) { state().tab == AppTab.SUBJECTS }
-        compose.onNodeWithContentDescription("Search subjects").assertExists()
-        compose.onNodeWithText("cesky").assertExists()
-        compose.onAllNodesWithText("Matematika").assertCountEquals(0)
-        compose.onNodeWithContentDescription("Absence").performClick()
+        compose.onNodeWithTag("subjectsList").assertExists()
+        compose.onNodeWithTag("tab-absence").performClick()
         compose.onNodeWithText("Plan absence").assertExists()
-        compose.onNodeWithContentDescription("Timetable").performClick()
+        compose.onNodeWithTag("tab-timetable").performClick()
         assertEquals(AppTab.TIMETABLE, state().tab)
-        compose.onNodeWithContentDescription("Today").performClick()
+        compose.onNodeWithTag("tab-today").performClick()
         compose.onNodeWithTag("todayHero").assertExists()
     }
 
     @Test fun plannedAbsenceIsSavedRestoredAndRemovedFromEncryptedStorage() {
-        compose.onNodeWithContentDescription("Absence").performClick()
-        compose.onNodeWithText("Plan absence").performScrollTo().performClick()
+        compose.onNodeWithTag("tab-absence").performClick()
+        compose.onNodeWithText("Plan absence").performClick()
         compose.onNodeWithContentDescription("Next week").performClick()
         compose.waitUntil(10_000) { !state().loading && state().timetable != null }
         compose.onNodeWithText("Select all").performClick()
-        scrollTo(hasText("Save plan"))
+        compose.onNodeWithTag("absencePlanner").performScrollToNode(hasText("Save plan"))
         compose.onNodeWithText("Save plan").performClick()
         compose.waitUntil(10_000) { state().plans.isNotEmpty() }
 
@@ -125,17 +122,18 @@ class DemoAppFlowTest {
         assertEquals(plan, state().plans.single())
 
         val deleteDescription = "Delete plan for ${plan.date}"
-        scrollTo(hasContentDescription(deleteDescription))
+        compose.onNodeWithTag("absencePlanner").performScrollToNode(hasContentDescription(deleteDescription))
         compose.onNodeWithContentDescription(deleteDescription).performClick()
         compose.waitUntil(10_000) { state().plans.isEmpty() }
         assertTrue(readSavedPlans(key).isEmpty())
-        scrollTo(hasText("No planned absences yet."))
+        compose.onNodeWithTag("absencePlanner").performScrollToNode(hasText("No planned absences yet."))
         compose.onNodeWithText("No planned absences yet.").assertExists()
     }
 
     @Test fun permanentTimetableDoesNotReplaceTheDatedWeek() {
         val datedWeek = requireNotNull(state().currentTimetable)
-        compose.onNodeWithContentDescription("Timetable").performClick()
+        compose.onNodeWithTag("tab-timetable").performClick()
+        compose.onNode(hasText("Timetable") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).performClick()
         compose.onNodeWithText("Permanent").performClick()
         compose.waitUntil(10_000) { !state().permanentTimetableLoading && state().permanentTimetable != null }
         assertEquals(com.bukovinafilip.gradey.model.TimetableKind.PERMANENT, state().permanentTimetable?.kind)
@@ -144,7 +142,7 @@ class DemoAppFlowTest {
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { state().timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT }
         compose.onNodeWithText("Regular weekly schedule without date-specific changes.").assertExists()
-        compose.onNodeWithContentDescription("Today").performClick()
+        compose.onNodeWithTag("tab-today").performClick()
         assertEquals(datedWeek, state().currentTimetable)
         compose.onNodeWithTag("todayHero").assertExists()
     }
@@ -169,10 +167,9 @@ class DemoAppFlowTest {
         val dayLabel = "${date.format(java.time.format.DateTimeFormatter.ofPattern("EEE", locale))}, ${date.dayOfMonth}"
         val lessonButton = hasContentDescription("Open ${lesson.subjectName ?: lesson.subjectAbbrev} lesson details", substring = true)
         try {
-            compose.onNodeWithContentDescription("Timetable").performClick()
-            scrollTo(hasContentDescription(dayLabel))
-            compose.onNodeWithContentDescription(dayLabel).performScrollTo().performClick().assertIsSelected()
-            scrollTo(lessonButton)
+            compose.onNodeWithTag("tab-timetable").performClick()
+            compose.onNodeWithContentDescription(dayLabel).performClick().assertIsSelected()
+            compose.onNodeWithTag("timetableList").performScrollToNode(lessonButton)
             compose.onNode(lessonButton).performClick()
             compose.onNodeWithTag("timetable-planner-item-${item.id}").performScrollTo().performClick()
             compose.waitUntil(10_000) { compose.onAllNodesWithTag("plannerEditor").fetchSemanticsNodes().isNotEmpty() }
@@ -186,9 +183,8 @@ class DemoAppFlowTest {
             androidx.test.espresso.Espresso.pressBack()
             compose.waitUntil(5_000) { state().tab == AppTab.TIMETABLE }
             assertEquals(snapshot.viewedWeek, state().viewedWeek)
-            scrollTo(hasContentDescription(dayLabel))
             compose.onNodeWithContentDescription(dayLabel).assertIsSelected()
-            scrollTo(lessonButton)
+            compose.onNodeWithTag("timetableList").performScrollToNode(lessonButton)
             compose.onNode(lessonButton).performClick()
             compose.onNodeWithTag("timetable-planner-item-${item.id}").assertExists()
             assertEquals(saved.first { it.id == item.id }, runBlocking { application.demoPlanner.load() }.first { it.id == item.id })
@@ -199,36 +195,36 @@ class DemoAppFlowTest {
         }
     }
 
-    @Test fun gradeSimulatorKeepsScenarioAcrossRotationWithoutEditingMarks() {
+    @Test fun tryAMarkShowsAnEstimateWithoutEditingMarks() {
         val recorded = state().dashboard.marksResponse
-        compose.onNodeWithContentDescription("Marks").performClick()
-        compose.onNodeWithContentDescription("Open Matematika").performClick()
-        compose.onNodeWithText("Grade simulator").performScrollTo().performClick()
-        compose.onNodeWithText("What if…").performClick()
-        compose.onNodeWithText("Add hypothetical mark (0/10)").performScrollTo().performClick()
-        compose.onNodeWithText("Add hypothetical mark (1/10)").performScrollTo().performClick()
-        compose.activityRule.scenario.recreate()
-        compose.onNodeWithTag("gradeSimulatorList").performScrollToNode(hasText("Add hypothetical mark (2/10)"))
-        compose.onNodeWithText("Add hypothetical mark (2/10)").assertIsDisplayed()
+        compose.onNodeWithTag("tab-subjects").performClick()
+        compose.onNodeWithText("Matematika").performClick()
+        compose.onNodeWithTag("subjectDetail").performScrollToNode(hasTestTag("theoreticalMarkField"))
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("theoreticalMarkField"))).performTextInput("3")
+        compose.onNodeWithTag("subjectDetail").performScrollToNode(hasTestTag("theoreticalResultPanel"))
+        compose.onNodeWithTag("theoreticalResultPanel").assertExists()
         assertEquals(recorded, state().dashboard.marksResponse)
-        compose.onNodeWithText("Reset scenario").performScrollTo().performClick()
-        compose.onNodeWithText("Add hypothetical mark (0/10)").performScrollTo().assertIsDisplayed()
+        // The first Back would only hide the keyboard the mark field opened.
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        androidx.test.espresso.Espresso.pressBack()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("subjectsList").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(AppTab.SUBJECTS, state().tab)
     }
 
     @Test fun mealReplacementAndCancellationRequireConfirmation() {
-        compose.onNodeWithContentDescription("Meals").performClick()
-        scrollTo(hasText("Order meal"))
-        compose.onNodeWithText("Order meal").performClick()
-        compose.onNodeWithText("Replace your meal?").assertIsDisplayed()
+        compose.onNodeWithTag("tab-stravacz").performClick()
+        compose.onNodeWithTag("mealsList").performScrollToNode(hasTestTag("mealToggle-2"))
+        compose.onNodeWithTag("mealToggle-2").performClick()
+        compose.onNodeWithText("Replace lunch?").assertIsDisplayed()
         assertEquals(listOf(1), orderedMealIDs())
         compose.onNodeWithText("Keep current order").performClick()
         assertEquals(listOf(1), orderedMealIDs())
 
-        compose.onNodeWithText("Order meal").performClick()
-        compose.onNodeWithText("Replace meal").performClick()
+        compose.onNodeWithTag("mealToggle-2").performClick()
+        compose.onNodeWithText("Replace order").performClick()
         compose.waitUntil(10_000) { orderedMealIDs() == listOf(2) }
-        scrollTo(hasText("Cancel order"))
-        compose.onNodeWithText("Cancel order").performClick()
+        compose.onNodeWithTag("mealsList").performScrollToNode(hasTestTag("mealToggle-2"))
+        compose.onNodeWithTag("mealToggle-2").performClick()
         compose.onNodeWithText("Cancel this meal?").assertIsDisplayed()
         assertEquals(listOf(2), orderedMealIDs())
         compose.onNodeWithText("Cancel meal").performClick()
@@ -236,12 +232,12 @@ class DemoAppFlowTest {
     }
 
     @Test fun signOutClearsPrivateStateAndDoesNotDisplayCredentialValues() {
-        compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         assertNoCredentialText()
         compose.onNodeWithTag("settingsDestination-account").performClick()
-        scrollTo(hasText("Sign out"))
-        compose.onNodeWithText("Sign out").performClick()
-        compose.onNodeWithText("Sign out of Gradey?").assertIsDisplayed()
+        compose.onNodeWithTag("settingsDetailScroll").performScrollToNode(hasTestTag("settingsSignOut"))
+        compose.onNodeWithTag("settingsSignOut").performClick()
+        compose.onNodeWithText("Sign out of all accounts on this device?").assertIsDisplayed()
         compose.onNode(hasText("Sign out") and hasAnyAncestor(dialog)).performClick()
         compose.waitUntil(10_000) { state().phase == AppPhase.SIGNED_OUT && !state().loading }
 
@@ -256,20 +252,22 @@ class DemoAppFlowTest {
 
     @Test fun demoSchoolControlsCannotOpenLoginOrRemoveSampleAccount() {
         val school = state().school
-        compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithTag("settingsDestination-account").performClick()
         compose.onNodeWithText("Explore Gradey with sample data. Real school accounts cannot be connected or changed in demo mode.").assertExists()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithTag("settingsDestination-connectedServices").performClick()
-        scrollTo(hasText("Add school"))
-        compose.onNodeWithText("Add school").assertIsNotEnabled().performClick()
-        scrollTo(hasText("Remove"))
-        compose.onNodeWithText("Remove").assertIsNotEnabled().performClick()
+        val linkedID = state().linkedAccounts.first().id
+        compose.onNodeWithTag("settingsDetailScroll").performScrollToNode(hasTestTag("settingsLinkSchool"))
+        compose.onNodeWithTag("settingsLinkSchool").assertIsNotEnabled().performClick()
+        compose.onNodeWithTag("linkedAccountMenu-$linkedID").performClick()
+        compose.onNodeWithTag("linkedAccountUnlink-$linkedID").assertIsNotEnabled()
+        androidx.test.espresso.Espresso.pressBack()
 
         assertEquals(AppPhase.SIGNED_IN, state().phase)
         assertEquals(school, state().school)
         compose.onAllNodesWithText("School URL").assertCountEquals(0)
-        compose.onAllNodesWithText("Remove school account?").assertCountEquals(0)
+        compose.onAllNodesWithText("Unlink account?").assertCountEquals(0)
     }
 
     @Test fun demoSchoolCommandsRejectRealCredentialsWithoutChangingSession() {
@@ -462,7 +460,7 @@ class DemoAppFlowTest {
             assertNull(state().account)
             assertFalse(state().isDemo)
             assertFalse((compose.activity.application as GradeyApplication).activeGraph.isDemo)
-            compose.onNodeWithText("Connect school").assertExists()
+            compose.onNodeWithTag("schoolLogin").assertExists()
             compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].requestGradeySignIn() }
             compose.waitUntil(5_000) { state().phase == AppPhase.SIGNED_OUT }
             compose.onNodeWithText("Continue without Gradey ID").performScrollTo().performClick()
@@ -477,11 +475,11 @@ class DemoAppFlowTest {
     }
 
     private fun signOutThroughUi() {
-        compose.onNodeWithContentDescription("Today").performClick()
-        compose.onNodeWithContentDescription("Open account").performClick()
+        compose.onNodeWithTag("tab-today").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithTag("settingsDestination-account").performClick()
-        scrollTo(hasText("Sign out"))
-        compose.onNodeWithText("Sign out").performClick()
+        compose.onNodeWithTag("settingsDetailScroll").performScrollToNode(hasTestTag("settingsSignOut"))
+        compose.onNodeWithTag("settingsSignOut").performClick()
         compose.onNode(hasText("Sign out") and hasAnyAncestor(dialog)).performClick()
         compose.waitUntil(10_000) { state().phase == AppPhase.SIGNED_OUT && !state().loading }
     }

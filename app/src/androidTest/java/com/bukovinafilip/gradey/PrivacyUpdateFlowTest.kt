@@ -14,7 +14,7 @@ class PrivacyUpdateFlowTest {
         var accepted = false
         compose.setContent { GradeyTheme { PrivacyUpdateScreen(onAccept = { accepted = true }) } }
         compose.onNodeWithText("I’m 16 or older").assertDoesNotExist()
-        compose.onNodeWithText("Done").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Done").assertDoesNotExist()
         compose.onNodeWithText("I’ve read this — accept").assertIsNotEnabled()
         compose.onNodeWithText("Read the full Privacy Policy").performScrollTo()
         compose.onNodeWithText("I’ve read this — accept").assertIsEnabled().performClick()
@@ -28,7 +28,7 @@ class PrivacyUpdateFlowTest {
         compose.onNodeWithText("I’ve read this — accept").assertDoesNotExist()
         compose.onNodeWithText("Background checks use encrypted session tokens").performScrollTo().performClick()
         compose.onNodeWithText("When you link a Bakaláři account to Gradey ID, the app obtains a separate school session.", substring = true).assertExists()
-        compose.onNodeWithText("Done").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Done").performScrollTo().performClick()
         compose.runOnIdle { assertTrue(closed); assertFalse(accepted) }
     }
 }

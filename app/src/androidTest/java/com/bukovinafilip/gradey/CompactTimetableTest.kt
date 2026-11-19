@@ -46,7 +46,7 @@ class CompactTimetableTest {
                     Box(Modifier.requiredSize(320.dp, 568.dp)) {
                         TimetableScreen(TimetableWeek(monday.toString(), days, emptyList()), false,
                             onRefresh = {}, onChangeWeek = {}, onOpenAI = {}, onOpenSettings = {},
-                            onChangeKind = {}, onOpenPlanner = { plannerOpened++ },
+                            onChangeKind = {}, onOpenPlanner = { plannerOpened++ }, schoolScope = "school",
                             onPlanLesson = { selected, _ -> plannedLesson = selected.id })
                     }
                 }

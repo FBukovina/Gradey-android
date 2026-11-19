@@ -617,7 +617,7 @@ private fun TryAMark(
             }
             val spoken = listOfNotNull(stringResource(R.string.subjects_detail_simulator_result, estimated), differenceText).joinToString(", ")
             Row(
-                Modifier.clearAndSetSemantics { contentDescription = spoken }.testTag("theoreticalResultPanel"),
+                Modifier.testTag("theoreticalResultPanel").clearAndSetSemantics { contentDescription = spoken },
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.sm),
             ) {
                 Text("→ $average", style = GradeyType.headline.tabular(), color = MaterialTheme.colorScheme.onSurface)

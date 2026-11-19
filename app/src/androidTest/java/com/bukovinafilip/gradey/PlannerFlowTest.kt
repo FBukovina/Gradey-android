@@ -32,13 +32,13 @@ class PlannerFlowTest {
         compose.setContent { GradeyTheme { PlannerRoute(repository, onBack = {}, onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
         compose.onNodeWithContentDescription("Add planner item").performClick()
-        compose.onNodeWithText("Title").performTextInput("Read chapter three")
-        compose.onNodeWithText("Notes").performTextInput("Pages 42 to 55")
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextInput("Read chapter three")
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerNotesField"))).performTextInput("Pages 42 to 55")
         compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
         compose.waitUntil(5_000) { latest.size == 1 }
         compose.onNodeWithText("Read chapter three").assertExists()
         compose.onNodeWithContentDescription("Edit Read chapter three").performClick()
-        compose.onNodeWithText("Title").performTextReplacement("Read chapter four")
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextReplacement("Read chapter four")
         compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
         compose.waitUntil(5_000) { latest.singleOrNull()?.title == "Read chapter four" }
         compose.onNodeWithContentDescription("Mark Read chapter four complete").performClick()
@@ -50,7 +50,7 @@ class PlannerFlowTest {
         compose.onNodeWithText("Delete item").performClick()
         compose.onNodeWithText("Delete").performClick()
         compose.waitUntil(5_000) { latest.isEmpty() }
-        compose.onNodeWithText("Completed and collected.").assertExists()
+        compose.onNodeWithText("No completed items").assertExists()
     }
 
     @Test fun nextLessonLookupPreservesContextAndSetsTimedDueDate() {
@@ -64,9 +64,9 @@ class PlannerFlowTest {
         compose.setContent { GradeyTheme { PlannerRoute(repository, onBack = {}, initialItem = draft,
             onFindNextLesson = { next }, onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
-        compose.onNodeWithText("Title").performTextInput("Math homework")
-        compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Due at the next lesson"))
-        compose.onNodeWithText("Due at the next lesson").performClick()
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextInput("Math homework")
+        compose.onNodeWithTag("plannerEditor").performScrollToNode(hasTestTag("plannerNextLessonButton"))
+        compose.onNodeWithTag("plannerNextLessonButton").performClick()
         compose.onNodeWithText("Due date set to the next matching lesson.").assertExists()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Save", substring = false))
         compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
@@ -84,7 +84,7 @@ class PlannerFlowTest {
         restoration.setContent { GradeyTheme { PlannerRoute(repository, onBack = {}, initialItem = incoming.value,
             onInitialItemHandled = { incoming.value = null }, onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
-        compose.onNodeWithText("Title").performTextReplacement("My unsaved edits")
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextReplacement("My unsaved edits")
         restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithText("My unsaved edits").assertExists()
         // A process-restored launch URL can carry a fresh draft ID. It must not replace saved state.
@@ -138,8 +138,8 @@ class PlannerFlowTest {
             onInitialItemHandled = { incoming.value = null }, onFindNextLesson = { started.complete(Unit); next.await() },
             onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
-        compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Due at the next lesson"))
-        compose.onNodeWithText("Due at the next lesson").performClick()
+        compose.onNodeWithTag("plannerEditor").performScrollToNode(hasTestTag("plannerNextLessonButton"))
+        compose.onNodeWithTag("plannerNextLessonButton").performClick()
         compose.waitUntil(5_000) { started.isCompleted }
         compose.runOnIdle { incoming.value = PersonalPlannerItem(id = "interrupt", title = "Other item") }
         compose.onNodeWithText("Open another planner item?").assertDoesNotExist()

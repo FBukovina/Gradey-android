@@ -95,7 +95,7 @@ class UpdaterFlowTest {
         compose.onNodeWithText("App updates").performScrollTo().performClick()
         compose.waitUntil(10_000) { schoolState().tab == AppTab.UPDATES }
         compose.onNodeWithText("App updates").assertIsDisplayed()
-        compose.onNodeWithText("Gradey ${BuildConfig.VERSION_NAME}").assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.VERSION_NAME).assertIsDisplayed()
         assertEquals(AppPhase.SIGNED_OUT, schoolState().phase)
 
         compose.onNodeWithTag("update-auto-checks").performScrollTo().assertIsOff().performClick()
@@ -114,8 +114,7 @@ class UpdaterFlowTest {
 
         // Checks remain off during recreation, so onResume cannot start a network request.
         compose.activityRule.scenario.recreate()
-        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
-            .performScrollToNode(hasText("App updates"))
+        // The title now sits in the top bar, outside the scrolling list.
         compose.onNodeWithText("App updates").assertIsDisplayed()
         compose.onNodeWithTag("update-auto-checks").performScrollTo().assertIsOff()
         compose.onNodeWithTag("update-auto-downloads").performScrollTo().assertIsOn()

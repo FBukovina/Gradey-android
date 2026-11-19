@@ -111,7 +111,7 @@ class WatchAccessDialogTest {
         compose.setContent { GradeyTheme { WatchAccessDialog(onDismiss = { closed = true }, isDemo = true, onAccessChanged = {}, manager = api) } }
         compose.onNodeWithText("Independent watch access is unavailable in demo mode.", substring = true).assertExists()
         compose.onNodeWithText("Review access").assertDoesNotExist()
-        compose.onNodeWithText("Done").performClick()
+        compose.onNodeWithContentDescription("Done").performClick()
         compose.runOnIdle { assertTrue(closed); assertEquals(0, api.loads); assertTrue(api.enables.isEmpty()) }
     }
 
