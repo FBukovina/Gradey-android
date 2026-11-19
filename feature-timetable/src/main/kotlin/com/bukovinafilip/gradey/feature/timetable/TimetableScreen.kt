@@ -651,7 +651,8 @@ private fun LessonRow(
 private fun LessonTimeRail(lesson: ScheduledLesson, isCurrent: Boolean, canceled: Boolean) {
     val primary = MaterialTheme.colorScheme.primary
     val tokens = MaterialTheme.gradeyColors
-    Column(Modifier.width(GradeyMetrics.minTouch), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    // At least 44 dp, wider when large text needs it: the times are never cut off.
+    Column(Modifier.widthIn(min = GradeyMetrics.minTouch), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             lesson.hour.caption,
             style = GradeyType.headline.tabular(),

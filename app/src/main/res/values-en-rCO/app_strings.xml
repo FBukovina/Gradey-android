@@ -4,4 +4,7 @@
     <string name="app_report_card">report card</string>
     <string name="app_recap">gradey recap</string>
     <string name="app_gradey_id">Gradey ID</string>
+    <string name="app_absence">absence</string>
+    <string name="app_timetable">timetable</string>
+    <string name="app_meals">meals</string>
 </resources>

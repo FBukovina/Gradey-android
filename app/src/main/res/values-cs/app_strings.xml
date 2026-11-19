@@ -53,9 +53,6 @@
     <string name="app_marks_removed">Odebrané známky: %1$d</string>
     <string name="app_today">Dnes</string>
     <string name="app_marks">Známky</string>
-    <string name="app_absence">Docházka</string>
-    <string name="app_timetable">Rozvrh</string>
-    <string name="app_meals">Obědy</string>
     <string name="app_account">Účet</string>
     <string name="app_plan_absence">Plánování absence</string>
     <string name="app_planner">Plánovač</string>
@@ -171,4 +168,7 @@
     <string name="app_report_card">Vysvědčení</string>
     <string name="app_recap">Gradey Recap</string>
     <string name="app_gradey_id">Gradey ID</string>
+    <string name="app_absence">Absence</string>
+    <string name="app_timetable">Rozvrh</string>
+    <string name="app_meals">Jídelna</string>
 </resources>

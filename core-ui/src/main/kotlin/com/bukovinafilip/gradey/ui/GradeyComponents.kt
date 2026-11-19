@@ -44,6 +44,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -725,6 +726,8 @@ val LazyListState.isScrolled: Boolean
 
 // MARK: - Segmented control
 
+private val SegmentAutoSize = TextAutoSize.StepBased(GradeyType.segment.fontSize * 0.7f, GradeyType.segment.fontSize)
+
 /** iOS segmented control: tertiary-fill capsule track, raised thumb, Medium 13 / Bold 13 labels. */
 @Composable
 fun SegmentedControl(
@@ -757,10 +760,11 @@ fun SegmentedControl(
                         .semantics { this.selected = selected },
                     contentAlignment = Alignment.Center,
                 ) {
+                    // A long label at a large text size shrinks before it is cut off, like a UISegmentedControl.
                     Text(
                         option, style = if (selected) GradeyType.segmentSelected else GradeyType.segment,
                         color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = GradeySpacing.sm),
+                        autoSize = SegmentAutoSize, modifier = Modifier.padding(horizontal = GradeySpacing.xs),
                     )
                 }
             }

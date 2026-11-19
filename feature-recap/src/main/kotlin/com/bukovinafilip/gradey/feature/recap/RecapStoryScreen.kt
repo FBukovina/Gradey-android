@@ -99,8 +99,11 @@ private const val SlideSeconds = 6.5f
 /** The share image is drawn once a slide has settled, and skipped for slides tapped past. */
 private const val ShareSettleMillis = 600L
 
-/** The slides are posters set in very large type; beyond this text scale they would no longer fit a phone. */
-private const val MaximumFontScale = 1.3f
+/**
+ * The slides are posters set in very large type. With large text switched on the whole story is
+ * drawn bigger, in proportion, up to this much; past it the slides would no longer fit a phone.
+ */
+private const val MaximumZoom = 1.3f
 
 private val Ink = RecapColors.Ink
 
@@ -196,8 +199,9 @@ fun RecapStoryScreen(
     )
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-    val density = LocalDensity.current
-    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale.coerceAtMost(MaximumFontScale))) {
+    val systemDensity = LocalDensity.current
+    val density = remember(systemDensity) { Density(systemDensity.density * systemDensity.fontScale.coerceIn(1f, MaximumZoom), fontScale = 1f) }
+    CompositionLocalProvider(LocalDensity provides density) {
         Box(
             modifier.fillMaxSize().drawBehind { drawRect(background) }.testTag("recapStory")
                 .focusRequester(focus).focusable()

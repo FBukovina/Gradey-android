@@ -53,9 +53,6 @@
     <string name="app_marks_removed">Marks removed: %1$d</string>
     <string name="app_today">Today</string>
     <string name="app_marks">Marks</string>
-    <string name="app_absence">Absence</string>
-    <string name="app_timetable">Timetable</string>
-    <string name="app_meals">Meals</string>
     <string name="app_account">Account</string>
     <string name="app_plan_absence">Plan absence</string>
     <string name="app_planner">Planner</string>

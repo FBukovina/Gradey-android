@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">Gradey</string>
     <string name="app_gradey_id">Gradey ID</string>
+    <string name="app_absence">Absence</string>
+    <string name="app_timetable">Timetable</string>
+    <string name="app_meals">Meals</string>
 </resources>
