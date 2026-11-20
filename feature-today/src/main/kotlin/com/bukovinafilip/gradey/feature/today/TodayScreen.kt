@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.domain.SchoolInsightState
@@ -30,6 +31,8 @@ import com.bukovinafilip.gradey.model.TimetableWeek
 import com.bukovinafilip.gradey.ui.GradeyLazyColumn
 import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyTopBar
+import com.bukovinafilip.gradey.ui.ToolbarIconButton
+import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.ReconnectNotice
 import com.bukovinafilip.gradey.ui.StatDivider
@@ -54,6 +57,9 @@ fun TodayScreen(
     modifier: Modifier = Modifier,
     onOpenSubject: ((String) -> Unit)? = null,
     recapTile: (@Composable () -> Unit)? = null,
+    /** Opens the school's messages; null for schools without them, which hides the envelope. */
+    onOpenMessages: (() -> Unit)? = null,
+    unreadMessages: Int = 0,
     mealMenu: StravaCZMenu? = null,
     hasMealAccount: Boolean = false,
     onOpenMeals: (() -> Unit)? = null,
@@ -87,6 +93,16 @@ fun TodayScreen(
             onOpenAI = onOpenAI, aiDescription = stringResource(R.string.today_gradey_ai),
             onRefresh = onRefresh, isRefreshing = isRefreshing, refreshDescription = stringResource(R.string.today_refresh),
             onOpenSettings = onOpenSettings, settingsDescription = stringResource(R.string.today_settings),
+            actions = if (onOpenMessages == null) null else {
+                {
+                    val title = stringResource(R.string.today_messages)
+                    val unread = if (unreadMessages > 0) pluralStringResource(R.plurals.today_messages_unread, unreadMessages, unreadMessages) else null
+                    ToolbarIconButton(
+                        HugeIcons.Mail01, if (unread == null) title else "$title, $unread", onOpenMessages,
+                        modifier = Modifier.testTag("todayKomensButton"), badge = if (unreadMessages > 0) unreadMessages.coerceAtMost(99).toString() else null,
+                    )
+                }
+            },
         )
         GradeyLazyColumn(Modifier.weight(1f).testTag("todayScroll"), state = listState) {
             if (reconnect != null) item(key = "reconnect", contentType = "reconnect") {

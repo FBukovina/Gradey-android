@@ -58,4 +58,9 @@
     <!-- Lunch -->
     <string name="today_lunch">Lunch</string>
     <string name="today_no_meal">No meal ordered</string>
+    <string name="today_messages">Messages</string>
+    <plurals name="today_messages_unread">
+        <item quantity="one">%d unread</item>
+        <item quantity="other">%d unread</item>
+    </plurals>
 </resources>

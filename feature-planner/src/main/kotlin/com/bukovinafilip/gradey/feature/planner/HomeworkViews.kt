@@ -1,6 +1,5 @@
 package com.bukovinafilip.gradey.feature.planner
 
-import android.util.Patterns
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -33,12 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.Homework
@@ -57,6 +49,7 @@ import com.bukovinafilip.gradey.ui.ModalCloseButton
 import com.bukovinafilip.gradey.ui.SectionHeader
 import com.bukovinafilip.gradey.ui.SchoolAttachmentsSection
 import com.bukovinafilip.gradey.ui.gradeyColors
+import com.bukovinafilip.gradey.ui.linkified
 import com.bukovinafilip.gradey.ui.struck
 import com.bukovinafilip.gradey.ui.tabular
 import java.time.LocalDate
@@ -271,18 +264,5 @@ private fun HomeworkDetails(homework: Homework, labels: HomeworkLabels) {
         homework.notice?.let { DetailRow(HugeIcons.Book02, stringResource(R.string.homework_detail_notice), it) }
         if (homework.isElectronic) DetailRow(HugeIcons.CheckList, stringResource(R.string.homework_detail_hand_in), stringResource(R.string.homework_detail_electronic))
         if (homework.isClosed) DetailRow(HugeIcons.SecurityLock, stringResource(R.string.homework_detail_status), stringResource(R.string.homework_closed))
-    }
-}
-
-/** Homework text with its web links made tappable (iOS `HomeworkText.linkified`). */
-private fun linkified(text: String, color: Color): AnnotatedString = buildAnnotatedString {
-    append(text)
-    val styles = TextLinkStyles(SpanStyle(color = color, textDecoration = TextDecoration.Underline))
-    val matcher = Patterns.WEB_URL.matcher(text)
-    while (matcher.find()) {
-        val shown = matcher.group()
-        // A link written without a scheme opens over https.
-        val url = if (shown.contains("://")) shown else "https://$shown"
-        addLink(LinkAnnotation.Url(url, styles), matcher.start(), matcher.end())
     }
 }

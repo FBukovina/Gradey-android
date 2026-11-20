@@ -60,4 +60,11 @@
     <!-- Lunch -->
     <string name="today_lunch">oběd</string>
     <string name="today_no_meal">žádnej objednanej oběd</string>
+    <string name="today_messages">zprávy</string>
+    <plurals name="today_messages_unread">
+        <item quantity="few">%d nepřečtený</item>
+        <item quantity="many">%d nepřečtený</item>
+        <item quantity="one">%d nepřečtená</item>
+        <item quantity="other">%d nepřečtenejch</item>
+    </plurals>
 </resources>

@@ -75,6 +75,7 @@ include(
     ":feature-account",
     ":feature-ai",
     ":feature-recap",
+    ":feature-komens",
     ":baselineprofile",
     ":glance-widgets",
     ":wear",

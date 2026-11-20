@@ -65,9 +65,11 @@ import com.bukovinafilip.gradey.domain.AbsenceDayLessonResolver
 import com.bukovinafilip.gradey.domain.AbsenceDayLessons
 import com.bukovinafilip.gradey.domain.Homework
 import com.bukovinafilip.gradey.domain.HomeworkList
+import com.bukovinafilip.gradey.domain.KomensList
 import com.bukovinafilip.gradey.domain.RecapCalendar
 import com.bukovinafilip.gradey.domain.SchoolAttachment
 import com.bukovinafilip.gradey.domain.TimetableWeeksLoader
+import com.bukovinafilip.gradey.feature.komens.KomensScreen
 import com.bukovinafilip.gradey.feature.planner.HomeworkDetailSheet
 import com.bukovinafilip.gradey.feature.planner.LessonHomeworkSection
 import com.bukovinafilip.gradey.feature.recap.MarksRecapTile
@@ -303,6 +305,9 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID, onReconnectAccount = model::reconnectAccount,
                                 insightState = state.insightState, plannerItems = todayPlannerItems, schoolScope = state.school?.cacheScope,
                                 onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = openPlannerEntry,
+                                // Komens exists only in Bakaláři.
+                                onOpenMessages = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) model::openKomens else null,
+                                unreadMessages = remember(state.komens, state.komensReadIDs) { KomensList.unreadCount(state.komens, state.komensReadIDs) },
                                 recapTile = recapOverview.featured(recapHidden)?.let { recap ->
                                     { TodayRecapTile(recap, onOpen = { model.openRecapStory(recap.period.id) }, onHide = { recapStore.hide(recap.period.id) }) }
                                 },
@@ -424,6 +429,11 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 },
                             )
                             AppTab.SUPPORT -> SupportScreen(state.account?.id, state.isDemo, onBack = model::back)
+                            AppTab.KOMENS -> KomensScreen(
+                                snapshot = state.komens, readIDs = state.komensReadIDs, isRefreshing = state.komensRefreshing, errorMessage = state.komensError,
+                                downloadingAttachmentID = downloadingAttachmentID, onRefresh = { model.refreshKomens(force = true) },
+                                onMarkRead = model::markKomensRead, onOpenAttachment = openAttachment, onClose = model::back,
+                            )
                             AppTab.AI -> if (state.isGuest) GuestCloudGate(model::requestGradeySignIn, onClose = model::back)
                             else com.bukovinafilip.gradey.feature.ai.GradeyAIRoute(
                                 model.graph.schoolRepository, onClose = model::back, gradeyAccountID = state.account?.id, isDemo = state.isDemo,

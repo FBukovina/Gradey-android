@@ -27,6 +27,12 @@ class PlannerFlowTest {
     private var latest: List<PersonalPlannerItem> = emptyList()
     private var loaded = false
 
+    /** With the on-screen keyboard up, Save is below what the editor's list has laid out; scroll to it as a user would. */
+    private fun saveFromEditor() {
+        compose.onNodeWithTag("plannerEditor").performScrollToNode(hasTestTag("plannerSaveButton"))
+        compose.onNodeWithTag("plannerSaveButton").performClick()
+    }
+
     @Test fun createEditCompleteReopenAndDeletePersonalItem() {
         val repository = InMemoryPersonalPlannerRepository()
         compose.setContent { GradeyTheme { PlannerRoute(repository, onBack = {}, onItemsChanged = { latest = it; loaded = true }) } }
@@ -34,12 +40,12 @@ class PlannerFlowTest {
         compose.onNodeWithContentDescription("Add planner item").performClick()
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextInput("Read chapter three")
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerNotesField"))).performTextInput("Pages 42 to 55")
-        compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
+        saveFromEditor()
         compose.waitUntil(5_000) { latest.size == 1 }
         compose.onNodeWithText("Read chapter three").assertExists()
         compose.onNodeWithContentDescription("Edit Read chapter three").performClick()
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextReplacement("Read chapter four")
-        compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
+        saveFromEditor()
         compose.waitUntil(5_000) { latest.singleOrNull()?.title == "Read chapter four" }
         compose.onNodeWithContentDescription("Mark Read chapter four complete").performClick()
         compose.waitUntil(5_000) { latest.single().isCompleted }
@@ -69,7 +75,7 @@ class PlannerFlowTest {
         compose.onNodeWithTag("plannerNextLessonButton").performClick()
         compose.onNodeWithText("Due date set to the next matching lesson.").assertExists()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Save", substring = false))
-        compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
+        saveFromEditor()
         compose.waitUntil(5_000) { latest.size == 1 }
         assertEquals("2026-10-06", latest.single().dueDate)
         assertEquals("08:00", latest.single().dueTime)
@@ -115,7 +121,7 @@ class PlannerFlowTest {
         compose.setContent { GradeyTheme { PlannerRoute(repository, onBack = {}, initialItem = incoming.value,
             onInitialItemHandled = { incoming.value = null }, onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
-        compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
+        saveFromEditor()
         compose.waitUntil(5_000) { started.isCompleted }
         compose.runOnIdle { incoming.value = PersonalPlannerItem(id = "second", title = "Incoming second") }
         compose.onNodeWithText("Open another planner item?").assertDoesNotExist()
@@ -147,7 +153,7 @@ class PlannerFlowTest {
         compose.onNodeWithText("Keep editing").performClick()
         compose.onNodeWithText("Due date set to the next matching lesson.").assertExists()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Save", substring = false))
-        compose.onNodeWithText("Save", useUnmergedTree = true).performClick()
+        saveFromEditor()
         compose.waitUntil(5_000) { latest.singleOrNull()?.id == "lookup" }
         assertEquals("2026-10-06", latest.single().dueDate)
         assertEquals("08:00", latest.single().dueTime)

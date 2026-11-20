@@ -5,4 +5,5 @@
     <string name="app_timetable">Timetable</string>
     <string name="app_meals">Meals</string>
     <string name="app_attachment_no_app">No app on this device can open this file.</string>
+    <string name="app_messages">Messages</string>
 </resources>

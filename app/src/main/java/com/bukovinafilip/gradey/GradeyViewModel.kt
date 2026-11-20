@@ -8,6 +8,8 @@ import com.bukovinafilip.gradey.data.AndroidGradeyGraph
 import com.bukovinafilip.gradey.data.SecureJsonStore
 import com.bukovinafilip.gradey.domain.Homework
 import com.bukovinafilip.gradey.domain.HomeworkList
+import com.bukovinafilip.gradey.domain.KomensMessage
+import com.bukovinafilip.gradey.model.KomensSnapshot
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.isEduPageParentSession
 import com.bukovinafilip.gradey.model.*
@@ -45,6 +47,7 @@ internal enum class AppTab(val labelRes: Int, val kind: DestinationKind) {
     REPORT_CARD(R.string.app_report_card, DestinationKind.PUSHED), RECAP_LIST(R.string.app_recap, DestinationKind.PUSHED),
     ACCOUNT(R.string.app_account, DestinationKind.FULL_SCREEN), AI(R.string.app_ai, DestinationKind.FULL_SCREEN),
     RECAP_STORY(R.string.app_recap, DestinationKind.FULL_SCREEN), SUPPORT(R.string.app_support, DestinationKind.FULL_SCREEN),
+    KOMENS(R.string.app_messages, DestinationKind.FULL_SCREEN),
     UPDATES(R.string.app_updates, DestinationKind.FULL_SCREEN),
 }
 
@@ -100,6 +103,12 @@ internal data class GradeyState(
     val homework: List<Homework> = emptyList(),
     /** Done ticks still on their way to the school. */
     val homeworkPendingIDs: Set<String> = emptySet(),
+    /** Komens messages and the noticeboard as the school sent them; null until they were loaded once. */
+    val komens: KomensSnapshot? = null,
+    /** Messages opened here; they stay read even if a list loaded meanwhile says otherwise. */
+    val komensReadIDs: Set<String> = emptySet(),
+    val komensRefreshing: Boolean = false,
+    val komensError: String? = null,
 ) {
     /** The bottom-bar tab the current destination belongs to. */
     val rootTab: AppTab get() = if (tab.kind == DestinationKind.TAB) tab else backStack.lastOrNull { it.kind == DestinationKind.TAB } ?: AppTab.TODAY
@@ -136,6 +145,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     /** The account the homework list was last loaded for, and when (elapsed realtime). */
     private var homeworkLoaded: Pair<String, Long>? = null
     private var homeworkRefresh: kotlinx.coroutines.Job? = null
+    private var komensLoaded: Pair<String, Long>? = null
+    private var komensRefresh: kotlinx.coroutines.Job? = null
     private var awaitingPlannerEntry = false
     private var appleAvailable = false
     private var pendingAppleCallback: String? = null
@@ -604,7 +615,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
         val mealMenu = if (mealSession != null) off { graph.stravaCZRepository.loadCachedMenu() } else null
         val homework = off { runCatching { graph.schoolRepository.loadCachedHomework() }.getOrDefault(emptyList()) }
-        mutableState.update { it.copy(dashboard = cached ?: DashboardData(MarksResponse()), personalPlannerItems = plannerItems, homework = homework,
+        val komens = off { runCatching { graph.schoolRepository.loadCachedKomens() }.getOrNull() }
+        mutableState.update { it.copy(dashboard = cached ?: DashboardData(MarksResponse()), personalPlannerItems = plannerItems, homework = homework, komens = komens,
             timetable = week, currentTimetable = week, viewedWeek = week?.weekStart ?: LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString(), plans = plans,
             preferences = preferences, linkedAccounts = linkedAccounts, mealMenu = mealMenu, hasMealAccount = mealSession != null,
             absence = cachedAbsence ?: AbsenceResponse(absencesPerSubject = cached?.absencesPerSubject.orEmpty())) }
@@ -632,6 +644,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             syncCompanions(week)
         }
         refreshHomework()
+        refreshKomens()
         if (!state.value.isGuest) attempt(context.getString(R.string.app_school_accounts)) { val accounts = off { graph.linkedAccountRepository.localAccounts() }; mutableState.update { it.copy(linkedAccounts = accounts) } }
         attempt(context.getString(R.string.app_meals)) {
             val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
@@ -673,6 +686,67 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         val (loadedScope, loadedAt) = homeworkLoaded ?: (null to 0L)
         if (loadedScope == schoolScope && android.os.SystemClock.elapsedRealtime() - loadedAt < 15 * 60_000L) return
         homeworkRefresh = viewModelScope.launch { refreshHomework() }
+    }
+
+    /**
+     * Komens is an extra, like homework: a failed load keeps the lists there are and is reported
+     * only on the Messages screen, never in the refresh error.
+     */
+    private suspend fun refreshKomens() {
+        val school = state.value.school ?: return
+        if (school.provider != SchoolProvider.BAKALARI) return
+        val schoolScope = school.cacheScope
+        mutableState.update { if (it.school?.cacheScope == schoolScope) it.copy(komensRefreshing = true) else it }
+        try {
+            val snapshot = off { graph.schoolRepository.loadKomens() }
+            mutableState.update { if (it.school?.cacheScope != schoolScope) it else it.copy(komens = snapshot, komensError = null) }
+            komensLoaded = schoolScope to android.os.SystemClock.elapsedRealtime()
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (error: Exception) {
+            mutableState.update { if (it.school?.cacheScope != schoolScope) it else it.copy(komensError = safeError(error, context)) }
+        } finally {
+            mutableState.update { if (it.school?.cacheScope == schoolScope) it.copy(komensRefreshing = false) else it }
+        }
+    }
+
+    /** Opening Messages loads them at most once in fifteen minutes; the refresh button always does (as on iOS). */
+    fun refreshKomens(force: Boolean) {
+        val schoolScope = state.value.school?.cacheScope ?: return
+        if (state.value.phase != AppPhase.SIGNED_IN || komensRefresh?.isActive == true) return
+        val (loadedScope, loadedAt) = komensLoaded ?: (null to 0L)
+        if (!force && loadedScope == schoolScope && android.os.SystemClock.elapsedRealtime() - loadedAt < 15 * 60_000L) return
+        komensRefresh = viewModelScope.launch { refreshKomens() }
+    }
+
+    fun openKomens() {
+        select(AppTab.KOMENS)
+        refreshKomens(force = false)
+    }
+
+    /**
+     * Shows the message as read at once (iOS `KomensStore.markRead`). If the school refuses, it turns
+     * unread again and is marked the next time it is opened.
+     */
+    fun markKomensRead(message: KomensMessage) {
+        val snapshot = state.value
+        val schoolScope = snapshot.school?.cacheScope ?: return
+        val id = message.messageID
+        if (message.isRead || id in snapshot.komensReadIDs) return
+        val repository = graph.schoolRepository
+        mutableState.update { it.copy(komensReadIDs = it.komensReadIDs + id) }
+        viewModelScope.launch {
+            val sent = try { off { repository.markKomensRead(id) }; true }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (_: Exception) { false }
+            mutableState.update {
+                when {
+                    it.school?.cacheScope != schoolScope -> it
+                    // The lists on screen follow the saved ones, so the message stays read after the next load too.
+                    sent -> it.copy(komens = it.komens?.markingRead(id))
+                    else -> it.copy(komensReadIDs = it.komensReadIDs - id)
+                }
+            }
+        }
     }
 
     /** Shows the tick at once and puts it back if the school refuses it (iOS `HomeworkStore.setDone`). */

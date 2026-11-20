@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="komens_title">Zprávy</string>
+    <string name="komens_box_received">Přijaté</string>
+    <string name="komens_box_noticeboard">Nástěnka</string>
+    <string name="komens_empty_received">Ze školy ti zatím nic nepřišlo.</string>
+    <string name="komens_empty_noticeboard">Na nástěnce nic není.</string>
+    <string name="komens_unread">Nepřečtená</string>
+    <string name="komens_untitled">Bez předmětu</string>
+    <string name="komens_back">Zpět</string>
+    <string name="komens_refresh">Obnovit</string>
+    <string name="komens_retry">Zkusit znovu</string>
+    <string name="komens_attachments">Přílohy</string>
+    <string name="komens_unavailable">Tato položka už není dostupná</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="komens_title">Messages</string>
+    <string name="komens_box_received">Received</string>
+    <string name="komens_box_noticeboard">Noticeboard</string>
+    <string name="komens_empty_received">No messages from school.</string>
+    <string name="komens_empty_noticeboard">Nothing on the noticeboard.</string>
+    <string name="komens_unread">Unread</string>
+    <string name="komens_untitled">No subject</string>
+    <string name="komens_back">Back</string>
+    <string name="komens_refresh">Refresh</string>
+    <string name="komens_retry">Try again</string>
+    <string name="komens_attachments">Attachments</string>
+    <string name="komens_unavailable">This item is no longer available</string>
+</resources>

@@ -275,6 +275,44 @@ class DemoAppFlowTest {
         }
     }
 
+    @Test fun komensOpensFromTodayAndReadingAMessageClearsItsBadge() {
+        // Demo mode carries sample messages, two of them unread.
+        compose.waitUntil(10_000) { state().komens != null && !state().loading }
+        fun unread() = com.bukovinafilip.gradey.domain.KomensList.unreadCount(state().komens, state().komensReadIDs)
+        val message = com.bukovinafilip.gradey.domain.KomensList.messages(state().komens, com.bukovinafilip.gradey.domain.KomensBox.RECEIVED, state().komensReadIDs)
+            .firstOrNull { !it.isRead }
+        // An earlier run in this process may have read them already; the screen is still checked.
+        val before = unread()
+        compose.onNodeWithTag("todayKomensButton").performClick()
+        compose.waitUntil(5_000) { state().tab == AppTab.KOMENS }
+        compose.onNodeWithTag("komensList").assertExists()
+        // Messages cover the whole screen: no bottom bar under them.
+        compose.onAllNodesWithTag("tab-today").assertCountEquals(0)
+
+        if (message != null) {
+            compose.onNodeWithTag("komensList").performScrollToNode(hasTestTag("komensRow-${message.messageID}"))
+            compose.onNodeWithTag("komensRow-${message.messageID}").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("komensMessage").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("komensMessageBody").assertExists()
+            // Showing the message marks it read at the school and in the saved lists.
+            compose.waitUntil(5_000) { unread() == before - 1 }
+            compose.waitUntil(5_000) {
+                runBlocking { (compose.activity.application as GradeyApplication).activeGraph.schoolRepository.loadCachedKomens() }
+                    ?.received?.first { it.id == message.messageID }?.read == true
+            }
+            // Back returns to the list first.
+            androidx.test.espresso.Espresso.pressBack()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("komensList").fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(AppTab.KOMENS, state().tab)
+        }
+
+        compose.onNodeWithText("Noticeboard").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("komensRow-komens-board-library").fetchSemanticsNodes().isNotEmpty() }
+        androidx.test.espresso.Espresso.pressBack()
+        compose.waitUntil(5_000) { state().tab == AppTab.TODAY }
+        compose.onNodeWithTag("todayKomensButton").assertExists()
+    }
+
     @Test fun recapOpensFromMarksAsAStoryAndReturnsToTheList() {
         // Demo mode carries sample semesters that follow the clock, so a recap is out on any day.
         compose.onNodeWithTag("tab-subjects").performClick()
