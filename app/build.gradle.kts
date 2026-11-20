@@ -19,8 +19,8 @@ android {
         applicationId = "com.bukovinafilip.gradey"
         minSdk = 26
         targetSdk = 36
-        versionCode = providers.gradleProperty("gradey.versionCode").orElse("8").get().toInt()
-        versionName = providers.gradleProperty("gradey.versionName").orElse("0.5").get()
+        versionCode = providers.gradleProperty("gradey.versionCode").orElse("9").get().toInt()
+        versionName = providers.gradleProperty("gradey.versionName").orElse("0.6").get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["intercomRegionResource"] = "@integer/intercom_server_region_$intercomRegion"
 

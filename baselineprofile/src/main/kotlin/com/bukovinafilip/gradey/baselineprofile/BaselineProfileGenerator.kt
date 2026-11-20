@@ -10,8 +10,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Walks the app in demo mode so the code behind launch, the five tabs, a subject, the report card
- * and Gradey Recap is compiled ahead of time on users' devices. No account or network is needed.
+ * Walks the app in demo mode so the code behind launch, the five tabs, a subject, the report card,
+ * Gradey Recap, the school's messages and the Planner with its homework is compiled ahead of time
+ * on users' devices. No account or network is needed.
  * Controls are found by their Compose test tags, so the device language does not matter.
  */
 @RunWith(AndroidJUnit4::class)
@@ -37,6 +38,22 @@ class BaselineProfileGenerator {
                 repeat(2) { device.click(device.displayWidth * 3 / 4, device.displayHeight / 2); device.waitForIdle() }
                 tap("recapCloseButton")
             }
+            device.pressBack()
+        }
+        tap("tab-today")
+        // Messages: the list, then the first message and back out again.
+        if (tap("todayKomensButton")) {
+            device.wait(Until.hasObject(By.res("komensList")), Timeout)
+            device.findObject(By.res(java.util.regex.Pattern.compile("komensRow-.*")))?.click()
+            if (device.wait(Until.hasObject(By.res("komensMessage")), Timeout)) device.pressBack()
+            device.wait(Until.hasObject(By.res("komensList")), Timeout)
+            device.pressBack()
+        }
+        // The Planner with the school's homework, and one homework's sheet.
+        if (tap("todayOpenPlannerButton")) {
+            device.wait(Until.hasObject(By.res("plannerList")), Timeout)
+            device.findObject(By.res(java.util.regex.Pattern.compile("homeworkItem-.*")))?.click()
+            if (device.wait(Until.hasObject(By.res("homeworkDetail")), Timeout)) device.pressBack()
             device.pressBack()
         }
         tap("tab-today")
