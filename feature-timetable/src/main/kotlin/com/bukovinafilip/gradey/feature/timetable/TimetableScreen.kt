@@ -136,6 +136,8 @@ fun TimetableScreen(
     onOpenPlannerItem: ((String) -> Unit)? = null,
     lessonHomework: (@Composable (ScheduledLesson, ScheduledDay) -> Unit)? = null,
     people: TimetablePeople? = null,
+    /** What follows the selected day's lessons, such as a dance class that evening. Not asked for the permanent timetable, which has no dates. */
+    afterSchool: (@Composable (LocalDate) -> Unit)? = null,
 ) {
     val isPermanent = kind == TimetableKind.PERMANENT
     val schoolTime = rememberSchoolTime()
@@ -263,6 +265,9 @@ fun TimetableScreen(
                         onOpen = openLesson,
                     )
                 }
+            }
+            if (afterSchool != null && isLoaded && !isPermanent && selectedLocalDate != null) {
+                item(key = "afterSchool", contentType = "afterSchool") { afterSchool(selectedLocalDate) }
             }
         }
     }

@@ -71,6 +71,10 @@ fun TodayScreen(
     schoolScope: String? = null,
     onOpenPlanner: (() -> Unit)? = null,
     onOpenPlannerItem: ((String) -> Unit)? = null,
+    /** The dance class, when there is something to say about it. */
+    danceSection: (@Composable () -> Unit)? = null,
+    /** A lesson is today, which moves [danceSection] up next to the school day; otherwise it closes the screen. */
+    isDanceDay: Boolean = false,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val listState = rememberLazyListState()
@@ -126,6 +130,7 @@ fun TodayScreen(
             }
             if (recapTile != null) item(key = "recap", contentType = "recap") { recapTile() }
             item(key = "nowAndNext", contentType = "nowAndNext") { NowAndNextSection(timetable, sources, onOpenTimetable) }
+            if (danceSection != null && isDanceDay) item(key = "dance", contentType = "dance") { danceSection() }
             item(key = "recentMarks", contentType = "recentMarks") {
                 RecentMarksSection(subjects, newMarkIDs, marksFailed, onOpenMarks, onOpenSubject)
             }
@@ -133,6 +138,7 @@ fun TodayScreen(
                 PlannerSection(plannerItems, schoolScope, onOpenPlanner, onOpenPlannerItem)
             }
             if (hasMealAccount) item(key = "lunch", contentType = "lunch") { LunchSection(mealMenu, onOpenMeals) }
+            if (danceSection != null && !isDanceDay) item(key = "dance", contentType = "dance") { danceSection() }
         }
     }
 }

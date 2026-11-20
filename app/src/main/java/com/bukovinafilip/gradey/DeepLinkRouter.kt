@@ -18,6 +18,8 @@ internal fun gradeyDestination(raw: String?): AppDestination? {
         "meals" -> AppDestination(AppTab.STRAVACZ)
         "ai" -> AppDestination(AppTab.AI)
         "updates" -> AppDestination(AppTab.UPDATES)
+        // The ticket sale alert opens the dance class.
+        "vavruska" -> AppDestination(AppTab.VAVRUSKA)
         "planner" -> {
             val parts = uri.path.orEmpty().split('/').filter(String::isNotEmpty)
             val id = parts.takeIf { it.size == 2 && it[0] == "item" }?.get(1)

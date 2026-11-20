@@ -69,8 +69,9 @@ import com.bukovinafilip.gradey.ui.gradeyColors
  * published policy changes in a way users must read, and refresh [PrivacyChanges] when you do:
  * everyone who accepted an earlier revision is asked again.
  *
- * Revision 3 adds friends' timetables, school homework, Komens messages and report cards. Revision 2 removed the
- * Bakaláři password upload and documented the Planner, Gradey AI and the watch.
+ * Revision 3 adds friends' timetables, TŠ Vavruška dance classes, school homework, Komens messages
+ * and report cards. Revision 2 removed the Bakaláři password upload and documented the Planner,
+ * Gradey AI and the watch.
  */
 internal const val PrivacyRevision = 3
 
@@ -80,9 +81,10 @@ internal val PrivacyEffectiveDate: java.time.LocalDate = java.time.LocalDate.of(
 /** One entry of "What changed" (iOS `PrivacyPolicyChange`): a title, one line, and the full explanation behind it. */
 private class PrivacyChange(val id: String, val icon: String, val title: Int, val summary: Int, val detail: Int)
 
-/** Only what this app does; the most important first. */
+/** The most important first (iOS `PrivacyPolicyRevision.changes`). */
 private val PrivacyChanges = listOf(
     PrivacyChange("friends", HugeIcons.UserGroup, R.string.privacy_update_friends_title, R.string.privacy_update_friends_summary, R.string.privacy_update_friends_detail),
+    PrivacyChange("dance", HugeIcons.MusicNote01, R.string.privacy_update_dance_title, R.string.privacy_update_dance_summary, R.string.privacy_update_dance_detail),
     PrivacyChange("homework", HugeIcons.BookOpen01, R.string.privacy_update_homework_title, R.string.privacy_update_homework_summary, R.string.privacy_update_homework_detail),
     PrivacyChange("messages", HugeIcons.Mail01, R.string.privacy_update_messages_title, R.string.privacy_update_messages_summary, R.string.privacy_update_messages_detail),
     PrivacyChange("reportCards", HugeIcons.GraduationScroll, R.string.privacy_update_report_cards_title, R.string.privacy_update_report_cards_summary, R.string.privacy_update_report_cards_detail),

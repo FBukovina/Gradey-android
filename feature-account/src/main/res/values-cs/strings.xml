@@ -172,4 +172,18 @@
     <string name="settings_friends_source_public">Veřejný rozvrh</string>
     <string name="settings_friends_name">Jméno</string>
     <string name="settings_friends_save">Uložit</string>
+    <string name="settings_dance_title">Taneční</string>
+    <string name="settings_dance_connect">Připojit taneční</string>
+    <string name="settings_dance_school">TŠ Vavruška</string>
+    <string name="settings_dance_course">Kurz %s</string>
+    <string name="settings_dance_name">Taneční</string>
+    <string name="settings_dance_status_reconnect">Vyžaduje přihlášení</string>
+    <string name="settings_dance_status_ended">Skončil</string>
+    <string name="settings_dance_new_course">Připojit nový kurz</string>
+    <string name="settings_dance_ticket_alerts">Upozornit na začátek prodeje</string>
+    <string name="settings_dance_disconnect_title">Odpojit taneční?</string>
+    <string name="settings_dance_disconnect_message">Gradey z tohoto zařízení smaže uložený rozpis lekcí i upozornění na vstupenky.</string>
+    <string name="settings_dance_disconnect_confirm">Odpojit</string>
+    <string name="settings_show_dance">Taneční TŠ Vavruška</string>
+    <string name="settings_show_dance_message">Ukaž lekce, prodlouženou a ples v Dnes a v Rozvrhu.</string>
 </resources>

@@ -244,6 +244,21 @@ class VavruskaTest {
         assertThat(VavruskaSchedule.relevantTicketSales(snapshot, clock)).containsExactly(sale)
         assertThat(VavruskaSchedule.isCourseEnded(snapshot, clock)).isFalse()
         assertThat(VavruskaSchedule.isCourseEnded(VavruskaSnapshot(), clock)).isFalse()
+
+        // Today: Wednesday's lesson is tonight, and the sale opens in two days.
+        val rows = VavruskaSchedule.todayRows(snapshot, hasUnreadNotices = false, now = clock, zone = VavruskaDates.Prague)!!
+        assertThat(rows.nextEvent!!.id).isEqualTo("preview-2@vavruska.info")
+        assertThat(rows.isDanceDay).isTrue()
+        assertThat(rows.sale).isEqualTo(sale)
+        assertThat(rows.needsReconnect).isFalse()
+        // On a phone set to Tokyo it is 22:00 and the lesson starts at 2:00 the next morning: not "today".
+        assertThat(VavruskaSchedule.todayRows(snapshot, false, clock, java.time.ZoneId.of("Asia/Tokyo"))!!.isDanceDay).isFalse()
+        // A course with nothing in the next two weeks, no sale and no news has no place on Today…
+        val quiet = snapshot.copy(events = snapshot.events.filter { it.kind == VavruskaEventKind.BALL }, ticketSales = emptyList())
+        assertThat(VavruskaSchedule.todayRows(quiet, false, clock, VavruskaDates.Prague)).isNull()
+        // …unless the board has news or the link needs a new sign-in.
+        assertThat(VavruskaSchedule.todayRows(quiet, true, clock, VavruskaDates.Prague)!!.nextEvent).isNull()
+        assertThat(VavruskaSchedule.todayRows(quiet.copy(calendarUnavailable = true), false, clock, VavruskaDates.Prague)!!.needsReconnect).isTrue()
     }
 
     @Test fun eachSourceIsAskedOnlyWhenItIsDueSoTheSiteSeesAHandfulOfRequests() = runBlocking {

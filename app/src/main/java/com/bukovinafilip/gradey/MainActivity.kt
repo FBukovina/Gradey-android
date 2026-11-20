@@ -66,9 +66,11 @@ import com.bukovinafilip.gradey.domain.AbsenceDayLessons
 import com.bukovinafilip.gradey.domain.Homework
 import com.bukovinafilip.gradey.domain.HomeworkList
 import com.bukovinafilip.gradey.domain.KomensList
+import com.bukovinafilip.gradey.domain.VavruskaSchedule
 import com.bukovinafilip.gradey.domain.RecapCalendar
 import com.bukovinafilip.gradey.domain.SchoolAttachment
 import com.bukovinafilip.gradey.domain.TimetableWeeksLoader
+import com.bukovinafilip.gradey.feature.account.SettingsDance
 import com.bukovinafilip.gradey.feature.komens.KomensScreen
 import com.bukovinafilip.gradey.feature.planner.HomeworkDetailSheet
 import com.bukovinafilip.gradey.feature.planner.LessonHomeworkSection
@@ -83,6 +85,9 @@ import com.bukovinafilip.gradey.feature.subjects.MarksReportCardRow
 import com.bukovinafilip.gradey.feature.subjects.ReportCardScreen
 import com.bukovinafilip.gradey.feature.subjects.SubjectsScreen
 import com.bukovinafilip.gradey.feature.timetable.AddFriendSheet
+import com.bukovinafilip.gradey.feature.vavruska.AfterSchoolBlock
+import com.bukovinafilip.gradey.feature.vavruska.TodayDanceSection
+import com.bukovinafilip.gradey.feature.vavruska.VavruskaScreen
 import com.bukovinafilip.gradey.feature.timetable.TimetablePeople
 import com.bukovinafilip.gradey.feature.timetable.TimetableScreen
 import com.bukovinafilip.gradey.feature.today.TodayScreen
@@ -99,6 +104,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         val app = application as GradeyApplication
         app.updates.onForeground()
+        // Coming back to the app looks at the dance class again; the repository decides what is due.
+        androidx.lifecycle.ViewModelProvider(this)[GradeyViewModel::class.java].vavruska.refreshIfNeeded()
         if (!app.activeGraph.isDemo && app.plannerCalendarMirror.hasAccess) lifecycleScope.launch {
             try { app.plannerCalendarMirror.synchronize() }
             catch (error: kotlinx.coroutines.CancellationException) { throw error }
@@ -161,6 +168,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     val scope = rememberCoroutineScope()
     val appPreferences = remember { context.getSharedPreferences("gradey-app-preferences", 0) }
     var ageAttestation by rememberSaveable { mutableStateOf(appPreferences.getString("ageAttestation", null)) }
+    // The TŠ Vavruška dance class: a section on Today, a block under the Timetable's day, and its own screen.
+    val dance by model.vavruska.state.collectAsStateWithLifecycle()
+    val danceClock = com.bukovinafilip.gradey.ui.rememberSchoolTime()
+    val danceNow by remember { androidx.compose.runtime.derivedStateOf { danceClock.value.toInstant().toEpochMilli() } }
+    val danceRows = remember(dance, danceNow) {
+        if (dance.isActive) VavruskaSchedule.todayRows(dance.snapshot, dance.hasUnreadNotices, danceNow, java.time.ZoneId.systemDefault()) else null
+    }
     // Friends' timetables: chosen from the Timetable title, added there or in Settings.
     val friendsState by model.friends.state.collectAsStateWithLifecycle()
     var showAddFriend by rememberSaveable { mutableStateOf(false) }
@@ -242,7 +256,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     ) { granted -> if (granted) scope.launch {
         registerPush(context, model.graph)
         PlannerReminderScheduler.reconcile(context, state, plannerRemindersEnabled)
+        model.vavruska.reconcileAlerts()
     } }
+    val setDanceTicketAlerts: (Boolean) -> Unit = { enabled ->
+        model.vavruska.setTicketAlerts(enabled)
+        // The alert is a notification, so turning it on asks for the permission it needs.
+        if (enabled && android.os.Build.VERSION.SDK_INT >= 33 && !canNotify(context)) notificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
     val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
             try {
@@ -311,6 +331,10 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID, onReconnectAccount = model::reconnectAccount,
                                 insightState = state.insightState, plannerItems = todayPlannerItems, schoolScope = state.school?.cacheScope,
                                 onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = openPlannerEntry,
+                                danceSection = danceRows?.let { rows ->
+                                    { TodayDanceSection(rows, danceNow, showsSavedDataNote = dance.lastRefreshFailed, onOpen = model::openVavruska) }
+                                },
+                                isDanceDay = danceRows?.isDanceDay == true,
                                 // Komens exists only in Bakaláři.
                                 onOpenMessages = if (state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI) model::openKomens else null,
                                 unreadMessages = remember(state.komens, state.komensReadIDs) { KomensList.unreadCount(state.komens, state.komensReadIDs) },
@@ -368,6 +392,10 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                         if (items.isNotEmpty()) LessonHomeworkSection(items, state.homeworkPendingIDs, toggleHomework, onOpen = { openHomeworkID = it })
                                     },
                                     people = people,
+                                    // Dance lessons follow the user's own school day, never a friend's.
+                                    afterSchool = if (dance.isActive) { date ->
+                                        AfterSchoolBlock(remember(dance.snapshot, date) { VavruskaSchedule.on(dance.snapshot, date) }, onOpen = model::openVavruska)
+                                    } else null,
                                 )
                             }
                             AppTab.STRAVACZ -> com.bukovinafilip.gradey.feature.stravacz.StravaCZRoute(
@@ -402,6 +430,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 store = recapStore, periodID = state.recapPeriodID, source = recapSource, onClose = model::back,
                             )
                             AppTab.ACCOUNT -> AccountScreen(
+                                dance = SettingsDance(
+                                    enabled = dance.enabled, connected = dance.course != null, courseCode = dance.course?.courseCode,
+                                    scheduleSummary = dance.course?.scheduleSummary, needsReconnect = dance.course != null && dance.snapshot.calendarUnavailable,
+                                    ended = VavruskaSchedule.isCourseEnded(dance.snapshot, danceNow), ticketAlerts = dance.ticketAlerts,
+                                    onEnabledChange = model.vavruska::setEnabled, onOpen = model::openVavruska,
+                                    onDisconnect = { scope.launch { model.vavruska.disconnect() } }, onTicketAlertsChange = setDanceTicketAlerts,
+                                ),
                                 friends = friendsState.friends, onAddFriend = { addFriendShowsTimetable = false; showAddFriend = true },
                                 onRenameFriend = { friend, name -> model.friends.rename(friend.id, name) }, onRemoveFriend = { model.friends.remove(it.id) },
                                 onOpenWatch = { showWatchAccess = true },
@@ -445,6 +480,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 },
                             )
                             AppTab.SUPPORT -> SupportScreen(state.account?.id, state.isDemo, onBack = model::back)
+                            AppTab.VAVRUSKA -> VavruskaScreen(
+                                course = dance.course, snapshot = dance.snapshot, isRefreshing = dance.refreshing, lastRefreshFailed = dance.lastRefreshFailed,
+                                hasUnreadNotices = dance.hasUnreadNotices, ticketAlertsEnabled = dance.ticketAlerts,
+                                onRefresh = { model.vavruska.refreshIfNeeded(force = true, includeTicketLinks = true) },
+                                onConnect = model.vavruska::connect, errorMessage = model.vavruska::message,
+                                onTicketAlertsChange = setDanceTicketAlerts, onSeen = model.vavruska::markNoticeBoardSeen, onClose = model::back,
+                            )
                             AppTab.KOMENS -> KomensScreen(
                                 snapshot = state.komens, readIDs = state.komensReadIDs, isRefreshing = state.komensRefreshing, errorMessage = state.komensError,
                                 downloadingAttachmentID = downloadingAttachmentID, onRefresh = { model.refreshKomens(force = true) },

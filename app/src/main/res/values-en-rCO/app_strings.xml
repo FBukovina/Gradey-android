@@ -27,5 +27,20 @@
     <string name="privacy_update_friends_title">friends\' timetables stay on your device</string>
     <string name="privacy_update_friends_summary">a friend\'s Bakaláři login is kept only in this device\'s encrypted storage and is used only for their timetable.</string>
     <string name="privacy_update_friends_detail">if a friend signs in with Bakaláři, your device sends their login straight to their school\'s HTTPS server and keeps it in this device\'s encrypted storage so it can reload their timetable later. Gradey never loads their marks or absences. public timetables need no login. friends\' timetables are not sent to Gradey, Gradey AI, the watch or widgets. only add someone who agrees to it. removing a friend or signing out deletes their data from this device.</string>
-    <string name="privacy_update_subtitle">the policy now covers friends\' timetables and homework, Komens messages and report cards from your school. please read what changed before you continue.</string>
+    <string name="app_dance">dance class</string>
+    <string name="app_vavruska_error_invalid_password">that password didn\'t work. check your course card, lowercase L vs capital I vs 1 and zero vs O are sneaky</string>
+    <string name="app_vavruska_error_unexpected_page">vavruska.info sent a page Gradey doesn\'t get. the site probably changed</string>
+    <string name="app_vavruska_error_invalid_response">vavruska.info sent something weird</string>
+    <string name="app_vavruska_error_status">vavruska.info threw error %d</string>
+    <string name="app_vavruska_error_calendar_unavailable">the lesson plan link doesn\'t work anymore. sign in again with your course card password</string>
+    <string name="app_vavruska_error_not_connected">connect your dance class first</string>
+    <string name="app_vavruska_sale_default_title">prodloužená</string>
+    <string name="app_vavruska_notification_sale_title">tickets just dropped</string>
+    <string name="app_vavruska_notification_sale_body">%1$s (%2$s): grab tickets for parents and guests before they\'re gone</string>
+    <string name="app_vavruska_channel">dance class tickets</string>
+    <string name="privacy_update_dance_title">dance classes stay on your device</string>
+    <string name="privacy_update_dance_summary">Gradey doesn\'t keep your course password, only the course\'s private calendar link.</string>
+    <string name="privacy_update_dance_detail">if you connect a tš vavruška course, your device sends the course password to vavruska.info once to find your course. the course and its private calendar link are kept in this device\'s encrypted storage. lessons, notice-board posts and ticket-sale dates are cached on the device, and ticket-sale reminders are scheduled locally. nothing about your course is sent to Gradey. disconnecting removes all of it.</string>
+    <string name="privacy_update_subtitle">the policy now covers friends\' timetables, dance classes and homework from your school. please read what changed before you continue.</string>
+    <string name="app_vavruska_error_missing_password">enter the password from your course card</string>
 </resources>

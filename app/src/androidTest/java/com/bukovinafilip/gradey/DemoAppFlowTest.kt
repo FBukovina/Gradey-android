@@ -23,6 +23,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -40,6 +41,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.builtins.ListSerializer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -346,6 +348,69 @@ class DemoAppFlowTest {
             compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].friends.remove(id) }
             compose.waitUntil(5_000) { friends().friends.none { it.id == id } }
         }
+    }
+
+    @Test fun aDanceClassIsConnectedShownOnTodayAndInTheTimetableAndDisconnected() {
+        fun dance() = run {
+            var value: VavruskaState? = null
+            compose.activityRule.scenario.onActivity { value = ViewModelProvider(it)[GradeyViewModel::class.java].vavruska.state.value }
+            requireNotNull(value)
+        }
+        fun model(action: (GradeyViewModel) -> Unit) = compose.activityRule.scenario.onActivity { action(ViewModelProvider(it)[GradeyViewModel::class.java]) }
+        // Nothing of the dance class shows until a course is connected.
+        compose.onAllNodesWithTag("todayDanceCard").assertCountEquals(0)
+        model { it.openVavruska() }
+        try {
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("vavruskaConnectView").fetchSemanticsNodes().isNotEmpty() }
+            // The demo refuses the password "WRONG" and says why.
+            compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("vavruskaPasswordField"))).performTextInput("wrong")
+            androidx.test.espresso.Espresso.closeSoftKeyboard()
+            compose.onNodeWithTag("vavruskaConnectButton").performScrollTo().performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("vavruskaConnectError").fetchSemanticsNodes().isNotEmpty() }
+            assertNull(dance().course)
+            compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("vavruskaPasswordField"))).performTextReplacement("Abc123")
+            androidx.test.espresso.Espresso.closeSoftKeyboard()
+            compose.onNodeWithTag("vavruskaConnectButton").performScrollTo().performClick()
+
+            // Connecting turns the dance class on and loads the lesson plan, the board and the ticket sale.
+            compose.waitUntil(10_000) { dance().isActive && dance().snapshot.events.isNotEmpty() && !dance().refreshing }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("vavruskaScrollView").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText("Course M04").assertIsDisplayed()
+            compose.onNodeWithTag("vavruskaScrollView").performScrollToNode(hasTestTag("vavruskaTicketsSection"))
+            compose.onNodeWithTag("vavruskaScrollView").performScrollToNode(hasTestTag("vavruskaNoticeBoard"))
+            compose.onNodeWithTag("vavruskaScrollView").performScrollToNode(hasTestTag("vavruskaLinksSection"))
+            assertEquals(1, dance().snapshot.ticketSales.size)
+            // The first board is the baseline, not news.
+            assertFalse(dance().hasUnreadNotices)
+
+            androidx.test.espresso.Espresso.pressBack()
+            compose.waitUntil(5_000) { state().tab == AppTab.TODAY }
+            // Today says when the next lesson is; its title leads back to the dance class.
+            compose.onNodeWithTag("todayScroll").performScrollToNode(hasTestTag("todayDanceCard"))
+            compose.onNodeWithTag("todayDanceNextEvent").assertExists()
+            compose.onNodeWithTag("todayOpenVavruskaButton").performClick()
+            compose.waitUntil(5_000) { state().tab == AppTab.VAVRUSKA }
+            androidx.test.espresso.Espresso.pressBack()
+
+            // The sample course has a lesson on this week's Wednesday evening, under that day's school lessons.
+            compose.onNodeWithTag("tab-timetable").performClick()
+            val wednesday = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Prague")).with(java.time.DayOfWeek.WEDNESDAY)
+            model { it.changeWeek(wednesday.toString()) }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("dayChip-3").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("dayChip-3").performClick()
+            compose.onNodeWithTag("timetableList").performScrollToNode(hasTestTag("timetableAfterSchoolBlock"))
+            compose.onNodeWithTag("timetableDanceEvent-preview-2@vavruska.info").assertExists()
+
+            // Turning the dance class off in Settings hides it everywhere without forgetting the course.
+            model { it.vavruska.setEnabled(false) }
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("timetableAfterSchoolBlock").fetchSemanticsNodes().isEmpty() }
+            assertNotNull(dance().course)
+        } finally {
+            runBlocking { ViewModelProvider(compose.activity)[GradeyViewModel::class.java].vavruska.disconnect() }
+            model { it.vavruska.setEnabled(false); it.select(AppTab.TODAY) }
+        }
+        assertNull(dance().course)
+        compose.onAllNodesWithTag("todayDanceCard").assertCountEquals(0)
     }
 
     @Test fun recapOpensFromMarksAsAStoryAndReturnsToTheList() {

@@ -47,7 +47,7 @@ internal enum class AppTab(val labelRes: Int, val kind: DestinationKind) {
     REPORT_CARD(R.string.app_report_card, DestinationKind.PUSHED), RECAP_LIST(R.string.app_recap, DestinationKind.PUSHED),
     ACCOUNT(R.string.app_account, DestinationKind.FULL_SCREEN), AI(R.string.app_ai, DestinationKind.FULL_SCREEN),
     RECAP_STORY(R.string.app_recap, DestinationKind.FULL_SCREEN), SUPPORT(R.string.app_support, DestinationKind.FULL_SCREEN),
-    KOMENS(R.string.app_messages, DestinationKind.FULL_SCREEN),
+    KOMENS(R.string.app_messages, DestinationKind.FULL_SCREEN), VAVRUSKA(R.string.app_dance, DestinationKind.FULL_SCREEN),
     UPDATES(R.string.app_updates, DestinationKind.FULL_SCREEN),
 }
 
@@ -148,6 +148,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     private var komensLoaded: Pair<String, Long>? = null
     /** Friends' timetables; they follow [graph], so demo mode never touches real friends. */
     val friends = FriendsController(app, viewModelScope) { graph.friendRepository }
+    /** The optional TŠ Vavruška dance course, shown on Today, in the Timetable and on its own screen. */
+    val vavruska = VavruskaController(app, viewModelScope) { graph }
     private var komensRefresh: kotlinx.coroutines.Job? = null
     private var awaitingPlannerEntry = false
     private var appleAvailable = false
@@ -566,6 +568,12 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     /** True when Back should leave the current destination rather than the app. */
     val canGoBack: Boolean get() = state.value.tab != AppTab.TODAY || state.value.backStack.isNotEmpty()
 
+    /** The dance class screen; opening it also looks for the link to a ticket sale that is about to open. */
+    fun openVavruska() {
+        select(AppTab.VAVRUSKA)
+        vavruska.refreshIfNeeded(includeTicketLinks = true)
+    }
+
     fun openReportCard() = select(AppTab.REPORT_CARD)
     fun openRecapList() = select(AppTab.RECAP_LIST)
     fun openRecapStory(periodID: String) {
@@ -605,8 +613,10 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     }
 
     private suspend fun restoreCachedData() {
-        val session = state.value.school ?: return
+        // Neither needs a school account of the user's own.
         friends.reload()
+        vavruska.reload()
+        val session = state.value.school ?: return
         val isGuest = state.value.isGuest
         val plannerItems = off { plannerRepository.load() }
         val cached = off { graph.schoolRepository.loadCachedDashboard() }
@@ -970,6 +980,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             cleanup { SchoolAttachments.clear(app) }
             // A friend's Bakaláři login must not outlive the account that added it.
             cleanup { signingOutGraph.friendRepository.removeAll() }
+            cleanup { vavruska.signedOut(signingOutGraph) }
             cleanup { signingOutGraph.cache?.clearAll() }
             cleanup { signingOutGraph.schoolInsightStore.clearAll() }
             cleanup { guestPreferences.clear() }

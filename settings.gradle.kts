@@ -76,6 +76,7 @@ include(
     ":feature-ai",
     ":feature-recap",
     ":feature-komens",
+    ":feature-vavruska",
     ":baselineprofile",
     ":glance-widgets",
     ":wear",

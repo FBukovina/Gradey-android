@@ -172,4 +172,18 @@
     <string name="settings_friends_source_public">public timetable</string>
     <string name="settings_friends_name">name</string>
     <string name="settings_friends_save">save</string>
+    <string name="settings_dance_title">dance class</string>
+    <string name="settings_dance_connect">connect dance class</string>
+    <string name="settings_dance_school">TŠ Vavruška</string>
+    <string name="settings_dance_course">course %s</string>
+    <string name="settings_dance_name">dance class</string>
+    <string name="settings_dance_status_reconnect">needs sign in</string>
+    <string name="settings_dance_status_ended">ended</string>
+    <string name="settings_dance_new_course">connect a new course</string>
+    <string name="settings_dance_ticket_alerts">ping me when tickets drop</string>
+    <string name="settings_dance_disconnect_title">disconnect dance class?</string>
+    <string name="settings_dance_disconnect_message">Gradey deletes the saved lesson plan and ticket alerts from this device</string>
+    <string name="settings_dance_disconnect_confirm">disconnect</string>
+    <string name="settings_show_dance">TŠ Vavruška dance class</string>
+    <string name="settings_show_dance_message">show your dance lessons, prodloužená and ball in today and timetable</string>
 </resources>

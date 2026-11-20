@@ -36,7 +36,6 @@
     <string name="timetable_detail_homework">Homework</string>
     <string name="timetable_detail_homework_assigned">Assigned</string>
     <string name="timetable_done">Done</string>
-    <string name="timetable_friends_menu_label">Whose timetable</string>
     <string name="timetable_friends_me">My timetable</string>
     <string name="timetable_friends_add">Add friend</string>
     <string name="friends_add_title">Add a friend</string>

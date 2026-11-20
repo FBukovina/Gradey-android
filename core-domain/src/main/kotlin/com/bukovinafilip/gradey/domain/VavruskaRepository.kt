@@ -217,7 +217,34 @@ object VavruskaSchedule {
         snapshot.ticketSales.filter { it.eventStartEpochMillis > now && it.saleStartEpochMillis < now + 21L * 24 * 60 * 60 * 1000 }
 
     fun isCourseEnded(snapshot: VavruskaSnapshot, now: Long): Boolean = snapshot.events.maxOfOrNull { it.endEpochMillis }?.let { it < now } ?: false
+
+    /**
+     * What Today says about the dance class (iOS `TodayView.danceRows`): the next lesson within two
+     * weeks, a ticket sale worth knowing about, news on the board, or that the link needs a new
+     * sign-in. Null hides the section: nothing is worth a row.
+     *
+     * @param zone the device's, which decides whether the next lesson is today.
+     */
+    fun todayRows(snapshot: VavruskaSnapshot, hasUnreadNotices: Boolean, now: Long, zone: java.time.ZoneId): VavruskaTodayRows? {
+        val next = upcoming(snapshot, now).firstOrNull { it.startEpochMillis < now + 14L * 24 * 60 * 60 * 1000 }
+        val sale = relevantTicketSales(snapshot, now).firstOrNull()
+        if (!snapshot.calendarUnavailable && next == null && sale == null && !hasUnreadNotices) return null
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        return VavruskaTodayRows(
+            needsReconnect = snapshot.calendarUnavailable, nextEvent = next, sale = sale, hasUnreadNotices = hasUnreadNotices,
+            isDanceDay = next != null && Instant.ofEpochMilli(next.startEpochMillis).atZone(zone).toLocalDate() == today,
+        )
+    }
 }
+
+/** @param isDanceDay the next lesson is today, which moves the section up next to the school day. */
+data class VavruskaTodayRows(
+    val needsReconnect: Boolean,
+    val nextEvent: VavruskaEvent?,
+    val sale: VavruskaTicketSale?,
+    val hasUnreadNotices: Boolean,
+    val isDanceDay: Boolean,
+)
 
 /**
  * Sample pages shaped like vavruska.info's real output, dated relative to now so the demo always has

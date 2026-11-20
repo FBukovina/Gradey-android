@@ -199,6 +199,7 @@ fun AccountScreen(
     onAddFriend: (() -> Unit)? = null,
     onRenameFriend: (Friend, String) -> Unit = { _, _ -> },
     onRemoveFriend: (Friend) -> Unit = {},
+    dance: SettingsDance? = null,
 ) {
     var page by rememberSaveable { mutableStateOf(SettingsPage.of(initialDestination)) }
     var focusName by rememberSaveable { mutableStateOf(false) }
@@ -207,6 +208,7 @@ fun AccountScreen(
     var renamingFriend by remember { mutableStateOf<Friend?>(null) }
     var friendName by remember { mutableStateOf("") }
     var removingFriend by remember { mutableStateOf<Friend?>(null) }
+    var disconnectingDance by remember { mutableStateOf(false) }
     var confirmation by remember { mutableStateOf(AccountConfirmation.NONE) }
     var quietTimeEdit by remember { mutableStateOf(QuietTimeEdit.NONE) }
     var pickingStudent by rememberSaveable { mutableStateOf(false) }
@@ -264,6 +266,7 @@ fun AccountScreen(
                     onRemoveCanteen = if (onUnlinkCanteen != null) ({ removingCanteen = it }) else null, onOpenWatch = onOpenWatch,
                     friends = friends, onAddFriend = onAddFriend,
                     onRenameFriend = { friendName = it.name; renamingFriend = it }, onRemoveFriend = { removingFriend = it },
+                    dance = dance, onDisconnectDance = { disconnectingDance = true },
                 )
             }
             SettingsPage.NOTIFICATIONS -> SettingsDetailPage(SettingsDestination.NOTIFICATIONS.title(), back, isLoading, errorMessage, onRetry) {
@@ -283,7 +286,7 @@ fun AccountScreen(
             SettingsPage.PREFERENCES -> SettingsDetailPage(SettingsDestination.APP_PREFERENCES.title(), back, isLoading, errorMessage, onRetry) {
                 preferencesPage(
                     appLanguage = appLanguage, systemLanguageCode = systemLanguageCode, onLanguageChange = onLanguageChange,
-                    showMealsTab = showMealsTab, onShowMealsTabChange = onShowMealsTabChange,
+                    showMealsTab = showMealsTab, onShowMealsTabChange = onShowMealsTabChange, dance = dance,
                 )
             }
             SettingsPage.SUPPORT -> SettingsDetailPage(SettingsDestination.SUPPORT_ABOUT.title(), back, isLoading, errorMessage, onRetry) {
@@ -326,6 +329,11 @@ fun AccountScreen(
             onConfirm = { removingFriend = null; onRemoveFriend(friend) }, dismissLabel = stringResource(R.string.settings_cancel),
         )
     }
+    if (disconnectingDance && dance != null) GradeyDialog(
+        title = stringResource(R.string.settings_dance_disconnect_title), text = stringResource(R.string.settings_dance_disconnect_message),
+        onDismiss = { disconnectingDance = false }, confirmLabel = stringResource(R.string.settings_dance_disconnect_confirm), destructive = true,
+        onConfirm = { disconnectingDance = false; dance.onDisconnect() }, dismissLabel = stringResource(R.string.settings_cancel),
+    )
     val dismissConfirmation = { confirmation = AccountConfirmation.NONE }
     when (confirmation) {
         AccountConfirmation.NONE -> Unit

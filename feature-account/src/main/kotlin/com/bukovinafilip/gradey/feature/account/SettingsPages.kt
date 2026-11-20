@@ -243,6 +243,8 @@ internal fun LazyListScope.connectedServicesPage(
     onAddFriend: (() -> Unit)? = null,
     onRenameFriend: (Friend) -> Unit = {},
     onRemoveFriend: (Friend) -> Unit = {},
+    dance: SettingsDance? = null,
+    onDisconnectDance: () -> Unit = {},
 ) {
     item(key = "schools", contentType = "group") {
         SettingsGroup(title = stringResource(R.string.settings_connected_school_title)) {
@@ -285,6 +287,34 @@ internal fun LazyListScope.connectedServicesPage(
             canteenAccounts = canteenAccounts, canteenSession = canteenSession, currentCanteenLinkID = currentCanteenLinkID,
             onLinkCanteen = onLinkCanteen, onOpenMeals = onOpenMeals, onRemoveCanteen = onRemoveCanteen,
         )
+    }
+    // Always listed next to school and canteen: this is where people look for it.
+    if (dance != null) item(key = "dance", contentType = "group") {
+        SettingsGroup(title = stringResource(R.string.settings_dance_title)) {
+            if (dance.connected) LinkedServiceRow(
+                accountID = "dance", icon = HugeIcons.MusicNote03,
+                name = dance.courseCode?.let { stringResource(R.string.settings_dance_course, it) } ?: stringResource(R.string.settings_dance_name),
+                subtitle = listOfNotNull(stringResource(R.string.settings_dance_school), dance.scheduleSummary).joinToString(" · "),
+                menu = { close ->
+                    SettingsMenuItem(
+                        stringResource(R.string.settings_unlink), HugeIcons.Delete02, { close(); onDisconnectDance() },
+                        Modifier.testTag("vavruskaDisconnectButton"), color = MaterialTheme.gradeyColors.red,
+                    )
+                },
+                details = {
+                    if (dance.needsReconnect) RowStatusLabel(stringResource(R.string.settings_dance_status_reconnect), HugeIcons.Alert02, MaterialTheme.gradeyColors.orange)
+                    else if (dance.ended) RowStatusLabel(stringResource(R.string.settings_dance_status_ended), HugeIcons.Calendar03, MaterialTheme.gradeyColors.secondaryLabel)
+                    if (dance.needsReconnect || dance.ended) PlainLink(
+                        stringResource(if (dance.ended) R.string.settings_dance_new_course else R.string.settings_reconnect), dance.onOpen,
+                        Modifier.testTag("vavruskaReconnectSettingsButton"),
+                    )
+                    SettingsToggleRow(
+                        stringResource(R.string.settings_dance_ticket_alerts), null, dance.ticketAlerts, enabled = true, onChange = dance.onTicketAlertsChange,
+                        modifier = Modifier.testTag("settingsVavruskaTicketAlertsToggle"),
+                    )
+                },
+            ) else SettingsActionRow(HugeIcons.MusicNote03, stringResource(R.string.settings_dance_connect), dance.onOpen, Modifier.testTag("accountLinkVavruskaButton"), enabled = !isLoading)
+        }
     }
     // Friends (iOS `FriendsSettingsSection`): who is there, where their timetable comes from, then the row that adds one.
     if (onAddFriend != null) item(key = "friends", contentType = "group") {
@@ -599,6 +629,7 @@ internal fun LazyListScope.preferencesPage(
     onLanguageChange: ((AppLanguage) -> Unit)?,
     showMealsTab: Boolean,
     onShowMealsTabChange: ((Boolean) -> Unit)?,
+    dance: SettingsDance? = null,
 ) {
     if (onLanguageChange != null) {
         item(key = "language", contentType = "group") {
@@ -632,6 +663,19 @@ internal fun LazyListScope.preferencesPage(
                 stringResource(R.string.settings_show_meals_tab), null, showMealsTab, enabled = true, onChange = onShowMealsTabChange,
                 modifier = Modifier.testTag("settingsShowMealsTab"),
             )
+        }
+    }
+    if (dance != null) item(key = "dance", contentType = "group") {
+        SettingsGroup {
+            SettingsToggleRow(
+                stringResource(R.string.settings_show_dance), stringResource(R.string.settings_show_dance_message), dance.enabled, enabled = true,
+                onChange = dance.onEnabledChange, modifier = Modifier.testTag("showVavruskaToggle"),
+            )
+            // Turned on with nothing to show yet: the way to connect a course is right here.
+            if (dance.enabled && !dance.connected) {
+                SettingsRowDivider()
+                SettingsActionRow(HugeIcons.MusicNote03, stringResource(R.string.settings_dance_connect), dance.onOpen, Modifier.testTag("preferencesConnectVavruskaButton"))
+            }
         }
     }
 }

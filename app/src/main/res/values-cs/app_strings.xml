@@ -171,5 +171,20 @@
     <string name="privacy_update_friends_title">Rozvrhy kamarádů zůstávají v tvém zařízení</string>
     <string name="privacy_update_friends_summary">Přihlášení kamaráda do Bakalářů zůstává jen v šifrovaném úložišti tohoto zařízení a slouží jen k jeho rozvrhu.</string>
     <string name="privacy_update_friends_detail">Když se kamarád přihlásí přes Bakaláři, tvoje zařízení pošle jeho přihlašovací údaje přímo na HTTPS server jeho školy a uloží je do šifrovaného úložiště tohoto zařízení, aby mohlo jeho rozvrh později znovu načíst. Gradey nikdy nenačítá jeho známky ani absenci. Veřejný rozvrh přihlášení nepotřebuje. Rozvrhy kamarádů se neposílají do Gradey, Gradey AI, hodinek ani do widgetů. Přidávej jen lidi, kteří s tím souhlasí. Odebráním kamaráda nebo odhlášením se jeho data z tohoto zařízení smažou.</string>
-    <string name="privacy_update_subtitle">Zásady nově popisují rozvrhy kamarádů a domácí úkoly, zprávy z Komensu a vysvědčení ze školy. Než budeš pokračovat, přečti si, co se změnilo.</string>
+    <string name="app_dance">Taneční</string>
+    <string name="app_vavruska_error_invalid_password">Heslo nesedí. Zkontroluj průkazku, hlavně malé L, velké I a jedničku nebo nulu a O.</string>
+    <string name="app_vavruska_error_unexpected_page">vavruska.info vrátila stránku, které Gradey nerozumí. Web se možná změnil.</string>
+    <string name="app_vavruska_error_invalid_response">vavruska.info poslala nečekanou odpověď.</string>
+    <string name="app_vavruska_error_status">vavruska.info vrátila chybu %d.</string>
+    <string name="app_vavruska_error_calendar_unavailable">Odkaz na rozpis už nefunguje. Přihlas se znovu heslem z průkazky.</string>
+    <string name="app_vavruska_error_not_connected">Nejdřív připoj taneční.</string>
+    <string name="app_vavruska_sale_default_title">Prodloužená</string>
+    <string name="app_vavruska_notification_sale_title">Prodej vstupenek začal</string>
+    <string name="app_vavruska_notification_sale_body">%1$s (%2$s): kup vstupenky pro rodiče a hosty, než zmizí.</string>
+    <string name="app_vavruska_channel">Vstupenky do tanečních</string>
+    <string name="privacy_update_dance_title">Taneční zůstávají v tvém zařízení</string>
+    <string name="privacy_update_dance_summary">Gradey si neukládá heslo ke kurzu, jen soukromý odkaz na kalendář kurzu.</string>
+    <string name="privacy_update_dance_detail">Když připojíš kurz v TŠ Vavruška, tvoje zařízení jednou pošle heslo ke kurzu na vavruska.info, aby kurz našlo. Kurz a jeho soukromý odkaz na kalendář se uloží do šifrovaného úložiště tohoto zařízení. Lekce, příspěvky z nástěnky a začátky prodeje vstupenek se ukládají v zařízení a připomínky prodeje vstupenek se plánují přímo v něm. Nic o tvém kurzu se neposílá do Gradey. Odpojením se všechno smaže.</string>
+    <string name="privacy_update_subtitle">Zásady nově popisují rozvrhy kamarádů, taneční a domácí úkoly ze školy. Než budeš pokračovat, přečti si, co se změnilo.</string>
+    <string name="app_vavruska_error_missing_password">Zadej heslo z kartičky kurzu.</string>
 </resources>

@@ -111,3 +111,26 @@ internal fun AppLanguage.pickerSelection(systemLanguageCode: String): AppLanguag
 /** Picking a language keeps the Chronically online switch as it was (iOS `selectPickerLanguage`). */
 internal fun AppLanguage.selectingPickerLanguage(language: AppLanguage, systemLanguageCode: String): AppLanguage =
     language.withChronicallyOnline(isChronicallyOnline, systemLanguageCode)
+
+/**
+ * The TŠ Vavruška dance class as Settings shows it (iOS `vavruskaSection` and the `showVavruska` switch).
+ *
+ * @param enabled the dance class is shown on Today and in the Timetable.
+ * @param connected a course is connected; the remaining values describe it.
+ * @param needsReconnect its lesson plan link stopped working.
+ * @param ended every lesson and event of the course is over.
+ */
+data class SettingsDance(
+    val enabled: Boolean,
+    val connected: Boolean,
+    val courseCode: String? = null,
+    val scheduleSummary: String? = null,
+    val needsReconnect: Boolean = false,
+    val ended: Boolean = false,
+    val ticketAlerts: Boolean = false,
+    val onEnabledChange: (Boolean) -> Unit = {},
+    /** Opens the dance class screen, which connects a course when there is none. */
+    val onOpen: () -> Unit = {},
+    val onDisconnect: () -> Unit = {},
+    val onTicketAlertsChange: (Boolean) -> Unit = {},
+)
