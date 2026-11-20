@@ -41,6 +41,8 @@ class AndroidGradeyGraph private constructor(
     val canteenAccountRepository: com.bukovinafilip.gradey.domain.CanteenAccountRepository,
     /** Friends whose timetables can be shown next to the user's own. Kept on this device only. */
     val friendRepository: com.bukovinafilip.gradey.domain.FriendRepository,
+    /** The optional TŠ Vavruška dance course. Kept on this device only. */
+    val vavruskaRepository: com.bukovinafilip.gradey.domain.VavruskaRepository,
 ) {
     companion object {
         fun create(context: Context, config: AndroidGradeyConfig): AndroidGradeyGraph {
@@ -53,6 +55,11 @@ class AndroidGradeyGraph private constructor(
                     friendRepository = com.bukovinafilip.gradey.domain.FriendRepository(
                         com.bukovinafilip.gradey.domain.InMemoryFriendStore(), com.bukovinafilip.gradey.network.DemoBakalariClient(),
                         com.bukovinafilip.gradey.network.DemoBakalariPublicTimetableClient(),
+                    ),
+                    // The demo's dance class reads sample pages; any password but "WRONG" connects it.
+                    vavruskaRepository = com.bukovinafilip.gradey.domain.VavruskaRepository(
+                        com.bukovinafilip.gradey.domain.DemoVavruskaClient(), com.bukovinafilip.gradey.domain.InMemoryVavruskaCourseStore(),
+                        com.bukovinafilip.gradey.domain.InMemoryVavruskaCache(),
                     ),
                     canteenAccountRepository = MockCanteenAccountRepository(),
                     schoolInsightStore = com.bukovinafilip.gradey.domain.SchoolInsightStore(),
@@ -107,6 +114,11 @@ class AndroidGradeyGraph private constructor(
                     com.bukovinafilip.gradey.network.BakalariPublicTimetableNetworkClient(),
                     JsonFriendTimetableCache(SecureJsonStore(context, "gradey-friend-timetables", GradeyJson)),
                 ),
+                vavruskaRepository = SecureJsonStore(context, "gradey-vavruska-secrets", GradeyJson).let { store ->
+                    com.bukovinafilip.gradey.domain.VavruskaRepository(
+                        com.bukovinafilip.gradey.network.VavruskaNetworkClient(), AndroidVavruskaCourseStore(store), JsonVavruskaCache(store),
+                    )
+                },
                 gradeyAuthRepository = authRepository,
                 canteenAccountRepository = SupabaseCanteenAccountRepository(com.bukovinafilip.gradey.network.SupabaseCanteenAccountClient(supabase), authRepository, authSecureStore),
                 linkedAccountRepository = SupabaseLinkedAccountRepository(accountClient, authRepository, authSecureStore, sessionStore, cache),
