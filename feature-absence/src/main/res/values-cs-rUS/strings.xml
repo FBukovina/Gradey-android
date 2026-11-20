@@ -79,4 +79,6 @@
         <item quantity="many">z výpočtů v gradey je skryto %d hodiny.</item>
         <item quantity="other">z výpočtů v gradey je skryto %d hodin.</item>
     </plurals>
+    <string name="absence_days_choose_lessons">vyber zameškaný hodiny (%d)</string>
+    <string name="absence_days_removed_lesson">%s, odebráno</string>
 </resources>

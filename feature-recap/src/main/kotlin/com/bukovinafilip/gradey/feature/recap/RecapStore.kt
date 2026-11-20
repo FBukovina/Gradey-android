@@ -2,34 +2,35 @@ package com.bukovinafilip.gradey.feature.recap
 
 import android.content.SharedPreferences
 import androidx.compose.runtime.Immutable
+import com.bukovinafilip.gradey.domain.AbsenceDayLessonResolver
 import com.bukovinafilip.gradey.domain.GradeSimulation
 import com.bukovinafilip.gradey.domain.Recap
 import com.bukovinafilip.gradey.domain.RecapArchives
 import com.bukovinafilip.gradey.domain.RecapBuilder
 import com.bukovinafilip.gradey.domain.RecapCalendar
 import com.bukovinafilip.gradey.domain.RecapInput
+import com.bukovinafilip.gradey.domain.RecapKind
 import com.bukovinafilip.gradey.domain.RecapPeriod
 import com.bukovinafilip.gradey.domain.RecapSemester
 import com.bukovinafilip.gradey.domain.ReportCardPeriod
 import com.bukovinafilip.gradey.domain.ReportCardTerm
 import com.bukovinafilip.gradey.domain.SchoolRepository
 import com.bukovinafilip.gradey.domain.TimetableDates
+import com.bukovinafilip.gradey.domain.TimetableWeeksLoader
+import com.bukovinafilip.gradey.model.AbsenceDayOverride
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.Subject
 import com.bukovinafilip.gradey.model.TimetableWeek
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
@@ -41,7 +42,14 @@ import java.time.LocalDate
  * @param supportsReportCards false for schools without report cards (EduPage); their recaps leave the report card out.
  */
 @Immutable
-data class RecapSource(val subjects: List<Subject>, val absence: AbsenceResponse?, val supportsReportCards: Boolean = true)
+data class RecapSource(
+    val subjects: List<Subject>,
+    val absence: AbsenceResponse?,
+    val supportsReportCards: Boolean = true,
+    /** The school's own record and the saved corrections, to name the lessons behind each absent day. */
+    val rawAbsence: AbsenceResponse? = absence,
+    val absenceOverrides: List<AbsenceDayOverride> = emptyList(),
+)
 
 /**
  * Which recaps are out and what Today points at.
@@ -112,7 +120,13 @@ class RecapStore(
         val end = minOf(period.end, day.plusDays(1))
         val weeks = async { if (start < end) withTimeoutOrNull(TimetableTimeoutMillis) { timetableWeeks(start, end) } else null }
         val reportCards = async { loadReportCards(source) }
-        val input = RecapInput(semesters(source), reportCards.await(), weeks.await(), day)
+        val loadedWeeks = weeks.await()
+        // A whole semester reads the school's own per-subject absence instead.
+        val raw = source.rawAbsence
+        val absenceLessons = if (period.kind != RecapKind.SEMESTER && raw != null && loadedWeeks != null) {
+            AbsenceDayLessonResolver.resolveAll(raw, loadedWeeks, source.absenceOverrides)
+        } else null
+        val input = RecapInput(semesters(source), reportCards.await(), loadedWeeks, day, absenceLessons)
         withContext(Dispatchers.Default) { build(period, input, source) }
     }
 
@@ -151,16 +165,8 @@ class RecapStore(
         if (source.supportsReportCards) attempt { repository.loadReportCards() } ?: cachedReportCards(source) else emptyList()
 
     /** The weeks from [start] up to [end]: saved ones first, the rest from the school, four at a time. */
-    private suspend fun timetableWeeks(start: LocalDate, end: LocalDate): List<TimetableWeek> = coroutineScope {
-        val mondays = generateSequence(TimetableDates.monday(start)) { it.plusWeeks(1) }.takeWhile { it < end }.toList()
-        val limit = Semaphore(4)
-        mondays.map { monday ->
-            async {
-                val week = monday.toString()
-                attempt { repository.loadCachedTimetable(week) } ?: limit.withPermit { attempt { repository.loadTimetable(week) } }
-            }
-        }.awaitAll().filterNotNull()
-    }
+    private suspend fun timetableWeeks(start: LocalDate, end: LocalDate): List<TimetableWeek> =
+        TimetableWeeksLoader.load(repository, generateSequence(TimetableDates.monday(start)) { it.plusWeeks(1) }.takeWhile { it < end }.toList())
 
     /** Null when a load fails; a recap is then built from what there is. */
     private suspend fun <T> attempt(block: suspend () -> T): T? = try {

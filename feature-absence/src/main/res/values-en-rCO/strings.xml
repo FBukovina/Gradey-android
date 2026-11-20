@@ -77,4 +77,6 @@
         <item quantity="one">%d lesson is hidden from your gradey totals.</item>
         <item quantity="other">%d lessons are hidden from your gradey totals.</item>
     </plurals>
+    <string name="absence_days_choose_lessons">pick the lessons you missed (%d)</string>
+    <string name="absence_days_removed_lesson">%s, removed</string>
 </resources>

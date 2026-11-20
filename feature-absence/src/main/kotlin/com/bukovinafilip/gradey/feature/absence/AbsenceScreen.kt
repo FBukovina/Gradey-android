@@ -51,6 +51,9 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.style.TextDecoration
+import com.bukovinafilip.gradey.domain.AbsenceDayLessons
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.AbsenceMonthSummary
 import com.bukovinafilip.gradey.domain.AbsenceOverrideProjection
@@ -126,6 +129,7 @@ fun AbsenceScreen(
     onRestoreOverride: ((String) -> Unit)? = null,
     onResetOverrides: (() -> Unit)? = null,
     onLoadCorrectionWeek: ((String) -> Unit)? = null,
+    dayLessons: Map<String, AbsenceDayLessons> = emptyMap(),
 ) {
     var mode by rememberSaveable { mutableStateOf(AbsenceMode.Subjects) }
     val correctionsEnabled = overrideScope != null && onSaveOverride != null
@@ -265,7 +269,7 @@ fun AbsenceScreen(
                 AbsenceMode.Days -> countItems(
                     prefix = "days", rows = dayRows, total = timeline.total, palette = palette,
                     emptyText = R.string.absence_days_empty,
-                    onEditDay = if (correctionsEnabled) editDay else null, editableDates = correctableSet,
+                    onEditDay = if (correctionsEnabled) editDay else null, editableDates = correctableSet, dayLessons = dayLessons,
                 )
                 AbsenceMode.Months -> {
                     if (monthRows.size >= 2) {
@@ -446,6 +450,7 @@ private fun LazyListScope.countItems(
     emptyText: Int,
     onEditDay: ((String) -> Unit)?,
     editableDates: Set<String>,
+    dayLessons: Map<String, AbsenceDayLessons> = emptyMap(),
 ) {
     if (rows.isEmpty()) {
         item(key = "$prefix-empty", contentType = "empty") { EmptyAbsenceRow(stringResource(emptyText)) }
@@ -466,6 +471,7 @@ private fun LazyListScope.countItems(
             modifier = Modifier.joinedListRow().testTag("absenceRow-${row.key}"),
             onClick = if (editable) ({ onEditDay?.invoke(date!!) }) else null,
             onClickLabel = if (editable) stringResource(R.string.absence_override_edit_hint) else null,
+            lessons = date?.let(dayLessons::get),
         )
     }
 }
@@ -481,19 +487,54 @@ private fun AbsenceCountRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
+    lessons: AbsenceDayLessons? = null,
 ) {
     PlainRow(modifier, onClick = onClick, onClickLabel = onClickLabel, horizontalSpacing = GradeySpacing.sm) {
-        Text(
-            title, Modifier.weight(1f),
-            style = if (isTotal) GradeyType.subheadlineBold else GradeyType.subheadlineSemibold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title, style = if (isTotal) GradeyType.subheadlineBold else GradeyType.subheadlineSemibold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (lessons != null) DayLessonsLine(lessons)
+        }
         CategoryChips(counts, categories, palette)
         Text(
             counts.total.toString(), Modifier.widthIn(min = TotalColumnWidth),
             style = GradeyType.subheadlineBold.tabular(), color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End, maxLines = 1,
         )
+    }
+}
+
+/**
+ * The subjects missed that day, or a prompt to choose them when only part of the day was missed
+ * (iOS `lessonsLine`). Lessons a correction removed are struck through.
+ */
+@Composable
+private fun DayLessonsLine(day: AbsenceDayLessons) {
+    val secondary = MaterialTheme.gradeyColors.secondaryLabel
+    when (val status = day.status) {
+        is AbsenceDayLessons.Status.NeedsSelection -> Text(
+            stringResource(R.string.absence_days_choose_lessons, status.required),
+            Modifier.testTag("absenceDayLessons-${day.dateKey}"), style = GradeyType.caption.tabular(), color = MaterialTheme.colorScheme.primary,
+        )
+        AbsenceDayLessons.Status.Resolved -> if (day.lessons.isNotEmpty()) {
+            val removed = stringResource(R.string.absence_days_removed_lesson)
+            val spoken = day.lessons.joinToString(", ") { if (it.isHidden) removed.format(it.subjectName) else it.subjectName }
+            val text = remember(day, secondary) {
+                buildAnnotatedString {
+                    day.lessons.forEachIndexed { index, lesson ->
+                        if (index > 0) append(" · ")
+                        if (lesson.isHidden) withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough, color = secondary.copy(alpha = 0.55f))) { append(lesson.subjectName) }
+                        else append(lesson.subjectName)
+                    }
+                }
+            }
+            Text(
+                text, Modifier.clearAndSetSemantics { contentDescription = spoken }.testTag("absenceDayLessons-${day.dateKey}"),
+                style = GradeyType.caption, color = secondary, maxLines = 3, overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

@@ -61,7 +61,10 @@ import com.bukovinafilip.gradey.feature.absence.AbsenceScreen
 import com.bukovinafilip.gradey.feature.account.AccountScreen
 import com.bukovinafilip.gradey.feature.auth.GradeyIdLoginScreen
 import com.bukovinafilip.gradey.feature.login.SchoolLoginScreen
+import com.bukovinafilip.gradey.domain.AbsenceDayLessonResolver
+import com.bukovinafilip.gradey.domain.AbsenceDayLessons
 import com.bukovinafilip.gradey.domain.RecapCalendar
+import com.bukovinafilip.gradey.domain.TimetableWeeksLoader
 import com.bukovinafilip.gradey.feature.recap.MarksRecapTile
 import com.bukovinafilip.gradey.feature.recap.RecapListScreen
 import com.bukovinafilip.gradey.feature.recap.RecapOverview
@@ -150,11 +153,24 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     // Gradey Recap: worked out from what is on screen plus the archive, off the main thread.
     val recapStore = remember(model.graph) { RecapStore(model.graph.schoolRepository, appPreferences) }
     val recapHidden by recapStore.hiddenIDs.collectAsStateWithLifecycle()
+    val recapSignedIn = state.phase == AppPhase.SIGNED_IN
     val recapSource = remember(state.dashboard.marksResponse.subjects, state.absence, state.school?.provider) {
         // Report cards exist only in Bakaláři (iOS `supportsReportCards`).
-        RecapSource(state.dashboard.marksResponse.subjects, state.absence, state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI)
+        RecapSource(
+            state.dashboard.marksResponse.subjects, state.absence, state.school?.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI,
+            rawAbsence = state.rawAbsence, absenceOverrides = state.absenceOverrides,
+        )
     }
-    val recapSignedIn = state.phase == AppPhase.SIGNED_IN
+    // The subjects behind each absent day. Their timetable weeks are loaded once Absence is first opened.
+    var absenceLessonsWanted by rememberSaveable { mutableStateOf(false) }
+    if (state.tab == AppTab.ABSENCE) absenceLessonsWanted = true
+    val absenceDayLessons by produceState(emptyMap<String, AbsenceDayLessons>(), model.graph, state.rawAbsence, state.absenceOverrides, recapSignedIn && absenceLessonsWanted) {
+        value = if (!recapSignedIn || !absenceLessonsWanted) emptyMap() else {
+            val raw = state.rawAbsence
+            val weeks = TimetableWeeksLoader.load(model.graph.schoolRepository, AbsenceDayLessonResolver.weekStarts(raw))
+            AbsenceDayLessonResolver.resolveAll(raw, weeks, state.absenceOverrides)
+        }
+    }
     val recapOverview by produceState(RecapOverview(), recapStore, recapSource, state.school?.cacheScope, recapSignedIn, RecapCalendar.today()) {
         value = if (recapSignedIn) recapStore.overview(recapSource) else RecapOverview()
     }
@@ -278,7 +294,7 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 availableSubjects = state.dashboard.marksResponse.subjects, correctionTimetable = state.correctionTimetable,
                                 correctionError = state.correctionError, onSaveOverride = model::saveAbsenceOverride,
                                 onRestoreOverride = model::restoreAbsenceOverride, onResetOverrides = model::resetAbsenceOverrides,
-                                onLoadCorrectionWeek = model::loadCorrectionWeek,
+                                onLoadCorrectionWeek = model::loadCorrectionWeek, dayLessons = absenceDayLessons,
                             )
                             AppTab.TIMETABLE -> {
                                 val permanent = state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT
