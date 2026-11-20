@@ -97,7 +97,7 @@ Read-only hosted checks in this task identified `link-school-account` v8, `relin
 
 ## Verification recorded so far
 
-- **Android 0.6, 20 November 2026:** 477 phone unit tests and 63 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; the release APK keeps the signing certificate and installs over the published 0.5 with demo mode intact after the privacy update. Real devices and real accounts were not verified. See [the 0.6 release notes](releases/0.6.md).
+- **Android 0.6, 20 November 2026:** 477 phone unit tests and 63 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; the release APK keeps the signing certificate, and a 0.5 installation updated to it through the in-app updater with demo mode intact after the privacy update. Real devices and real accounts were not verified. See [the 0.6 release notes](releases/0.6.md).
 
 - **Android 0.5, 19 November 2026:** 420 phone unit tests and 57 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; the release APK keeps the 0.4 signing certificate and installs over 0.4 with data intact. Frame timing, real devices and real accounts were not verified. Details are in [the 0.5 release notes](releases/0.5.md). The entries below predate 0.5.
 
