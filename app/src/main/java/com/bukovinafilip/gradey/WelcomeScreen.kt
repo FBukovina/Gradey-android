@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -60,9 +61,31 @@ import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.ModalCloseButton
 import com.bukovinafilip.gradey.ui.PlainLink
 import com.bukovinafilip.gradey.ui.PlainRow
+import com.bukovinafilip.gradey.ui.SectionHeader
 import com.bukovinafilip.gradey.ui.gradeyColors
 
-internal const val PrivacyRevision = 2
+/**
+ * The privacy notice the app ships (iOS `PrivacyPolicyRevision.current`). Raise it only when the
+ * published policy changes in a way users must read, and refresh [PrivacyChanges] when you do:
+ * everyone who accepted an earlier revision is asked again.
+ *
+ * Revision 3 adds school homework, Komens messages and report cards. Revision 2 removed the
+ * Bakaláři password upload and documented the Planner, Gradey AI and the watch.
+ */
+internal const val PrivacyRevision = 3
+
+/** The date on the published policy at help.bukovinafilip.com. */
+internal val PrivacyEffectiveDate: java.time.LocalDate = java.time.LocalDate.of(2026, 11, 5)
+
+/** One entry of "What changed" (iOS `PrivacyPolicyChange`): a title, one line, and the full explanation behind it. */
+private class PrivacyChange(val id: String, val icon: String, val title: Int, val summary: Int, val detail: Int)
+
+/** Only what this app does; the most important first. */
+private val PrivacyChanges = listOf(
+    PrivacyChange("homework", HugeIcons.BookOpen01, R.string.privacy_update_homework_title, R.string.privacy_update_homework_summary, R.string.privacy_update_homework_detail),
+    PrivacyChange("messages", HugeIcons.Mail01, R.string.privacy_update_messages_title, R.string.privacy_update_messages_summary, R.string.privacy_update_messages_detail),
+    PrivacyChange("reportCards", HugeIcons.GraduationScroll, R.string.privacy_update_report_cards_title, R.string.privacy_update_report_cards_summary, R.string.privacy_update_report_cards_detail),
+)
 internal const val PrivacyUrl = "https://help.bukovinafilip.com/en/articles/10-privacy-policy"
 internal const val TermsUrl = "https://help.bukovinafilip.com/en/articles/11-terms-and-conditions"
 internal const val HelpUrl = "https://help.bukovinafilip.com/en"
@@ -220,24 +243,29 @@ internal fun PrivacyUpdateScreen(onAccept: () -> Unit, onClose: (() -> Unit)? = 
                 )
                 onClose?.let { close -> ModalCloseButton(close, contentDescription = stringResource(R.string.privacy_update_done), size = 44.dp) }
             }
-            Text(stringResource(R.string.privacy_update_subtitle), style = GradeyType.callout, color = secondary)
+            Column(verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
+                Text(stringResource(R.string.privacy_update_subtitle), style = GradeyType.callout, color = secondary)
+                // In the app's language, not the device's.
+                val locale = LocalConfiguration.current.locales[0]
+                val effective = remember(locale) {
+                    PrivacyEffectiveDate.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.LONG).withLocale(locale))
+                }
+                Text(stringResource(R.string.privacy_update_effective, effective), style = GradeyType.footnote, color = secondary)
+            }
             Column {
-                listOf(
-                    Triple(R.string.privacy_update_password_title, R.string.privacy_update_password_summary, R.string.privacy_update_password_detail),
-                    Triple(R.string.privacy_update_tokens_title, R.string.privacy_update_tokens_summary, R.string.privacy_update_tokens_detail),
-                    Triple(R.string.privacy_update_ai_title, R.string.privacy_update_ai_summary, R.string.privacy_update_ai_detail),
-                    Triple(R.string.privacy_update_planner_title, R.string.privacy_update_planner_summary, R.string.privacy_update_planner_detail),
-                    Triple(R.string.privacy_update_watch_title, R.string.privacy_update_watch_summary, R.string.privacy_update_watch_detail),
-                ).forEachIndexed { index, (title, summary, detail) ->
+                SectionHeader(stringResource(R.string.privacy_update_changes_title), Modifier.padding(start = GradeySpacing.xs, end = GradeySpacing.xs, bottom = GradeySpacing.sm))
+                PrivacyChanges.forEachIndexed { index, change ->
                     val open = expanded == index
                     PlainRow(
-                        Modifier.animateContentSize(tween(250)), onClick = { expanded = if (open) null else index }, verticalAlignment = Alignment.Top,
+                        Modifier.animateContentSize(tween(250)).testTag("privacyChange-${change.id}"),
+                        onClick = { expanded = if (open) null else index }, verticalAlignment = Alignment.Top,
                         onClickLabel = stringResource(if (open) R.string.privacy_update_collapse else R.string.privacy_update_expand),
                     ) {
+                        GradeyIcon(change.icon, Modifier.padding(top = 2.dp), size = 17.dp, tint = MaterialTheme.colorScheme.primary)
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(GradeySpacing.xs)) {
-                            Text(stringResource(title), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
-                            Text(stringResource(summary), style = GradeyType.subheadline, color = secondary)
-                            if (open) Text(stringResource(detail), style = GradeyType.footnote, color = secondary)
+                            Text(stringResource(change.title), style = GradeyType.headline, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(change.summary), style = GradeyType.subheadline, color = secondary)
+                            if (open) Text(stringResource(change.detail), style = GradeyType.footnote, color = secondary)
                         }
                         GradeyIcon(
                             HugeIcons.ArrowDown01, Modifier.padding(top = GradeySpacing.xs).graphicsLayer { rotationZ = if (open) 180f else 0f },

@@ -9,4 +9,16 @@
     <string name="app_meals">meals</string>
     <string name="app_attachment_no_app">no app on this device can open this file.</string>
     <string name="app_messages">messages</string>
+    <string name="privacy_update_homework_title">homework from your school</string>
+    <string name="privacy_update_homework_summary">Gradey loads your homework from the school, and ticking one off tells the school too.</string>
+    <string name="privacy_update_homework_detail">your device loads homework straight from your school\'s server, like your timetable, and shows it in the planner and on lessons. when you mark homework as done, your device sends that to the school\'s server, as the official app does. homework is not saved as a personal planner item and is not sent to Gradey\'s servers.</string>
+    <string name="privacy_update_messages_title">messages from your school</string>
+    <string name="privacy_update_messages_summary">Gradey shows your Komens messages and noticeboard, and opening a message tells the school it\'s read.</string>
+    <string name="privacy_update_messages_detail">your device loads Komens messages, noticeboard posts and their attachments straight from your school\'s server and keeps a copy on the device. when you open an unread message, your device tells the school\'s server it has been read, as the official app does. messages are not sent to Gradey\'s servers or to Gradey AI.</string>
+    <string name="privacy_update_report_cards_title">report cards stay on your device</string>
+    <string name="privacy_update_report_cards_summary">Gradey loads your report cards from the school and estimates the next one on your device.</string>
+    <string name="privacy_update_report_cards_detail">your device loads your report cards, with final marks, averages and missed hours, straight from your school\'s server and keeps a copy on the device. this semester\'s estimate is worked out on your device from your current averages. none of it is sent to Gradey\'s servers or to Gradey AI.</string>
+    <string name="privacy_update_effective">effective %s</string>
+    <string name="privacy_update_changes_title">what changed</string>
+    <string name="privacy_update_subtitle">the policy now covers homework, Komens messages and report cards from your school. please read what changed before you continue.</string>
 </resources>

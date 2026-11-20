@@ -9,4 +9,16 @@
     <string name="app_meals">jídelna</string>
     <string name="app_attachment_no_app">tenhle soubor neumí otevřít žádná aplikace v zařízení.</string>
     <string name="app_messages">zprávy</string>
+    <string name="privacy_update_homework_title">domácí úkoly ze školy</string>
+    <string name="privacy_update_homework_summary">Gradey načítá domácí úkoly ze školy, a když nějaký odškrtneš, dozví se to i škola.</string>
+    <string name="privacy_update_homework_detail">tvoje zařízení načítá domácí úkoly přímo ze serveru školy, stejně jako rozvrh, a ukazuje je v plánovači a u hodin. když úkol označíš jako hotový, zařízení to pošle na server školy, stejně jako oficiální aplikace. úkoly se neukládají jako tvoje osobní položky plánovače a neposílají se na servery Gradey.</string>
+    <string name="privacy_update_messages_title">zprávy ze školy</string>
+    <string name="privacy_update_messages_summary">Gradey ukazuje zprávy z Komensu a nástěnku školy, a otevřením zprávy dáš škole vědět, že je přečtená.</string>
+    <string name="privacy_update_messages_detail">tvoje zařízení načítá zprávy z Komensu, příspěvky z nástěnky a jejich přílohy přímo ze serveru školy a kopii si nechává v zařízení. když otevřeš nepřečtenou zprávu, zařízení dá serveru školy vědět, že je přečtená, stejně jako oficiální aplikace. zprávy se neposílají na servery Gradey ani do Gradey AI.</string>
+    <string name="privacy_update_report_cards_title">vysvědčení zůstávají v tvém zařízení</string>
+    <string name="privacy_update_report_cards_summary">Gradey načítá tvoje vysvědčení ze školy a odhad toho dalšího počítá přímo v zařízení.</string>
+    <string name="privacy_update_report_cards_detail">tvoje zařízení načítá vysvědčení se známkami, průměry a zameškanými hodinami přímo ze serveru školy a kopii si nechává v zařízení. odhad na toto pololetí se počítá v zařízení z tvých současných průměrů. nic z toho se neposílá na servery Gradey ani do Gradey AI.</string>
+    <string name="privacy_update_effective">účinné od %s</string>
+    <string name="privacy_update_changes_title">co se změnilo</string>
+    <string name="privacy_update_subtitle">zásady nově popisují domácí úkoly, zprávy z Komensu a vysvědčení ze školy. než budeš pokračovat, přečti si, co se změnilo.</string>
 </resources>
