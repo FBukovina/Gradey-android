@@ -2,7 +2,7 @@
 
 Native Kotlin companion to [Gradey](https://github.com/FBukovina/Gradely), with Jetpack Compose, phone widgets and Wear OS.
 
-Version 0.5 rebuilds the phone app to match Gradey 2.8.1 on iPhone: a new look on every screen, Gradey Recap, the report card estimate, and an optimized release build. See [the 0.5 release notes](docs/releases/0.5.md) for what changed and what was verified. It has not been published yet.
+Version 0.5 rebuilds the phone app to match Gradey 2.8.1 on iPhone: a new look on every screen, Gradey Recap, the report card estimate, and an optimized release build. See [the 0.5 release notes](docs/releases/0.5.md) for what changed and what was verified.
 
 Version 0.4 updates the launcher icon with adaptive and themed variants, and adds dedicated notification icons. See [the 0.4 release notes](docs/releases/0.4.md) for availability and verification.
 
@@ -12,9 +12,9 @@ The 0.2.0 update implements school/account flows, EduPage verification and stude
 
 Version 0.2.1 introduced a direct APK updater: automatic background checks, Wi-Fi downloads, verified APKs, and an Android installation confirmation. In 0.3, open **App updates** from **Settings → Support & About**, Gradey tools, or the sign-in screen. See [updater setup and release publishing](docs/updater.md).
 
-[Download the 0.4 phone APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.4/gradey-0.4-debug.apk) · [Release notes and checksums](https://github.com/FBukovina/Gradey-android/releases/tag/v0.4). 0.4 is the latest published version. This direct-update preview includes public Google/Supabase account configuration and supports real local school connections through **Continue without Gradey ID**. Choose **Use demo data** to explore without credentials. Live AI, Apple browser sign-in, Android push and Play purchases remain unconfigured; real account/device acceptance is pending. It is not a completed production release.
+[Download the 0.5 phone APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.5/gradey-0.5.apk) · [Release notes and checksums](https://github.com/FBukovina/Gradey-android/releases/tag/v0.5). This direct-update release includes public Google/Supabase account configuration and supports real local school connections through **Continue without Gradey ID**. Choose **Use demo data** to explore without credentials. Live AI, Apple browser sign-in, Android push and Play purchases remain unconfigured; real account/device acceptance is pending. It is not a completed production release.
 
-Existing compatible installations can open **App updates → Check for updates**. Version 0.4 uses code 7 and the existing direct-download signing key, so it can update public 0.3 (code 6), public 0.2.2 (code 5), public 0.2.1 (code 3), and local 0.2.2 previews (code 4) while retaining app data. New users can install the APK manually. This release publishes the phone app only; Wear OS remains independently versioned at 0.2.0.
+Existing direct installations can open **App updates → Check for updates**. Version 0.5 uses code 8 and the existing direct-download signing key, so 0.4 and earlier direct downloads update in place and keep their data. New users can install the APK manually. This release publishes the phone app only; Wear OS remains independently versioned at 0.2.0.
 
 ## Run locally
 

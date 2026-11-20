@@ -2,7 +2,7 @@
 
 The phone app supports updates distributed through the public stable releases in [FBukovina/Gradey-android](https://github.com/FBukovina/Gradey-android/releases). This is the distribution channel for APKs installed directly. No release is published by building the app or generating its update manifest.
 
-The updater is included from version 0.2.1 onward. New installations can download the [0.4 debug preview APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.4/gradey-0.4-debug.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.4/gradey-update.json) from the [0.4 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.4). Version 0.4 uses code 7 and the existing debug certificate, allowing updates from public 0.3 (code 6), public 0.2.2 (code 5), public 0.2.1 (code 3), and local previews (code 4). The account-configured preview still has the live-service limitations described in [android-configuration.md](android-configuration.md).
+The updater is included from version 0.2.1 onward. New installations can download the [0.5 APK](https://github.com/FBukovina/Gradey-android/releases/download/v0.5/gradey-0.5.apk) and [matching manifest](https://github.com/FBukovina/Gradey-android/releases/download/v0.5/gradey-update.json) from the [0.5 release](https://github.com/FBukovina/Gradey-android/releases/tag/v0.5). Version 0.5 uses code 8 and the signing certificate of every earlier direct download, so those installations can update to it. The account-configured build still has the live-service limitations described in [android-configuration.md](android-configuration.md).
 
 ## What users see
 
