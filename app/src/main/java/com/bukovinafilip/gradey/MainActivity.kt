@@ -63,8 +63,13 @@ import com.bukovinafilip.gradey.feature.auth.GradeyIdLoginScreen
 import com.bukovinafilip.gradey.feature.login.SchoolLoginScreen
 import com.bukovinafilip.gradey.domain.AbsenceDayLessonResolver
 import com.bukovinafilip.gradey.domain.AbsenceDayLessons
+import com.bukovinafilip.gradey.domain.Homework
+import com.bukovinafilip.gradey.domain.HomeworkList
 import com.bukovinafilip.gradey.domain.RecapCalendar
+import com.bukovinafilip.gradey.domain.SchoolAttachment
 import com.bukovinafilip.gradey.domain.TimetableWeeksLoader
+import com.bukovinafilip.gradey.feature.planner.HomeworkDetailSheet
+import com.bukovinafilip.gradey.feature.planner.LessonHomeworkSection
 import com.bukovinafilip.gradey.feature.recap.MarksRecapTile
 import com.bukovinafilip.gradey.feature.recap.RecapListScreen
 import com.bukovinafilip.gradey.feature.recap.RecapOverview
@@ -120,6 +125,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Attachments opened in an earlier run are not kept; a restored activity may still have one open.
+        if (savedInstanceState == null) lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) { SchoolAttachments.clear(applicationContext) }
         consumeAppleCallback(intent)
         pendingLaunchLink = savedInstanceState?.getString("gradey.pendingLaunchLink") ?: if (savedInstanceState == null) intent?.data?.toString() else null
         val savedTab = savedInstanceState?.getString("gradey.savedTab")?.let { name -> AppTab.entries.firstOrNull { it.name == name } }
@@ -150,6 +157,32 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     val scope = rememberCoroutineScope()
     val appPreferences = remember { context.getSharedPreferences("gradey-app-preferences", 0) }
     var ageAttestation by rememberSaveable { mutableStateOf(appPreferences.getString("ageAttestation", null)) }
+    // School homework: its detail sheet opens from Today, the Planner and a lesson.
+    var openHomeworkID by rememberSaveable { mutableStateOf<String?>(null) }
+    var downloadingAttachmentID by remember { mutableStateOf<String?>(null) }
+    val toggleHomework: (Homework) -> Unit = { model.setHomeworkDone(it.id, !it.isDone) }
+    val openAttachment: (SchoolAttachment) -> Unit = { attachment ->
+        if (downloadingAttachmentID == null) {
+            downloadingAttachmentID = attachment.id
+            scope.launch {
+                try {
+                    val bytes = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { model.graph.schoolRepository.downloadAttachment(attachment) }
+                    if (!SchoolAttachments.open(context, attachment, bytes)) model.showError(resources.getString(R.string.app_attachment_no_app))
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+                } catch (error: Exception) { model.showError(safeError(error, context))
+                } finally { downloadingAttachmentID = null }
+            }
+        }
+    }
+    val schoolHomeworkTitle = stringResource(com.bukovinafilip.gradey.feature.planner.R.string.homework_school)
+    // Today previews open school homework next to the user's own Planner items.
+    val todayPlannerItems = remember(state.personalPlannerItems, state.homework, state.school?.cacheScope, RecapCalendar.today(), schoolHomeworkTitle) {
+        val schoolScope = state.school?.cacheScope
+        if (schoolScope == null || state.homework.isEmpty()) state.personalPlannerItems
+        else state.personalPlannerItems + HomeworkList.upcoming(state.homework, RecapCalendar.today()).map { it.plannerItem(schoolScope, schoolHomeworkTitle) }
+    }
+    val openPlannerEntry: (String) -> Unit = { id -> Homework.idFromPlannerItem(id)?.let { openHomeworkID = it } ?: model.openPlanner(itemID = id) }
+    if (state.tab == AppTab.PERSONAL_PLANNER || state.tab == AppTab.TIMETABLE) LaunchedEffect(state.tab, state.school?.cacheScope) { model.refreshHomeworkIfStale() }
     // Gradey Recap: worked out from what is on screen plus the archive, off the main thread.
     val recapStore = remember(model.graph) { RecapStore(model.graph.schoolRepository, appPreferences) }
     val recapHidden by recapStore.hiddenIDs.collectAsStateWithLifecycle()
@@ -268,8 +301,8 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 onOpenSubject = model::openSubject,
                                 mealMenu = state.mealMenu, hasMealAccount = state.hasMealAccount && showMealsTab, onOpenMeals = { model.select(AppTab.STRAVACZ) },
                                 linkedAccounts = state.linkedAccounts, activeAccountID = state.school?.linkedAccountID, onReconnectAccount = model::reconnectAccount,
-                                insightState = state.insightState, plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
-                                onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = { model.openPlanner(itemID = it) },
+                                insightState = state.insightState, plannerItems = todayPlannerItems, schoolScope = state.school?.cacheScope,
+                                onOpenPlanner = { model.openPlanner() }, onOpenPlannerItem = openPlannerEntry,
                                 recapTile = recapOverview.featured(recapHidden)?.let { recap ->
                                     { TodayRecapTile(recap, onOpen = { model.openRecapStory(recap.period.id) }, onHide = { recapStore.hide(recap.period.id) }) }
                                 },
@@ -310,6 +343,12 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                     errorMessage = if (permanent) state.permanentTimetableError else null,
                                     plannerItems = state.personalPlannerItems, schoolScope = state.school?.cacheScope,
                                     onOpenPlannerItem = { model.openPlanner(itemID = it) },
+                                    lessonHomework = if (state.homework.isEmpty()) null else { lesson, day ->
+                                        val items = remember(state.homework, lesson, day.date) {
+                                            HomeworkList.forLesson(state.homework, lesson, day.date?.let { runCatching { java.time.LocalDate.parse(it.take(10)) }.getOrNull() })
+                                        }
+                                        if (items.isNotEmpty()) LessonHomeworkSection(items, state.homeworkPendingIDs, toggleHomework, onOpen = { openHomeworkID = it })
+                                    },
                                 )
                             }
                             AppTab.STRAVACZ -> com.bukovinafilip.gradey.feature.stravacz.StravaCZRoute(
@@ -331,6 +370,8 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 onAskTestAI = { model.openAI(AIEntryRequest(com.bukovinafilip.gradey.feature.ai.AIAction.TEST, eventID = it)) },
                                 calendarMirror = if (state.isDemo) null else (context.applicationContext as GradeyApplication).plannerCalendarMirror,
                                 onInitialItemHandled = model::plannerEntryHandled,
+                                homework = state.homework, homeworkPendingIDs = state.homeworkPendingIDs,
+                                onToggleHomework = toggleHomework, onOpenHomework = { openHomeworkID = it },
                             )
                             AppTab.REPORT_CARD -> ReportCardScreen(
                                 subjects = state.dashboard.marksResponse.subjects,
@@ -474,6 +515,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
             if (updateReady) Box(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(GradeySpacing.md)) {
                 UpdateReadyBanner(updateState.release?.versionName.orEmpty()) { model.select(AppTab.UPDATES) }
             }
+        }
+        if (state.phase == AppPhase.SIGNED_IN) openHomeworkID?.let { id ->
+            HomeworkDetailSheet(
+                homework = state.homework.firstOrNull { it.id == id }, pending = id in state.homeworkPendingIDs,
+                downloadingAttachmentID = downloadingAttachmentID, onToggle = toggleHomework, onOpenAttachment = openAttachment,
+                onDismiss = { openHomeworkID = null },
+            )
         }
         if (showHelp) com.bukovinafilip.gradey.feature.support.SupportHelpDialog(
             onDismiss = { showHelp = false }, onOpenHelpCenter = { uriHandler.openUri(HelpUrl) },

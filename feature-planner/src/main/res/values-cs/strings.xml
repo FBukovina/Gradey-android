@@ -77,4 +77,21 @@
     <string name="planner_subject">Předmět</string>
     <string name="planner_try_again">Zkusit znovu</string>
     <string name="planner_type">Typ</string>
+    <string name="homework_school">Úkol ze školy</string>
+    <string name="homework_due_today">Odevzdat dnes</string>
+    <string name="homework_due_tomorrow">Odevzdat zítra</string>
+    <string name="homework_due_date">Odevzdat %s</string>
+    <string name="homework_detail_due">Odevzdat</string>
+    <string name="homework_detail_assigned">Zadáno</string>
+    <string name="homework_detail_notice">Poznámka</string>
+    <string name="homework_detail_hand_in">Odevzdání</string>
+    <string name="homework_detail_electronic">Online přes Bakaláře</string>
+    <string name="homework_detail_status">Stav</string>
+    <string name="homework_closed">Uzavřeno učitelem</string>
+    <string name="homework_attachments">Přílohy</string>
+    <string name="homework_mark_done">Označit jako hotové</string>
+    <string name="homework_mark_not_done">Označit jako nehotové</string>
+    <string name="homework_detail_teacher">Učitel</string>
+    <string name="homework_done">Hotovo</string>
+    <string name="homework_unavailable">Tato položka už není dostupná</string>
 </resources>

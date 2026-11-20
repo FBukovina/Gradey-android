@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bukovinafilip.gradey.data.AndroidGradeyGraph
 import com.bukovinafilip.gradey.data.SecureJsonStore
+import com.bukovinafilip.gradey.domain.Homework
+import com.bukovinafilip.gradey.domain.HomeworkList
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.isEduPageParentSession
 import com.bukovinafilip.gradey.model.*
@@ -94,6 +96,10 @@ internal data class GradeyState(
     /** Destinations under [tab], oldest first; Back returns to the last one. */
     val backStack: List<AppTab> = emptyList(),
     val recapPeriodID: String? = null,
+    /** Homework from the school, by due day. Empty for schools without it. */
+    val homework: List<Homework> = emptyList(),
+    /** Done ticks still on their way to the school. */
+    val homeworkPendingIDs: Set<String> = emptySet(),
 ) {
     /** The bottom-bar tab the current destination belongs to. */
     val rootTab: AppTab get() = if (tab.kind == DestinationKind.TAB) tab else backStack.lastOrNull { it.kind == DestinationKind.TAB } ?: AppTab.TODAY
@@ -127,6 +133,9 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     private var permanentRevision = 0L
     private var initialTabApplied = false
     private var pendingDestination: AppDestination? = null
+    /** The account the homework list was last loaded for, and when (elapsed realtime). */
+    private var homeworkLoaded: Pair<String, Long>? = null
+    private var homeworkRefresh: kotlinx.coroutines.Job? = null
     private var awaitingPlannerEntry = false
     private var appleAvailable = false
     private var pendingAppleCallback: String? = null
@@ -594,7 +603,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         val linkedAccounts = off { if (isGuest) emptyList() else graph.linkedAccountRepository.cachedAccounts() }
         val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
         val mealMenu = if (mealSession != null) off { graph.stravaCZRepository.loadCachedMenu() } else null
-        mutableState.update { it.copy(dashboard = cached ?: DashboardData(MarksResponse()), personalPlannerItems = plannerItems,
+        val homework = off { runCatching { graph.schoolRepository.loadCachedHomework() }.getOrDefault(emptyList()) }
+        mutableState.update { it.copy(dashboard = cached ?: DashboardData(MarksResponse()), personalPlannerItems = plannerItems, homework = homework,
             timetable = week, currentTimetable = week, viewedWeek = week?.weekStart ?: LocalDate.now(java.time.ZoneId.of("Europe/Prague")).toString(), plans = plans,
             preferences = preferences, linkedAccounts = linkedAccounts, mealMenu = mealMenu, hasMealAccount = mealSession != null,
             absence = cachedAbsence ?: AbsenceResponse(absencesPerSubject = cached?.absencesPerSubject.orEmpty())) }
@@ -621,6 +631,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             mutableState.update { it.copy(currentTimetable = week, timetable = week, viewedWeek = week.weekStart) }
             syncCompanions(week)
         }
+        refreshHomework()
         if (!state.value.isGuest) attempt(context.getString(R.string.app_school_accounts)) { val accounts = off { graph.linkedAccountRepository.localAccounts() }; mutableState.update { it.copy(linkedAccounts = accounts) } }
         attempt(context.getString(R.string.app_meals)) {
             val mealSession = off { graph.stravaCZRepository.bootstrapSession() }
@@ -637,6 +648,54 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         mutableState.update { it.copy(school = refreshedSession) }
         updateInsights()
         if (failures.isNotEmpty()) showError(context.getString(R.string.app_refresh_failed, failures.joinToString()))
+    }
+
+    /**
+     * Homework is an extra: a school without the module, or a failed load, keeps the list there is
+     * and never adds to the refresh error.
+     */
+    private suspend fun refreshHomework() {
+        val schoolScope = state.value.school?.cacheScope ?: return
+        try {
+            val fresh = off { graph.schoolRepository.loadHomework() }
+            mutableState.update {
+                if (it.school?.cacheScope != schoolScope) it else it.copy(homework = HomeworkList.merged(fresh, it.homework, it.homeworkPendingIDs))
+            }
+            homeworkLoaded = schoolScope to android.os.SystemClock.elapsedRealtime()
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (_: Exception) { }
+    }
+
+    /** Opening the Planner or Timetable brings in new homework, at most once in fifteen minutes (as on iOS). */
+    fun refreshHomeworkIfStale() {
+        val schoolScope = state.value.school?.cacheScope ?: return
+        if (state.value.phase != AppPhase.SIGNED_IN || homeworkRefresh?.isActive == true) return
+        val (loadedScope, loadedAt) = homeworkLoaded ?: (null to 0L)
+        if (loadedScope == schoolScope && android.os.SystemClock.elapsedRealtime() - loadedAt < 15 * 60_000L) return
+        homeworkRefresh = viewModelScope.launch { refreshHomework() }
+    }
+
+    /** Shows the tick at once and puts it back if the school refuses it (iOS `HomeworkStore.setDone`). */
+    fun setHomeworkDone(id: String, isDone: Boolean) {
+        val snapshot = state.value
+        val schoolScope = snapshot.school?.cacheScope ?: return
+        val previous = snapshot.homework.firstOrNull { it.id == id }?.isDone ?: return
+        if (id in snapshot.homeworkPendingIDs || previous == isDone) return
+        val repository = graph.schoolRepository
+        mutableState.update { it.copy(homework = HomeworkList.withDone(it.homework, id, isDone), homeworkPendingIDs = it.homeworkPendingIDs + id) }
+        viewModelScope.launch {
+            val failure = try { off { repository.setHomeworkDone(id, isDone) }; null }
+                catch (cancelled: CancellationException) { throw cancelled }
+                catch (error: Exception) { error }
+            mutableState.update {
+                if (it.school?.cacheScope != schoolScope) it
+                else it.copy(
+                    homework = if (failure == null) it.homework else HomeworkList.withDone(it.homework, id, previous),
+                    homeworkPendingIDs = it.homeworkPendingIDs - id,
+                )
+            }
+            if (failure != null && state.value.school?.cacheScope == schoolScope) showError(safeError(failure, context))
+        }
     }
 
     fun changeWeek(date: String) = action {
@@ -788,6 +847,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
         removedScope?.let { plansStore.clear("plans.$it") }
         if (state.value.school?.linkedAccountID == id) {
             graph.schoolRepository.logout()
+            SchoolAttachments.clear(app)
             clearCompanions()
             mutableState.update { GradeyState(phase = AppPhase.NEEDS_SCHOOL, loading = true, account = it.account, isDemo = it.isDemo) }
         } else {
@@ -830,6 +890,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             cleanup { signingOutGraph.linkedAccountRepository.clearLocalAccounts() }
             cleanup { signingOutGraph.canteenAccountRepository.clearLocalAccounts() }
             cleanup { signingOutGraph.schoolRepository.logout() }
+            cleanup { SchoolAttachments.clear(app) }
             cleanup { signingOutGraph.cache?.clearAll() }
             cleanup { signingOutGraph.schoolInsightStore.clearAll() }
             cleanup { guestPreferences.clear() }

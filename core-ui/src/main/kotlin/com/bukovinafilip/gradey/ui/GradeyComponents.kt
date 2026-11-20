@@ -51,6 +51,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import android.text.format.Formatter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import com.bukovinafilip.gradey.domain.SchoolAttachment
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
@@ -406,6 +410,62 @@ fun InfoRow(
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md), verticalAlignment = Alignment.CenterVertically) {
         InfoRowContent(icon, title, subtitle, tint)
         trailing?.invoke(this)
+    }
+}
+
+/** 24 dp icon column in primary, caption title over a subheadline value (iOS `DetailRow`). */
+@Composable
+fun DetailRow(icon: String, title: String, value: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
+    ) {
+        Box(Modifier.width(24.dp).padding(top = 2.dp), contentAlignment = Alignment.TopCenter) {
+            GradeyIcon(icon, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = GradeyType.captionSemibold, color = MaterialTheme.gradeyColors.secondaryLabel)
+            Text(value, style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
+}
+
+/**
+ * Files attached to homework or a Komens message (iOS `SchoolAttachmentsSection`). Tapping one
+ * asks the caller to download and open it; the row being downloaded shows a spinner.
+ */
+@Composable
+fun SchoolAttachmentsSection(
+    title: String,
+    attachments: List<SchoolAttachment>,
+    downloadingID: String?,
+    onOpen: (SchoolAttachment) -> Unit,
+    modifier: Modifier = Modifier,
+    tagPrefix: String = "attachment",
+) {
+    val context = LocalContext.current
+    Column(modifier.fillMaxWidth()) {
+        // Attachments live in sheets, so they get the small header the sheets' other sections use.
+        SectionHeader(title, Modifier.padding(horizontal = GradeySpacing.xs))
+        Spacer(Modifier.height(GradeySpacing.sm))
+        attachments.forEach { attachment ->
+            androidx.compose.runtime.key(attachment.id) {
+                val size = remember(attachment.size, context) { attachment.size?.let { Formatter.formatShortFileSize(context, it) } }
+                PlainRow(
+                    Modifier.testTag("$tagPrefix-${attachment.id}"),
+                    // One download at a time: the others wait until it is open.
+                    onClick = { onOpen(attachment) }, enabled = downloadingID == null,
+                ) {
+                    GradeyIcon(HugeIcons.Attachment01, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(attachment.name, style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
+                        if (size != null) Text(size, style = GradeyType.caption.tabular(), color = MaterialTheme.gradeyColors.secondaryLabel)
+                    }
+                    if (downloadingID == attachment.id) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    else DisclosureIcon()
+                }
+            }
+        }
     }
 }
 

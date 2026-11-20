@@ -1,5 +1,6 @@
 package com.bukovinafilip.gradey.feature.planner
 
+import com.bukovinafilip.gradey.domain.Homework
 import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.PlannerItemType
 import com.bukovinafilip.gradey.model.PlannerSubjectReference
@@ -46,6 +47,53 @@ class PlannerSectionsTest {
         )
         val completed = plannerSections(items, completed = true, filterDay = "2026-10-18", labels = labels, today = today)
         assertEquals(listOf("b"), completed.flatMap { section -> section.rows.map { it.item.id } })
+    }
+
+    @Test fun schoolHomeworkJoinsItsDueDayAheadOfTheUsersOwnItems() {
+        fun homework(id: String, due: String?, done: Boolean = false, closed: Boolean = false) =
+            Homework(id, "math", "Mathematics", "M", null, "Task $id", null, null, due?.let(LocalDate::parse), done, closed, false, emptyList())
+        val items = listOf(
+            PersonalPlannerItem(id = "own-tomorrow", title = "Read", dueDate = "2026-10-18"),
+            PersonalPlannerItem(id = "own-undated", title = "Someday"),
+        )
+        val school = listOf(
+            homework("hw-tomorrow", "2026-10-18"), homework("hw-next-week", "2026-10-21"), homework("hw-undated", null),
+            homework("hw-done", "2026-10-16", done = true), homework("hw-closed", "2026-10-20", closed = true),
+        )
+        val upcoming = plannerSections(items, completed = false, filterDay = null, labels = labels, today = today, homework = school)
+        // A day with only homework still gets its section; closed homework is in neither list.
+        assertEquals(listOf("Tomorrow", "Wednesday 21. 10.", "No date"), upcoming.map { it.title })
+        assertEquals(listOf("hw-tomorrow"), upcoming[0].homework.map { it.id })
+        assertEquals(listOf("own-tomorrow"), upcoming[0].rows.map { it.item.id })
+        assertEquals(listOf("hw-next-week"), upcoming[1].homework.map { it.id })
+        assertTrue(upcoming[1].rows.isEmpty())
+        assertEquals(listOf("hw-undated"), upcoming[2].homework.map { it.id })
+
+        val completed = plannerSections(items, completed = true, filterDay = null, labels = labels, today = today, homework = school)
+        assertEquals(listOf("hw-done"), completed.flatMap { it.homework }.map { it.id })
+        assertEquals("Friday 16. 10.", completed.single().title)
+
+        val focused = plannerSections(items, completed = false, filterDay = "2026-10-18", labels = labels, today = today, homework = school)
+        assertEquals(listOf("hw-tomorrow"), focused.single().homework.map { it.id })
+        assertEquals(listOf("own-tomorrow"), focused.single().rows.map { it.item.id })
+    }
+
+    @Test fun homeworkLabelsNameTheDueDayAndFallBackWhenThereIsNoText() {
+        val homeworkLabels = HomeworkLabels("School homework", "Due today", "Due tomorrow", "Due %s", Locale.ENGLISH)
+        fun homework(due: String?, content: String = "Workbook p. 34\nmore", subject: String? = "Mathematics") =
+            Homework("h", "math", subject, "M", null, content, null, null, due?.let(LocalDate::parse), false, false, false, emptyList())
+        assertEquals("Due today", homeworkLabels.due(homework("2026-10-17"), today))
+        assertEquals("Due tomorrow", homeworkLabels.due(homework("2026-10-18"), today))
+        assertEquals("Due Wed 21. 10.", homeworkLabels.due(homework("2026-10-21"), today))
+        assertEquals("Due Fri 1. 1. 2027", homeworkLabels.due(homework("2027-01-01"), today))
+        // Overdue homework names its day too.
+        assertEquals("Due Thu 15. 10.", homeworkLabels.due(homework("2026-10-15"), today))
+        assertNull(homeworkLabels.due(homework(null), today))
+        assertEquals("Workbook p. 34", homeworkLabels.title(homework("2026-10-17")))
+        assertEquals("Mathematics", homeworkLabels.title(homework("2026-10-17", content = "")))
+        assertEquals("School homework", homeworkLabels.title(homework("2026-10-17", content = "", subject = null)))
+        // Czech abbreviates weekdays without a trailing dot before the date.
+        assertEquals("Odevzdat st 21. 10.", HomeworkLabels("Úkol ze školy", "Odevzdat dnes", "Odevzdat zítra", "Odevzdat %s", Locale.forLanguageTag("cs")).due(homework("2026-10-21"), today))
     }
 
     @Test fun datesOutsideTheCurrentYearShowTheYear() {

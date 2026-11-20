@@ -65,6 +65,7 @@ import com.bukovinafilip.gradey.model.TimetableWeek
 import com.bukovinafilip.gradey.ui.EmptyState
 import com.bukovinafilip.gradey.ui.ErrorState
 import com.bukovinafilip.gradey.ui.GradeyColors
+import com.bukovinafilip.gradey.ui.DetailRow
 import com.bukovinafilip.gradey.ui.GradeyIcon
 import com.bukovinafilip.gradey.ui.GradeyLazyColumn
 import com.bukovinafilip.gradey.ui.GradeyMetrics
@@ -132,6 +133,7 @@ fun TimetableScreen(
     plannerItems: List<PersonalPlannerItem> = emptyList(),
     schoolScope: String? = null,
     onOpenPlannerItem: ((String) -> Unit)? = null,
+    lessonHomework: (@Composable (ScheduledLesson, ScheduledDay) -> Unit)? = null,
 ) {
     val isPermanent = kind == TimetableKind.PERMANENT
     val schoolTime = rememberSchoolTime()
@@ -270,6 +272,8 @@ fun TimetableScreen(
             selection = current,
             plannerItems = attached,
             showPlanner = !schoolScope.isNullOrBlank() && (attached.isNotEmpty() || onPlanLesson != null),
+            // The permanent timetable has no dates, so no homework is given or due in its lessons.
+            homework = lessonHomework?.takeIf { !isPermanent },
             onDismiss = { selection = null },
             onOpenPlannerItem = onOpenPlannerItem?.let { open ->
                 { itemID: String ->
@@ -728,6 +732,7 @@ private fun LessonDetailSheet(
     onDismiss: () -> Unit,
     onOpenPlannerItem: ((String) -> Unit)?,
     onAdd: (() -> Unit)?,
+    homework: (@Composable (ScheduledLesson, ScheduledDay) -> Unit)? = null,
 ) {
     val lesson = selection.lesson
     val unknown = stringResource(R.string.timetable_lesson_unknown)
@@ -754,6 +759,8 @@ private fun LessonDetailSheet(
             // The change is the news: show it before the regular details.
             if (lesson.changeKind != LessonChangeKind.NONE) LessonChangeBlock(lesson)
             LessonDetailRows(lesson)
+            // Homework given in this lesson or due in it; the slot draws nothing when there is none.
+            homework?.invoke(lesson, selection.day)
             if (showPlanner) LessonPlannerSection(plannerItems, onOpenPlannerItem, onAdd)
         }
     }
@@ -803,19 +810,3 @@ private fun LessonDetailRows(lesson: ScheduledLesson) {
     }
 }
 
-/** 24 dp icon column in primary, caption title over a subheadline value (iOS `DetailRow`). */
-@Composable
-private fun DetailRow(icon: String, title: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
-        horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md),
-    ) {
-        Box(Modifier.width(24.dp).padding(top = 2.dp), contentAlignment = Alignment.TopCenter) {
-            GradeyIcon(icon, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(title, style = GradeyType.captionSemibold, color = MaterialTheme.gradeyColors.secondaryLabel)
-            Text(value, style = GradeyType.subheadline, color = MaterialTheme.colorScheme.onSurface)
-        }
-    }
-}

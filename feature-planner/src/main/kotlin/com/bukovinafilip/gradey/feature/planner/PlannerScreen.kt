@@ -44,6 +44,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.bukovinafilip.gradey.domain.Homework
+import com.bukovinafilip.gradey.domain.HomeworkList
 import com.bukovinafilip.gradey.domain.PersonalPlanner
 import com.bukovinafilip.gradey.domain.PersonalPlannerRepository
 import com.bukovinafilip.gradey.domain.PlannerCalendarExport
@@ -107,6 +109,10 @@ fun PlannerRoute(
     onAskTestAI: ((String) -> Unit)? = null,
     calendarMirror: PlannerCalendarMirror? = null,
     onInitialItemHandled: () -> Unit = {},
+    homework: List<Homework> = emptyList(),
+    homeworkPendingIDs: Set<String> = emptySet(),
+    onToggleHomework: (Homework) -> Unit = {},
+    onOpenHomework: (String) -> Unit = {},
 ) {
     val resources = LocalResources.current
     val context = LocalContext.current
@@ -229,7 +235,8 @@ fun PlannerRoute(
     val locale = LocalConfiguration.current.locales[0]
     val is24Hour = DateFormat.is24HourFormat(context)
     val labels = remember(resources, locale, is24Hour) { PlannerLabels.from(resources, locale, is24Hour) }
-    val sections = remember(items, complete, filterDay, labels) { plannerSections(items, complete, filterDay, labels) }
+    val sections = remember(items, homework, complete, filterDay, labels) { plannerSections(items, complete, filterDay, labels, homework = homework) }
+    val homeworkLabels = rememberHomeworkLabels()
     val filterDayTitle = remember(filterDay, labels) {
         filterDay?.let { day -> PersonalPlannerDates.parse(day)?.let { dayTitle(it, LocalDate.now(), labels) } ?: day }
     }
@@ -306,6 +313,13 @@ fun PlannerRoute(
             sections.forEach { section ->
                 item(key = "section-${section.key}", contentType = "sectionTitle") {
                     PlainSectionTitle(section.title, Modifier.padding(top = GradeySpacing.lg, bottom = GradeySpacing.sm))
+                }
+                // School homework first on each day, then your own items.
+                items(section.homework, key = { "homework-${it.id}" }, contentType = { "homeworkRow" }) { item ->
+                    HomeworkRow(
+                        item, pending = item.id in homeworkPendingIDs, onToggle = { onToggleHomework(item) }, onOpen = { onOpenHomework(item.id) },
+                        showsDue = false, labels = homeworkLabels,
+                    )
                 }
                 items(section.rows, key = { it.item.id }, contentType = { "plannerRow" }) { row ->
                     PlannerRow(
@@ -460,8 +474,9 @@ internal data class PlannerRowUi(
     val schedule: String?,
 )
 
+/** One day of the Planner: the school's homework due that day, then the user's own items. */
 @Immutable
-internal data class PlannerSectionUi(val key: String, val title: String, val rows: List<PlannerRowUi>)
+internal data class PlannerSectionUi(val key: String, val title: String, val rows: List<PlannerRowUi>, val homework: List<Homework> = emptyList())
 
 @Immutable
 internal class PlannerLabels(
@@ -511,14 +526,20 @@ internal fun plannerSections(
     filterDay: String?,
     labels: PlannerLabels,
     today: LocalDate = LocalDate.now(),
+    homework: List<Homework> = emptyList(),
 ): List<PlannerSectionUi> {
     val visible = items.filter { it.isCompleted == completed && (filterDay == null || PersonalPlanner.orderingDate(it)?.toString() == filterDay) }
         .sortedWith(compareBy<PersonalPlannerItem> { PersonalPlanner.orderingDate(it) ?: LocalDate.MAX }.thenBy { it.dueTime ?: "23:59" }.thenBy { it.title.lowercase() })
-    return visible.groupBy { PersonalPlanner.orderingDate(it) }.map { (date, group) ->
+    val itemsByDay = visible.groupBy { PersonalPlanner.orderingDate(it) }
+    val homeworkByDay = HomeworkList.visible(homework, completed, filterDay?.let(PersonalPlannerDates::parse)).groupBy { it.dueOn }
+    // Days in order, the undated ones last.
+    val days = (itemsByDay.keys + homeworkByDay.keys).sortedWith(compareBy<LocalDate?> { it == null }.thenBy { it ?: LocalDate.MAX })
+    return days.map { date ->
         PlannerSectionUi(
             key = date?.toString() ?: "undated",
             title = dayTitle(date, today, labels),
-            rows = group.map { item ->
+            homework = homeworkByDay[date].orEmpty(),
+            rows = itemsByDay[date].orEmpty().map { item ->
                 PlannerRowUi(
                     item = item,
                     typeTitle = labels.types.getValue(item.type),

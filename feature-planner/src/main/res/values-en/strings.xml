@@ -77,4 +77,21 @@
     <string name="planner_subject">Subject</string>
     <string name="planner_try_again">Try again</string>
     <string name="planner_type">Type</string>
+    <string name="homework_school">School homework</string>
+    <string name="homework_due_today">Due today</string>
+    <string name="homework_due_tomorrow">Due tomorrow</string>
+    <string name="homework_due_date">Due %s</string>
+    <string name="homework_detail_due">Due</string>
+    <string name="homework_detail_assigned">Assigned</string>
+    <string name="homework_detail_notice">Note</string>
+    <string name="homework_detail_hand_in">Handing in</string>
+    <string name="homework_detail_electronic">Online, through Bakaláři</string>
+    <string name="homework_detail_status">Status</string>
+    <string name="homework_closed">Closed by the teacher</string>
+    <string name="homework_attachments">Attachments</string>
+    <string name="homework_mark_done">Mark as done</string>
+    <string name="homework_mark_not_done">Mark as not done</string>
+    <string name="homework_detail_teacher">Teacher</string>
+    <string name="homework_done">Done</string>
+    <string name="homework_unavailable">This item is no longer available</string>
 </resources>

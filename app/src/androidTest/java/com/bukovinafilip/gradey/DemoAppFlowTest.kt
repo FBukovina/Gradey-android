@@ -237,6 +237,44 @@ class DemoAppFlowTest {
         compose.onNodeWithTag("subjectsList").assertExists()
     }
 
+    @Test fun schoolHomeworkShowsInThePlannerCanBeTickedAndOpensItsDetail() {
+        // Demo mode carries sample homework that follows the clock.
+        compose.waitUntil(10_000) { state().homework.isNotEmpty() && !state().loading }
+        val homework = state().homework.first { it.isOpen && it.attachments.isNotEmpty() }
+        fun model(action: (GradeyViewModel) -> Unit) = compose.activityRule.scenario.onActivity { action(ViewModelProvider(it)[GradeyViewModel::class.java]) }
+        model { it.openPlanner() }
+        try {
+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("homeworkItem-${homework.id}").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("plannerList").performScrollToNode(hasTestTag("homeworkItem-${homework.id}"))
+
+            // The row opens the whole homework in a sheet, with its attachment and the done button.
+            compose.onNodeWithTag("homeworkItem-${homework.id}").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("homeworkDetail").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("homeworkDetailContent").assertExists()
+            compose.onNodeWithTag("homeworkAttachment-${homework.attachments.first().id}").assertExists()
+            compose.onNodeWithTag("homeworkDetailDoneButton").performScrollTo().performClick()
+            compose.waitUntil(5_000) { state().homework.first { it.id == homework.id }.isDone && state().homeworkPendingIDs.isEmpty() }
+            androidx.test.espresso.Espresso.pressBack()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("homeworkDetail").fetchSemanticsNodes().isEmpty() }
+            assertEquals(AppTab.PERSONAL_PLANNER, state().tab)
+
+            // Done homework leaves Upcoming and is listed under Completed, where the tick takes it back.
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("homeworkItem-${homework.id}").fetchSemanticsNodes().isEmpty() }
+            compose.onNodeWithText("Completed").performClick()
+            compose.waitUntil(5_000) { compose.onAllNodesWithTag("homeworkDone-${homework.id}").fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithTag("plannerList").performScrollToNode(hasTestTag("homeworkDone-${homework.id}"))
+            compose.onNodeWithTag("homeworkDone-${homework.id}").performClick()
+            compose.waitUntil(5_000) { state().homework.first { it.id == homework.id }.isOpen && state().homeworkPendingIDs.isEmpty() }
+            // The saved list agrees with what is on screen.
+            val saved = runBlocking { (compose.activity.application as GradeyApplication).activeGraph.schoolRepository.loadCachedHomework() }
+            assertFalse(saved.first { it.id == homework.id }.isDone)
+        } finally {
+            model { it.setHomeworkDone(homework.id, false) }
+            compose.waitUntil(5_000) { state().homeworkPendingIDs.isEmpty() }
+            model { it.select(AppTab.TODAY) }
+        }
+    }
+
     @Test fun recapOpensFromMarksAsAStoryAndReturnsToTheList() {
         // Demo mode carries sample semesters that follow the clock, so a recap is out on any day.
         compose.onNodeWithTag("tab-subjects").performClick()

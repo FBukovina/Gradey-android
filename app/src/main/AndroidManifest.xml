@@ -24,6 +24,14 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_file_paths" />
         </provider>
+        <!-- Opens a downloaded homework or Komens attachment in the app the user has for it. -->
+        <provider
+            android:name=".SchoolAttachmentProvider"
+            android:authorities="${applicationId}.attachments"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/school_attachment_paths" />
+        </provider>
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop"

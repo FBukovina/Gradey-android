@@ -151,4 +151,5 @@
     <string name="app_absence">Absence</string>
     <string name="app_timetable">Rozvrh</string>
     <string name="app_meals">Jídelna</string>
+    <string name="app_attachment_no_app">Tenhle soubor neumí otevřít žádná aplikace v zařízení.</string>
 </resources>

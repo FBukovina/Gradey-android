@@ -155,6 +155,9 @@ object HugeIcons {
     const val University = "university"
     const val GraduationScroll = "graduation-scroll"
     const val Book02 = "book-02"
+    const val Mortarboard02 = "mortarboard-02"
+    const val Attachment01 = "attachment-01"
+    const val Undo02 = "undo-02"
     const val Target02 = "target-02"
     // Gradey Recap personalities
     const val Crown = "crown"

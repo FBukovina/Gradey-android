@@ -7,4 +7,5 @@
     <string name="app_absence">absence</string>
     <string name="app_timetable">timetable</string>
     <string name="app_meals">meals</string>
+    <string name="app_attachment_no_app">no app on this device can open this file.</string>
 </resources>

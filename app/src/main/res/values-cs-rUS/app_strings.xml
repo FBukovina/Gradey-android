@@ -7,4 +7,5 @@
     <string name="app_absence">absence</string>
     <string name="app_timetable">rozvrh</string>
     <string name="app_meals">jídelna</string>
+    <string name="app_attachment_no_app">tenhle soubor neumí otevřít žádná aplikace v zařízení.</string>
 </resources>
