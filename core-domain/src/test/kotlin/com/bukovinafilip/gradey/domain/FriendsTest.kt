@@ -165,6 +165,29 @@ class FriendsTest {
         assertThat(failure.reason).isEqualTo(FriendTimetableException.Reason.NOT_PUBLISHED)
     }
 
+    @Test fun friendsAndTheDanceCourseSurviveBeingSaved() {
+        // The stores keep these as JSON; both kinds of friend and every field must come back as they went in.
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true; explicitNulls = false; encodeDefaults = true }
+        val friends = listOf(
+            com.bukovinafilip.gradey.model.Friend("f1", "Kuba", FriendTimetableSource.Bakalari("https://skola.example.cz", "Gymnázium", "kuba"), 1_790_000_000_000),
+            com.bukovinafilip.gradey.model.Friend("f2", "Ema", FriendTimetableSource.PublicClass("https://skola.example.cz", null, "ZV", "1.A", listOf("AJ1")), 1_790_000_000_001),
+            com.bukovinafilip.gradey.model.Friend("f3", "Tom", FriendTimetableSource.PublicClass("https://skola.example.cz", "ZŠ", "2B", "2.B", null), 1_790_000_000_002),
+        )
+        val serializer = kotlinx.serialization.builtins.ListSerializer(com.bukovinafilip.gradey.model.Friend.serializer())
+        val saved = json.encodeToString(serializer, friends)
+        assertThat(json.decodeFromString(serializer, saved)).isEqualTo(friends)
+        // A friend's password is in their session, never in the list.
+        assertThat(saved).doesNotContain("password")
+
+        val snapshot = runBlocking {
+            VavruskaRepository(DemoVavruskaClient(), InMemoryVavruskaCourseStore(VavruskaDemoData.course), InMemoryVavruskaCache()).refresh(force = true, includeTicketLinks = true).snapshot
+        }
+        assertThat(snapshot.events).isNotEmpty()
+        assertThat(snapshot.noticeBoard!!.items.first().paragraphs).isNotEmpty()
+        assertThat(json.decodeFromString(VavruskaSnapshot.serializer(), json.encodeToString(VavruskaSnapshot.serializer(), snapshot))).isEqualTo(snapshot)
+        assertThat(json.decodeFromString(VavruskaStoredCourse.serializer(), json.encodeToString(VavruskaStoredCourse.serializer(), VavruskaDemoData.course))).isEqualTo(VavruskaDemoData.course)
+    }
+
     @Test fun renamingAndRemovingFriendsKeepsTheListAndDeletesTheirDataFromTheDevice() = runBlocking {
         val store = InMemoryFriendStore()
         val cache = InMemoryFriendTimetableCache()
