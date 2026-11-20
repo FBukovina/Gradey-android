@@ -189,7 +189,7 @@ internal class VavruskaController(private val context: Context, private val scop
     fun reconcileAlerts() {
         val current = state.value
         val alerting = current.isActive && current.ticketAlerts && loadedGraph?.isDemo == false
-        VavruskaTicketAlerts.reconcile(context, if (alerting) current.snapshot.ticketSales else emptyList())
+        if (alerting) VavruskaTicketAlerts.reconcile(context, current.snapshot.ticketSales) else VavruskaTicketAlerts.invalidate(context)
     }
 
     fun message(error: Exception): String = when ((error as? VavruskaException)?.reason) {
@@ -211,29 +211,37 @@ internal class VavruskaController(private val context: Context, private val scop
  */
 internal object VavruskaTicketAlerts {
     const val preferences = "gradey-vavruska"
-    private const val workName = "gradey-vavruska-ticket-sales"
+    const val workName = "gradey-vavruska-ticket-sales"
     const val channel = "gradey-dance"
     private const val Horizon = 60L * 24 * 60 * 60 * 1000
     private const val MaxAlerts = 10
 
+    /** Alerts are off, or the course is gone: nothing may fire any more, and an alert already shown is taken down. */
     fun invalidate(context: Context): Unit = synchronized(AccountNotifications.lock) {
-        context.getSharedPreferences(preferences, Context.MODE_PRIVATE).edit().putString("generation", UUID.randomUUID().toString()).commit()
+        cancelScheduled(context)
         AccountNotifications.clearChannel(context, channel)
-        WorkManager.getInstance(context).cancelUniqueWork(workName)
-        Unit
     }
 
-    /** Replaces every scheduled alert with one per sale that opens within two months. An empty list cancels them. */
+    /** Scheduled alerts lose their token before their work is cancelled, so one already running cannot post. */
+    private fun cancelScheduled(context: Context) {
+        context.getSharedPreferences(preferences, Context.MODE_PRIVATE).edit().putString("generation", UUID.randomUUID().toString()).commit()
+        WorkManager.getInstance(context).cancelUniqueWork(workName)
+    }
+
+    /**
+     * Replaces every scheduled alert with one per sale that opens within two months. With nothing
+     * left to schedule the old ones are cancelled, but an alert already shown stays: its sale is open.
+     */
     fun reconcile(context: Context, sales: List<VavruskaTicketSale>, now: Long = System.currentTimeMillis()): Unit = synchronized(AccountNotifications.lock) {
         val due = sales.filter { it.saleStartEpochMillis > now + 60_000 && it.saleStartEpochMillis < now + Horizon }.sortedBy { it.saleStartEpochMillis }.take(MaxAlerts)
         if (due.isEmpty() || !canNotify(context)) {
-            invalidate(context)
+            cancelScheduled(context)
             return@synchronized
         }
         val generation = UUID.randomUUID().toString()
         // Do not schedule work whose ownership token was not durably stored.
         if (!context.getSharedPreferences(preferences, Context.MODE_PRIVATE).edit().putString("generation", generation).commit()) {
-            invalidate(context)
+            cancelScheduled(context)
             return@synchronized
         }
         val requests = due.map { sale ->
