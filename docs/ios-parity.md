@@ -2,7 +2,7 @@
 
 Reference: [Gradey iOS 2.8.1, commit `b0677eb`](https://github.com/FBukovina/Gradely/tree/b0677eb), for the screens, Gradey Recap and the report card rebuilt in Android 0.5, and for homework, Komens, friends' timetables and the dance class added in Android 0.6. The other rows were audited against [commit `7487a39`](https://github.com/FBukovina/Gradely/tree/7487a39d4a3c426245c9ccd87690b2ad749f75d4) of 29 September 2026 and have not been re-audited.
 
-This describes the Android 0.6 source (branch `android-0.6`, not published), not a production acceptance result. **Implemented** means a user-facing implementation exists; it does not imply a successful real school login, AI generation, purchase or push delivery. A build with missing service configuration must not be presented as a fully working release. See [the 0.6 notes](releases/0.6.md) and [the 0.5 release notes](releases/0.5.md) for what was verified.
+This describes the Android 0.6 source, not a production acceptance result. **Implemented** means a user-facing implementation exists; it does not imply a successful real school login, AI generation, purchase or push delivery. A build with missing service configuration must not be presented as a fully working release. See [the 0.6 release notes](releases/0.6.md) and [the 0.5 release notes](releases/0.5.md) for what was verified.
 
 ## Phone feature matrix
 
@@ -97,7 +97,7 @@ Read-only hosted checks in this task identified `link-school-account` v8, `relin
 
 ## Verification recorded so far
 
-- **Android 0.6, 20 November 2026 (not published):** 477 phone unit tests and 63 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; a release build keeps the signing certificate and installs over the published 0.5 with demo mode intact after the privacy update. Real devices and real accounts were not verified. See [the 0.6 notes](releases/0.6.md).
+- **Android 0.6, 20 November 2026:** 477 phone unit tests and 63 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; the release APK keeps the signing certificate and installs over the published 0.5 with demo mode intact after the privacy update. Real devices and real accounts were not verified. See [the 0.6 release notes](releases/0.6.md).
 
 - **Android 0.5, 19 November 2026:** 420 phone unit tests and 57 phone instrumentation tests pass on the Android 17 emulator; lint reports no errors; the release APK keeps the 0.4 signing certificate and installs over 0.4 with data intact. Frame timing, real devices and real accounts were not verified. Details are in [the 0.5 release notes](releases/0.5.md). The entries below predate 0.5.
 
