@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -138,8 +138,9 @@ internal fun VavruskaEventRow(event: VavruskaEvent, format: VavruskaFormat, isPa
     val (day, month) = format.tile(event.startEpochMillis)
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
         Row(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(GradeySpacing.md)) {
+            // 46 dp, growing with large text so the month is never cut off.
             Column(
-                Modifier.size(46.dp).background(tint.copy(alpha = 0.14f), RoundedCornerShape(GradeyRadius.sm)),
+                Modifier.defaultMinSize(46.dp, 46.dp).background(tint.copy(alpha = 0.14f), RoundedCornerShape(GradeyRadius.sm)).padding(horizontal = GradeySpacing.xs, vertical = 2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
             ) {
                 Text(day, style = GradeyType.title3.tabular(), color = tint, maxLines = 1)

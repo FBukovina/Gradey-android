@@ -467,7 +467,11 @@ private fun TodayPlannerRow(item: PersonalPlannerItem, formats: PlannerDateForma
     }
     val tint = if (item.type == PlannerItemType.TEST || item.type == PlannerItemType.PRESENTATION) GradeyColors.Average else MaterialTheme.colorScheme.primary
     PlainRow(Modifier.testTag("today-planner-${item.id}"), onClick = onClick) {
-        Box(Modifier.size(46.dp).clip(RoundedCornerShape(GradeyRadius.sm)).background(tint.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+        // 46 dp, growing with large text so the month is never cut off.
+        Box(
+            Modifier.defaultMinSize(46.dp, 46.dp).clip(RoundedCornerShape(GradeyRadius.sm)).background(tint.copy(alpha = 0.14f)).padding(horizontal = GradeySpacing.xs, vertical = 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             if (date != null) Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(date.dayOfMonth.toString(), style = GradeyType.title3.tabular(), color = tint, maxLines = 1)
                 Text(month.orEmpty(), style = GradeyType.caption2Bold, color = tint, maxLines = 1)

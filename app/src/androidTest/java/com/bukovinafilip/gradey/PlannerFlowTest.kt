@@ -27,8 +27,13 @@ class PlannerFlowTest {
     private var latest: List<PersonalPlannerItem> = emptyList()
     private var loaded = false
 
-    /** With the on-screen keyboard up, Save is below what the editor's list has laid out; scroll to it as a user would. */
+    /**
+     * With the on-screen keyboard up, Save is below what the editor's list has laid out, and the list
+     * moves while the keyboard slides. Put the keyboard away and scroll to Save, as a user would.
+     */
     private fun saveFromEditor() {
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasTestTag("plannerSaveButton"))
         compose.onNodeWithTag("plannerSaveButton").performClick()
     }
@@ -71,8 +76,14 @@ class PlannerFlowTest {
             onFindNextLesson = { next }, onItemsChanged = { latest = it; loaded = true }) } }
         compose.waitUntil(5_000) { loaded }
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("plannerTitleField"))).performTextInput("Math homework")
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.waitForIdle()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasTestTag("plannerNextLessonButton"))
         compose.onNodeWithTag("plannerNextLessonButton").performClick()
+        // The note appears under the button, which can be below what the editor's list has laid out.
+        compose.waitUntil(5_000) {
+            runCatching { compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Due date set to the next matching lesson.")) }.isSuccess
+        }
         compose.onNodeWithText("Due date set to the next matching lesson.").assertExists()
         compose.onNodeWithTag("plannerEditor").performScrollToNode(hasText("Save", substring = false))
         saveFromEditor()

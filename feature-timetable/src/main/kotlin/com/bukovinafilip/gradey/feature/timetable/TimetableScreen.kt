@@ -328,6 +328,8 @@ private fun TimetableTopBar(
     var menuOpen by remember { mutableStateOf(false) }
     val plannerDescription = stringResource(R.string.timetable_planner_title)
     val hasMenu = onChangeKind != null || people != null
+    // Wider with large text, so "Add friend" and a friend's name are not cut short.
+    val menuWidth = KindMenuWidth * LocalDensity.current.fontScale.coerceIn(1f, 1.6f)
     Box(Modifier.fillMaxWidth()) {
         GradeyTopBar(
             title = people?.selected?.name ?: stringResource(R.string.timetable_title),
@@ -344,11 +346,11 @@ private fun TimetableTopBar(
             } else null,
         )
         if (hasMenu) {
-            Box(Modifier.align(Alignment.BottomCenter).width(KindMenuWidth)) {
+            Box(Modifier.align(Alignment.BottomCenter).width(menuWidth)) {
                 DropdownMenu(
                     expanded = menuOpen,
                     onDismissRequest = { menuOpen = false },
-                    modifier = Modifier.width(KindMenuWidth).testTag("timetableKindPicker"),
+                    modifier = Modifier.width(menuWidth).testTag("timetableKindPicker"),
                     shape = RoundedCornerShape(GradeyRadius.md),
                     containerColor = MaterialTheme.gradeyColors.secondaryGroupedBackground,
                 ) {
