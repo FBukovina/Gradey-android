@@ -89,6 +89,12 @@ class BakalariPublicTimetableTest {
         // A day without a name falls back to its position.
         assertEquals(4, response.days[3].dayOfWeek)
 
+        // An empty Saturday row, as real pages have, is left out; a Saturday with lessons stays.
+        val withSaturday = timetableData.replace("{\"Hours\":[]}", "{\"DayAbbrev\":\"so\",\"Hours\":[]}")
+        assertEquals(listOf(1, 4, 2), BakalariPublicTimetableParser.timetable(page(withSaturday), PublicTimetableTerm.ACTUAL, monday)!!.days.map { it.dayOfWeek })
+        val saturdaySchool = timetableData.replace("{\"Hours\":[]}", "{\"DayAbbrev\":\"so\",\"Hours\":[{\"Begin\":\"8:00\",\"End\":\"8:45\",\"Atoms\":[{\"SubjectAbbrev\":\"TV\"}]}]}")
+        assertEquals(listOf(1, 4, 2, 6), BakalariPublicTimetableParser.timetable(page(saturdaySchool), PublicTimetableTerm.ACTUAL, monday)!!.days.map { it.dayOfWeek })
+
         // The permanent timetable has no dates.
         assertTrue(BakalariPublicTimetableParser.timetable(page(timetableData), PublicTimetableTerm.PERMANENT, monday)!!.days.all { it.date.isEmpty() })
         assertNull(BakalariPublicTimetableParser.timetable("<html>no data</html>", PublicTimetableTerm.ACTUAL, monday))

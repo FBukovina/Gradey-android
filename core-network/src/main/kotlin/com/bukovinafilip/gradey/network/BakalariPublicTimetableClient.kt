@@ -171,6 +171,8 @@ object BakalariPublicTimetableParser {
             }
             TimetableDayDTO(atoms = atoms, dayOfWeek = dayOfWeek, date = date)
         }
+        // Many schools' pages carry an empty Saturday row; without lessons it would only add two blank days to the week.
+        .filterNot { it.dayOfWeek >= 6 && it.atoms.isEmpty() }
         return TimetableResponse(
             hours = hours, days = days, groups = groups.values.sortedBy { it.id }, subjects = subjects.values.sortedBy { it.id },
             teachers = teachers.values.sortedBy { it.id }, rooms = rooms.values.sortedBy { it.id }, cycles = cycles.values.sortedBy { it.id },
