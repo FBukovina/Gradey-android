@@ -23,12 +23,16 @@ data class RecapSemester(
     fun prepared(subject: Subject): PreparedGradeCalculation = prepared[subject.id] ?: GradeSimulation.prepare(subject)
 }
 
-/** @param timetableWeeks null until the period's timetable weeks were loaded. */
+/**
+ * @param timetableWeeks null until the period's timetable weeks were loaded.
+ * @param absenceLessons the missed lessons of each absent day by date key, for the absence slide; null when not known.
+ */
 data class RecapInput(
     val semesters: List<RecapSemester> = emptyList(),
     val reportCards: List<ReportCardTerm> = emptyList(),
     val timetableWeeks: List<TimetableWeek>? = null,
     val today: LocalDate,
+    val absenceLessons: Map<String, AbsenceDayLessons>? = null,
 )
 
 /** Turns a period's marks, absence and timetable into a [Recap]. Everything is computed on the device (iOS `RecapBuilder`). */
@@ -73,7 +77,7 @@ object RecapBuilder {
             topSubject = top,
             toughestSubject = toughest,
             moments = moments(entries, numeric, midpoint),
-            absence = absence(period, semesters, end),
+            absence = absence(period, semesters, input.absenceLessons, end),
             timetable = input.timetableWeeks?.let { timetable(it, period.start, end) },
             personality = personality(numeric, ranked, average, period, midpoint, startSeconds, endSeconds, isOngoing),
             reportCard = card,
@@ -255,14 +259,21 @@ object RecapBuilder {
 
     // Absence
 
-    private fun absence(period: RecapPeriod, semesters: List<RecapSemester>, end: LocalDate): RecapAbsence? {
+    private fun absence(period: RecapPeriod, semesters: List<RecapSemester>, lessons: Map<String, AbsenceDayLessons>?, end: LocalDate): RecapAbsence? {
         val responses = semesters.mapNotNull { it.absence }
         if (responses.isEmpty()) return null
         val days = responses.flatMap { it.absences }.filter { day -> RecapDates.day(day.date)?.let { it >= period.start && it < end } ?: false }
         val counts = days.map { it.toCounts() }.sumCounts()
-        // Only a whole semester has the school's own per-subject absence to name a subject from.
+        // A whole semester names the subject from the school's own per-subject absence.
         val most = if (period.kind == RecapKind.SEMESTER) responses.first().absencesPerSubject.maxByOrNull { it.base }?.takeIf { it.base > 0 } else null
-        return RecapAbsence(counts, most?.subjectName?.trim(), most?.base ?: 0)
+        if (most != null) return RecapAbsence(counts, most.subjectName.trim(), most.base)
+        // Shorter periods count the lessons missed on their days, leaving out the ones a correction removed.
+        if (lessons == null) return RecapAbsence(counts, null, 0)
+        val dateKeys = days.mapTo(HashSet()) { AbsenceOverrideProjection.dateKey(it.date) }
+        val top = lessons.filterKeys { it in dateKeys }.values.asSequence().flatMap { it.lessons }.filter { !it.isHidden }
+            .groupingBy { it.subjectName }.eachCount().entries
+            .maxWithOrNull(compareBy<Map.Entry<String, Int>> { it.value }.thenByDescending { it.key })
+        return RecapAbsence(counts, top?.key, top?.value ?: 0)
     }
 
     // Timetable
