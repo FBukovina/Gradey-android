@@ -5,6 +5,7 @@ Native Kotlin/Compose port of Gradey for iOS. The iOS app is the reference for b
 ## Layout
 
 - `core-model`, `core-domain` (pure Kotlin), `core-network`, `core-data`, `core-ui` (design system), `feature-*`, `app`.
+- The iOS source is not in this repo. Ask for a checkout of `FBukovina/Gradely` when porting a feature.
 - Features do not depend on each other. `app` wires them: screens take plain data and callbacks, and shared pieces are passed in as composable slots.
 - Build output goes to `~/Library/Caches/GradeyAndroid-build`, not the repo.
 
@@ -36,4 +37,5 @@ Releases must keep the signing key of earlier direct downloads. See `docs/update
 - A changed privacy notice means raising `PrivacyRevision` and rewriting `PrivacyChanges` in `WelcomeScreen.kt`.
 - School data that only Bakaláři has (report cards, homework, Komens) must be hidden for EduPage accounts.
 - Demo mode (`MockSchoolRepository`, `*DemoData`) needs sample data for every new feature; device tests rely on it.
-- Device tests find controls by test tag. With the on-screen keyboard up, scroll to a button before tapping it.
+- Device tests find controls by test tag. Close the on-screen keyboard and scroll to a button before tapping it; the device suite takes about ten minutes.
+- Data that stays on the device (friends, the dance course) is cleared in `GradeyViewModel.clearSignedInState` on sign-out.

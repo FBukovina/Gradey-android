@@ -2,6 +2,8 @@
 
 Native Kotlin companion to [Gradey](https://github.com/FBukovina/Gradely), with Jetpack Compose, phone widgets and Wear OS.
 
+Version 0.6, on the `android-0.6` branch and not published yet, adds homework, Komens messages, friends' timetables, the TŠ Vavruška dance class and the lessons behind each day of absence. See [the 0.6 notes](docs/releases/0.6.md).
+
 Version 0.5 rebuilds the phone app to match Gradey 2.8.1 on iPhone: a new look on every screen, Gradey Recap, the report card estimate, and an optimized release build. See [the 0.5 release notes](docs/releases/0.5.md) for what changed and what was verified.
 
 Version 0.4 updates the launcher icon with adaptive and themed variants, and adds dedicated notification icons. See [the 0.4 release notes](docs/releases/0.4.md) for availability and verification.
