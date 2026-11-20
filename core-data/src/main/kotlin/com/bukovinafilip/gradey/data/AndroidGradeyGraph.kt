@@ -39,6 +39,8 @@ class AndroidGradeyGraph private constructor(
     val schoolDirectoryProvider: com.bukovinafilip.gradey.domain.SchoolDirectoryProvider,
     val schoolInsightStore: com.bukovinafilip.gradey.domain.SchoolInsightStore,
     val canteenAccountRepository: com.bukovinafilip.gradey.domain.CanteenAccountRepository,
+    /** Friends whose timetables can be shown next to the user's own. Kept on this device only. */
+    val friendRepository: com.bukovinafilip.gradey.domain.FriendRepository,
 ) {
     companion object {
         fun create(context: Context, config: AndroidGradeyConfig): AndroidGradeyGraph {
@@ -47,6 +49,11 @@ class AndroidGradeyGraph private constructor(
                 val push = MockDevicePushTokenClient()
                 return AndroidGradeyGraph(
                     schoolRepository = MockSchoolRepository(),
+                    // Friends added in the demo use sample timetables and are gone when the demo ends.
+                    friendRepository = com.bukovinafilip.gradey.domain.FriendRepository(
+                        com.bukovinafilip.gradey.domain.InMemoryFriendStore(), com.bukovinafilip.gradey.network.DemoBakalariClient(),
+                        com.bukovinafilip.gradey.network.DemoBakalariPublicTimetableClient(),
+                    ),
                     canteenAccountRepository = MockCanteenAccountRepository(),
                     schoolInsightStore = com.bukovinafilip.gradey.domain.SchoolInsightStore(),
                     gradeyAuthRepository = auth,
@@ -95,6 +102,11 @@ class AndroidGradeyGraph private constructor(
                     cache = cache,
                 ), schoolInsightStore, cache),
                 schoolInsightStore = schoolInsightStore,
+                friendRepository = com.bukovinafilip.gradey.domain.FriendRepository(
+                    AndroidFriendStore(SecureJsonStore(context, "gradey-friend-secrets", GradeyJson)), BakalariNetworkClient(),
+                    com.bukovinafilip.gradey.network.BakalariPublicTimetableNetworkClient(),
+                    JsonFriendTimetableCache(SecureJsonStore(context, "gradey-friend-timetables", GradeyJson)),
+                ),
                 gradeyAuthRepository = authRepository,
                 canteenAccountRepository = SupabaseCanteenAccountRepository(com.bukovinafilip.gradey.network.SupabaseCanteenAccountClient(supabase), authRepository, authSecureStore),
                 linkedAccountRepository = SupabaseLinkedAccountRepository(accountClient, authRepository, authSecureStore, sessionStore, cache),

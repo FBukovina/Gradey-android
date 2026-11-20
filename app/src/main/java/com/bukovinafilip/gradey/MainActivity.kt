@@ -82,6 +82,8 @@ import com.bukovinafilip.gradey.feature.recap.TodayRecapTile
 import com.bukovinafilip.gradey.feature.subjects.MarksReportCardRow
 import com.bukovinafilip.gradey.feature.subjects.ReportCardScreen
 import com.bukovinafilip.gradey.feature.subjects.SubjectsScreen
+import com.bukovinafilip.gradey.feature.timetable.AddFriendSheet
+import com.bukovinafilip.gradey.feature.timetable.TimetablePeople
 import com.bukovinafilip.gradey.feature.timetable.TimetableScreen
 import com.bukovinafilip.gradey.feature.today.TodayScreen
 import com.bukovinafilip.gradey.ui.GradeyTheme
@@ -159,6 +161,10 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
     val scope = rememberCoroutineScope()
     val appPreferences = remember { context.getSharedPreferences("gradey-app-preferences", 0) }
     var ageAttestation by rememberSaveable { mutableStateOf(appPreferences.getString("ageAttestation", null)) }
+    // Friends' timetables: chosen from the Timetable title, added there or in Settings.
+    val friendsState by model.friends.state.collectAsStateWithLifecycle()
+    var showAddFriend by rememberSaveable { mutableStateOf(false) }
+    var addFriendShowsTimetable by rememberSaveable { mutableStateOf(false) }
     // School homework: its detail sheet opens from Today, the Planner and a lesson.
     var openHomeworkID by rememberSaveable { mutableStateOf<String?>(null) }
     var downloadingAttachmentID by remember { mutableStateOf<String?>(null) }
@@ -336,7 +342,14 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                             )
                             AppTab.TIMETABLE -> {
                                 val permanent = state.timetableKind == com.bukovinafilip.gradey.model.TimetableKind.PERMANENT
-                                TimetableScreen(
+                                val people = TimetablePeople(friendsState.friends, friendsState.selectedID, model.friends::select) { addFriendShowsTimetable = true; showAddFriend = true }
+                                // A friend's timetable: no Planner, no homework, and nothing of theirs but lessons.
+                                if (friendsState.selected != null) TimetableScreen(
+                                    week = friendsState.week, isRefreshing = friendsState.loading, onRefresh = model.friends::refresh,
+                                    onChangeWeek = model.friends::changeWeek, onOpenAI = openAI, onOpenSettings = openSettings,
+                                    requestedWeek = friendsState.viewedWeek, kind = friendsState.kind, onChangeKind = model.friends::changeKind,
+                                    errorMessage = friendsState.error, people = people,
+                                ) else TimetableScreen(
                                     week = if (permanent) state.permanentTimetable else state.timetable,
                                     isRefreshing = if (permanent) state.permanentTimetableLoading else state.loading,
                                     onRefresh = { if (permanent) model.refreshPermanentTimetable() else model.changeWeek(state.viewedWeek) },
@@ -354,6 +367,7 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                         }
                                         if (items.isNotEmpty()) LessonHomeworkSection(items, state.homeworkPendingIDs, toggleHomework, onOpen = { openHomeworkID = it })
                                     },
+                                    people = people,
                                 )
                             }
                             AppTab.STRAVACZ -> com.bukovinafilip.gradey.feature.stravacz.StravaCZRoute(
@@ -388,6 +402,8 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                                 store = recapStore, periodID = state.recapPeriodID, source = recapSource, onClose = model::back,
                             )
                             AppTab.ACCOUNT -> AccountScreen(
+                                friends = friendsState.friends, onAddFriend = { addFriendShowsTimetable = false; showAddFriend = true },
+                                onRenameFriend = { friend, name -> model.friends.rename(friend.id, name) }, onRemoveFriend = { model.friends.remove(it.id) },
                                 onOpenWatch = { showWatchAccess = true },
                                 ageAttestation = ageAttestation, onOpenPrivacyChanges = { reviewPrivacyChanges = true },
                                 canteenAccounts = state.canteenAccounts, canteenSession = state.canteenSession,
@@ -533,6 +549,13 @@ private fun GradeyApp(initialDestination: AppDestination, model: GradeyViewModel
                 onDismiss = { openHomeworkID = null },
             )
         }
+        if (showAddFriend && state.phase == AppPhase.SIGNED_IN) AddFriendSheet(
+            repository = model.graph.friendRepository, directory = model.graph.schoolDirectoryProvider,
+            ownSchoolURL = state.school?.takeIf { it.provider == com.bukovinafilip.gradey.model.SchoolProvider.BAKALARI }?.baseURL,
+            errorMessage = model.friends::message,
+            onAdded = { friend -> showAddFriend = false; model.friends.add(friend, show = addFriendShowsTimetable) },
+            onDismiss = { showAddFriend = false },
+        )
         if (showHelp) com.bukovinafilip.gradey.feature.support.SupportHelpDialog(
             onDismiss = { showHelp = false }, onOpenHelpCenter = { uriHandler.openUri(HelpUrl) },
             allowed = hasCompletedWelcome && isValidAgeAttestation(ageAttestation), isDemo = state.isDemo,

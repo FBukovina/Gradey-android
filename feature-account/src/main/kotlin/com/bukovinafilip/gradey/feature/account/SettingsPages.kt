@@ -40,6 +40,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.model.AppLanguage
 import com.bukovinafilip.gradey.model.GradeyAccount
+import com.bukovinafilip.gradey.model.Friend
+import com.bukovinafilip.gradey.model.FriendTimetableSource
 import com.bukovinafilip.gradey.model.LinkedCanteenAccount
 import com.bukovinafilip.gradey.model.LinkedSchoolAccount
 import com.bukovinafilip.gradey.model.NotificationLockScreenDetail
@@ -237,6 +239,10 @@ internal fun LazyListScope.connectedServicesPage(
     onOpenMeals: (() -> Unit)?,
     onRemoveCanteen: ((LinkedCanteenAccount) -> Unit)?,
     onOpenWatch: (() -> Unit)?,
+    friends: List<Friend> = emptyList(),
+    onAddFriend: (() -> Unit)? = null,
+    onRenameFriend: (Friend) -> Unit = {},
+    onRemoveFriend: (Friend) -> Unit = {},
 ) {
     item(key = "schools", contentType = "group") {
         SettingsGroup(title = stringResource(R.string.settings_connected_school_title)) {
@@ -279,6 +285,35 @@ internal fun LazyListScope.connectedServicesPage(
             canteenAccounts = canteenAccounts, canteenSession = canteenSession, currentCanteenLinkID = currentCanteenLinkID,
             onLinkCanteen = onLinkCanteen, onOpenMeals = onOpenMeals, onRemoveCanteen = onRemoveCanteen,
         )
+    }
+    // Friends (iOS `FriendsSettingsSection`): who is there, where their timetable comes from, then the row that adds one.
+    if (onAddFriend != null) item(key = "friends", contentType = "group") {
+        SettingsGroup(title = stringResource(R.string.settings_friends_title)) {
+            friends.forEach { friend ->
+                key(friend.id) {
+                    val source = friend.source
+                    LinkedServiceRow(
+                        accountID = "friend-${friend.id}",
+                        icon = if (source is FriendTimetableSource.Bakalari) HugeIcons.Key01 else HugeIcons.Globe02,
+                        name = friend.name,
+                        subtitle = when (source) {
+                            is FriendTimetableSource.Bakalari -> listOfNotNull(stringResource(R.string.settings_friends_source_bakalari), source.schoolName).joinToString(" · ")
+                            is FriendTimetableSource.PublicClass -> stringResource(R.string.settings_friends_source_public) + " · " + source.className
+                        },
+                        menu = { close ->
+                            SettingsMenuItem(stringResource(R.string.settings_friends_rename), HugeIcons.Edit02, { close(); onRenameFriend(friend) }, Modifier.testTag("friendRename-${friend.id}"))
+                            SettingsMenuItem(
+                                stringResource(R.string.settings_friends_remove), HugeIcons.Delete02, { close(); onRemoveFriend(friend) },
+                                Modifier.testTag("friendRemove-${friend.id}"), color = MaterialTheme.gradeyColors.red,
+                            )
+                        },
+                        details = null,
+                    )
+                    SettingsRowDivider()
+                }
+            }
+            SettingsActionRow(HugeIcons.UserAdd01, stringResource(R.string.settings_friends_add), onAddFriend, Modifier.testTag("settingsAddFriendButton"), enabled = !isLoading)
+        }
     }
     if (onOpenWatch != null) item(key = "watch", contentType = "group") {
         SettingsGroup(title = stringResource(R.string.settings_watch_title), footer = stringResource(R.string.settings_watch_description)) {

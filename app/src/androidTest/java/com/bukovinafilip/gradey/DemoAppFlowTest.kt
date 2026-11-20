@@ -313,6 +313,41 @@ class DemoAppFlowTest {
         compose.onNodeWithTag("todayKomensButton").assertExists()
     }
 
+    @Test fun aFriendsPublicTimetableIsAddedShownNextToYoursAndRemovedInSettings() {
+        fun friends() = run {
+            var value: FriendsState? = null
+            compose.activityRule.scenario.onActivity { value = ViewModelProvider(it)[GradeyViewModel::class.java].friends.state.value }
+            requireNotNull(value)
+        }
+        compose.onNodeWithTag("tab-timetable").performClick()
+        // The title's menu chooses whose timetable is shown and adds a friend.
+        // "Timetable" is also the tab's label; the title comes first.
+        compose.onAllNodesWithText("Timetable", useUnmergedTree = true)[0].performClick()
+        compose.onNodeWithTag("timetableAddFriendButton").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("addFriendView").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("addFriendNameField"))).performTextInput("Ema")
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.onNodeWithTag("addFriendMethod-publicClass").performScrollTo().performClick()
+        // The demo school is suggested first; its public page lists three classes.
+        compose.onNodeWithTag("addFriendShowClassesButton").performScrollTo().performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("addFriendClass-B2").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("addFriendClass-B2").performScrollTo().performClick()
+        compose.waitUntil(10_000) { friends().selected?.name == "Ema" && friends().week != null }
+        try {
+            // Their timetable takes the screen under their name, without the Planner.
+            compose.onAllNodesWithTag("addFriendView").assertCountEquals(0)
+            compose.onAllNodesWithTag("timetablePlannerButton").assertCountEquals(0)
+            compose.onNodeWithText("Ema", useUnmergedTree = true).performClick()
+            compose.onNodeWithTag("timetablePerson-me").performClick()
+            compose.waitUntil(5_000) { friends().selectedID == null }
+            compose.onNodeWithTag("timetablePlannerButton").assertExists()
+        } finally {
+            val id = friends().friends.first { it.name == "Ema" }.id
+            compose.activityRule.scenario.onActivity { ViewModelProvider(it)[GradeyViewModel::class.java].friends.remove(id) }
+            compose.waitUntil(5_000) { friends().friends.none { it.id == id } }
+        }
+    }
+
     @Test fun recapOpensFromMarksAsAStoryAndReturnsToTheList() {
         // Demo mode carries sample semesters that follow the clock, so a recap is out on any day.
         compose.onNodeWithTag("tab-subjects").performClick()

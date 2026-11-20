@@ -146,6 +146,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
     private var homeworkLoaded: Pair<String, Long>? = null
     private var homeworkRefresh: kotlinx.coroutines.Job? = null
     private var komensLoaded: Pair<String, Long>? = null
+    /** Friends' timetables; they follow [graph], so demo mode never touches real friends. */
+    val friends = FriendsController(app, viewModelScope) { graph.friendRepository }
     private var komensRefresh: kotlinx.coroutines.Job? = null
     private var awaitingPlannerEntry = false
     private var appleAvailable = false
@@ -604,6 +606,7 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
 
     private suspend fun restoreCachedData() {
         val session = state.value.school ?: return
+        friends.reload()
         val isGuest = state.value.isGuest
         val plannerItems = off { plannerRepository.load() }
         val cached = off { graph.schoolRepository.loadCachedDashboard() }
@@ -965,6 +968,8 @@ internal class GradeyViewModel(application: Application) : AndroidViewModel(appl
             cleanup { signingOutGraph.canteenAccountRepository.clearLocalAccounts() }
             cleanup { signingOutGraph.schoolRepository.logout() }
             cleanup { SchoolAttachments.clear(app) }
+            // A friend's Bakaláři login must not outlive the account that added it.
+            cleanup { signingOutGraph.friendRepository.removeAll() }
             cleanup { signingOutGraph.cache?.clearAll() }
             cleanup { signingOutGraph.schoolInsightStore.clearAll() }
             cleanup { guestPreferences.clear() }

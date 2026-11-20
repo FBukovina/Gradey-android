@@ -20,5 +20,12 @@
     <string name="privacy_update_report_cards_detail">your device loads your report cards, with final marks, averages and missed hours, straight from your school\'s server and keeps a copy on the device. this semester\'s estimate is worked out on your device from your current averages. none of it is sent to Gradey\'s servers or to Gradey AI.</string>
     <string name="privacy_update_effective">effective %s</string>
     <string name="privacy_update_changes_title">what changed</string>
-    <string name="privacy_update_subtitle">the policy now covers homework, Komens messages and report cards from your school. please read what changed before you continue.</string>
+    <string name="app_friends_error_sign_in_again">Bakaláři won\'t take this login anymore. remove them and add them again</string>
+    <string name="app_friends_error_unexpected_page">the school\'s timetable page looks off rn. try again later</string>
+    <string name="app_friends_error_status">school server threw error %d</string>
+    <string name="app_friends_error_not_published">this school doesn\'t publish its timetable. Use your friend\'s Bakaláři login instead.</string>
+    <string name="privacy_update_friends_title">friends\' timetables stay on your device</string>
+    <string name="privacy_update_friends_summary">a friend\'s Bakaláři login is kept only in this device\'s encrypted storage and is used only for their timetable.</string>
+    <string name="privacy_update_friends_detail">if a friend signs in with Bakaláři, your device sends their login straight to their school\'s HTTPS server and keeps it in this device\'s encrypted storage so it can reload their timetable later. Gradey never loads their marks or absences. public timetables need no login. friends\' timetables are not sent to Gradey, Gradey AI, the watch or widgets. only add someone who agrees to it. removing a friend or signing out deletes their data from this device.</string>
+    <string name="privacy_update_subtitle">the policy now covers friends\' timetables and homework, Komens messages and report cards from your school. please read what changed before you continue.</string>
 </resources>

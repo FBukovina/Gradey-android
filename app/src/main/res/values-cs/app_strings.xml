@@ -164,5 +164,12 @@
     <string name="privacy_update_report_cards_detail">Tvoje zařízení načítá vysvědčení se známkami, průměry a zameškanými hodinami přímo ze serveru školy a kopii si nechává v zařízení. Odhad na toto pololetí se počítá v zařízení z tvých současných průměrů. Nic z toho se neposílá na servery Gradey ani do Gradey AI.</string>
     <string name="privacy_update_effective">Účinné od %s</string>
     <string name="privacy_update_changes_title">Co se změnilo</string>
-    <string name="privacy_update_subtitle">Zásady nově popisují domácí úkoly, zprávy z Komensu a vysvědčení ze školy. Než budeš pokračovat, přečti si, co se změnilo.</string>
+    <string name="app_friends_error_sign_in_again">Bakaláři už tohle přihlášení nepřijímají. Odeber kamaráda a přidej ho znovu.</string>
+    <string name="app_friends_error_unexpected_page">Stránka s rozvrhem školy vypadá jinak, než Gradey čeká. Zkus to později.</string>
+    <string name="app_friends_error_status">Server školy odpověděl chybou %d.</string>
+    <string name="app_friends_error_not_published">Tahle škola nemá veřejný rozvrh. Použij kamarádovo přihlášení do Bakalářů.</string>
+    <string name="privacy_update_friends_title">Rozvrhy kamarádů zůstávají v tvém zařízení</string>
+    <string name="privacy_update_friends_summary">Přihlášení kamaráda do Bakalářů zůstává jen v šifrovaném úložišti tohoto zařízení a slouží jen k jeho rozvrhu.</string>
+    <string name="privacy_update_friends_detail">Když se kamarád přihlásí přes Bakaláři, tvoje zařízení pošle jeho přihlašovací údaje přímo na HTTPS server jeho školy a uloží je do šifrovaného úložiště tohoto zařízení, aby mohlo jeho rozvrh později znovu načíst. Gradey nikdy nenačítá jeho známky ani absenci. Veřejný rozvrh přihlášení nepotřebuje. Rozvrhy kamarádů se neposílají do Gradey, Gradey AI, hodinek ani do widgetů. Přidávej jen lidi, kteří s tím souhlasí. Odebráním kamaráda nebo odhlášením se jeho data z tohoto zařízení smažou.</string>
+    <string name="privacy_update_subtitle">Zásady nově popisují rozvrhy kamarádů a domácí úkoly, zprávy z Komensu a vysvědčení ze školy. Než budeš pokračovat, přečti si, co se změnilo.</string>
 </resources>

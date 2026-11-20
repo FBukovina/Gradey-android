@@ -171,4 +171,14 @@
     <string name="settings_credits_instagram" translatable="false">Instagram</string>
     <string name="settings_credits_edupage_repository" translatable="false">EdupageAPI/edupage-api</string>
     <string name="settings_strava_provider" translatable="false">Strava.cz</string>
+    <string name="settings_friends_title">Friends</string>
+    <string name="settings_friends_add">Add friend</string>
+    <string name="settings_friends_rename">Rename</string>
+    <string name="settings_friends_remove">Remove</string>
+    <string name="settings_friends_remove_title">Remove %s?</string>
+    <string name="settings_friends_remove_message">Their timetable and login are deleted from this device.</string>
+    <string name="settings_friends_source_bakalari">Bakaláři</string>
+    <string name="settings_friends_source_public">Public timetable</string>
+    <string name="settings_friends_name">Name</string>
+    <string name="settings_friends_save">Save</string>
 </resources>

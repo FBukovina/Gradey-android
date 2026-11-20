@@ -162,4 +162,14 @@
     <string name="settings_credits_bakalari_message">this unofficial integration connects to Bakaláři school systems. Gradey is not a Bakaláři product and is not affiliated with or endorsed by Bakaláři software.</string>
     <string name="settings_credits_edupage_title">EduPage support</string>
     <string name="settings_credits_edupage_message">this unofficial integration follows publicly documented EduPage API behavior. Gradey is not an EduPage product.</string>
+    <string name="settings_friends_title">friends</string>
+    <string name="settings_friends_add">add friend</string>
+    <string name="settings_friends_rename">rename</string>
+    <string name="settings_friends_remove">remove</string>
+    <string name="settings_friends_remove_title">remove %s?</string>
+    <string name="settings_friends_remove_message">their timetable and login get deleted from this device</string>
+    <string name="settings_friends_source_bakalari">Bakaláři</string>
+    <string name="settings_friends_source_public">public timetable</string>
+    <string name="settings_friends_name">name</string>
+    <string name="settings_friends_save">save</string>
 </resources>

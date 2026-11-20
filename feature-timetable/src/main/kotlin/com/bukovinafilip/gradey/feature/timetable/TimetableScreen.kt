@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.domain.TimetableDates
 import com.bukovinafilip.gradey.model.LessonChangeKind
+import com.bukovinafilip.gradey.model.Friend
 import com.bukovinafilip.gradey.model.PersonalPlannerItem
 import com.bukovinafilip.gradey.model.ScheduledDay
 import com.bukovinafilip.gradey.model.ScheduledLesson
@@ -134,6 +135,7 @@ fun TimetableScreen(
     schoolScope: String? = null,
     onOpenPlannerItem: ((String) -> Unit)? = null,
     lessonHomework: (@Composable (ScheduledLesson, ScheduledDay) -> Unit)? = null,
+    people: TimetablePeople? = null,
 ) {
     val isPermanent = kind == TimetableKind.PERMANENT
     val schoolTime = rememberSchoolTime()
@@ -197,6 +199,7 @@ fun TimetableScreen(
             onOpenAI = onOpenAI,
             onOpenSettings = onOpenSettings,
             onOpenPlanner = onOpenPlanner,
+            people = people,
         )
         Column(Modifier.align(Alignment.CenterHorizontally).widthIn(max = GradeyMetrics.contentMaxWidth).fillMaxWidth()) {
             if (isPermanent) {
@@ -293,7 +296,19 @@ fun TimetableScreen(
 
 // MARK: - Top bar
 
-/** Inline title with the weekly/permanent menu (iOS `toolbarTitleMenu`), Planner, refresh and Settings. */
+/**
+ * Whose timetable is on screen (iOS `personMenuContent`): the user's own or a friend's, chosen from
+ * the title's menu, which also adds a friend.
+ */
+@Immutable
+class TimetablePeople(val friends: List<Friend>, val selectedID: String?, val onSelect: (String?) -> Unit, val onAdd: () -> Unit) {
+    val selected: Friend? get() = friends.firstOrNull { it.id == selectedID }
+}
+
+/**
+ * Inline title with its menu (iOS `toolbarTitleMenu`): whose timetable, then weekly or permanent.
+ * Planner, refresh and Settings sit on the right.
+ */
 @Composable
 private fun TimetableTopBar(
     kind: TimetableKind,
@@ -303,12 +318,14 @@ private fun TimetableTopBar(
     onOpenAI: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenPlanner: (() -> Unit)?,
+    people: TimetablePeople? = null,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val plannerDescription = stringResource(R.string.timetable_planner_title)
+    val hasMenu = onChangeKind != null || people != null
     Box(Modifier.fillMaxWidth()) {
         GradeyTopBar(
-            title = stringResource(R.string.timetable_title),
+            title = people?.selected?.name ?: stringResource(R.string.timetable_title),
             onOpenAI = onOpenAI,
             aiDescription = stringResource(R.string.timetable_gradey_ai),
             onRefresh = onRefresh,
@@ -316,12 +333,12 @@ private fun TimetableTopBar(
             refreshDescription = stringResource(R.string.timetable_refresh),
             onOpenSettings = onOpenSettings,
             settingsDescription = stringResource(R.string.timetable_settings),
-            onTitleClick = if (onChangeKind != null) ({ menuOpen = true }) else null,
+            onTitleClick = if (hasMenu) ({ menuOpen = true }) else null,
             actions = if (onOpenPlanner != null) {
                 { ToolbarIconButton(HugeIcons.CheckList, plannerDescription, onOpenPlanner, Modifier.testTag("timetablePlannerButton")) }
             } else null,
         )
-        if (onChangeKind != null) {
+        if (hasMenu) {
             Box(Modifier.align(Alignment.BottomCenter).width(KindMenuWidth)) {
                 DropdownMenu(
                     expanded = menuOpen,
@@ -330,31 +347,53 @@ private fun TimetableTopBar(
                     shape = RoundedCornerShape(GradeyRadius.md),
                     containerColor = MaterialTheme.gradeyColors.secondaryGroupedBackground,
                 ) {
-                    TimetableKind.entries.forEach { option ->
-                        val isSelected = option == kind
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    stringResource(if (option == TimetableKind.PERMANENT) R.string.timetable_kind_permanent else R.string.timetable_kind_weekly),
-                                    style = GradeyType.body,
-                                )
-                            },
-                            onClick = {
+                    if (people != null) {
+                        // You, then each friend, then Add friend.
+                        TitleMenuItem(stringResource(R.string.timetable_friends_me), people.selectedID == null, Modifier.testTag("timetablePerson-me")) {
+                            menuOpen = false
+                            if (people.selectedID != null) people.onSelect(null)
+                        }
+                        people.friends.forEach { friend ->
+                            TitleMenuItem(friend.name, friend.id == people.selectedID, Modifier.testTag("timetablePerson-${friend.id}")) {
                                 menuOpen = false
-                                if (!isSelected) onChangeKind(option)
-                            },
-                            modifier = Modifier.semantics { selected = isSelected },
-                            leadingIcon = {
-                                Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
-                                    if (isSelected) GradeyIcon(HugeIcons.Tick02, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
-                                }
-                            },
-                        )
+                                if (friend.id != people.selectedID) people.onSelect(friend.id)
+                            }
+                        }
+                        TitleMenuItem(stringResource(R.string.timetable_friends_add), false, Modifier.testTag("timetableAddFriendButton"), icon = HugeIcons.Add01) {
+                            menuOpen = false
+                            people.onAdd()
+                        }
+                        if (onChangeKind != null) Hairline(Modifier.padding(vertical = GradeySpacing.xs))
+                    }
+                    if (onChangeKind != null) TimetableKind.entries.forEach { option ->
+                        TitleMenuItem(
+                            stringResource(if (option == TimetableKind.PERMANENT) R.string.timetable_kind_permanent else R.string.timetable_kind_weekly),
+                            option == kind,
+                        ) {
+                            menuOpen = false
+                            if (option != kind) onChangeKind(option)
+                        }
                     }
                 }
             }
         }
     }
+}
+
+/** A row of the title's menu: a tick when it is the current choice, or its own icon. */
+@Composable
+private fun TitleMenuItem(text: String, isSelected: Boolean, modifier: Modifier = Modifier, icon: String? = null, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(text, style = GradeyType.body, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        onClick = onClick,
+        modifier = modifier.semantics { selected = isSelected },
+        leadingIcon = {
+            Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+                if (isSelected) GradeyIcon(HugeIcons.Tick02, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+                else if (icon != null) GradeyIcon(icon, size = 18.dp, tint = MaterialTheme.colorScheme.primary)
+            }
+        },
+    )
 }
 
 // MARK: - Week bar and day row

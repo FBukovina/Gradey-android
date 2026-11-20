@@ -156,5 +156,12 @@
     <string name="privacy_update_report_cards_detail">Your device loads your report cards, with final marks, averages and missed hours, straight from your school\'s server and keeps a copy on the device. This semester\'s estimate is worked out on your device from your current averages. None of it is sent to Gradey\'s servers or to Gradey AI.</string>
     <string name="privacy_update_effective">Effective %s</string>
     <string name="privacy_update_changes_title">What changed</string>
-    <string name="privacy_update_subtitle">The policy now covers homework, Komens messages and report cards from your school. Please read what changed before you continue.</string>
+    <string name="app_friends_error_sign_in_again">Bakaláři no longer accepts this login. Remove the friend and add them again.</string>
+    <string name="app_friends_error_unexpected_page">The school\'s timetable page looks different than expected. Try again later.</string>
+    <string name="app_friends_error_status">The school\'s server answered with error %d.</string>
+    <string name="app_friends_error_not_published">This school doesn\'t publish its timetable. Use your friend\'s Bakaláři login instead.</string>
+    <string name="privacy_update_friends_title">Friends\' timetables stay on your device</string>
+    <string name="privacy_update_friends_summary">A friend\'s Bakaláři login is kept only in this device\'s encrypted storage and is used only for their timetable.</string>
+    <string name="privacy_update_friends_detail">If a friend signs in with Bakaláři, your device sends their login straight to their school\'s HTTPS server and keeps it in this device\'s encrypted storage so it can reload their timetable later. Gradey never loads their marks or absences. Public timetables need no login. Friends\' timetables are not sent to Gradey, Gradey AI, the watch or widgets. Only add someone who agrees to it. Removing a friend or signing out deletes their data from this device.</string>
+    <string name="privacy_update_subtitle">The policy now covers friends\' timetables and homework, Komens messages and report cards from your school. Please read what changed before you continue.</string>
 </resources>

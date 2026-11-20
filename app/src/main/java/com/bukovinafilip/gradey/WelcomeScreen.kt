@@ -69,7 +69,7 @@ import com.bukovinafilip.gradey.ui.gradeyColors
  * published policy changes in a way users must read, and refresh [PrivacyChanges] when you do:
  * everyone who accepted an earlier revision is asked again.
  *
- * Revision 3 adds school homework, Komens messages and report cards. Revision 2 removed the
+ * Revision 3 adds friends' timetables, school homework, Komens messages and report cards. Revision 2 removed the
  * Bakaláři password upload and documented the Planner, Gradey AI and the watch.
  */
 internal const val PrivacyRevision = 3
@@ -82,6 +82,7 @@ private class PrivacyChange(val id: String, val icon: String, val title: Int, va
 
 /** Only what this app does; the most important first. */
 private val PrivacyChanges = listOf(
+    PrivacyChange("friends", HugeIcons.UserGroup, R.string.privacy_update_friends_title, R.string.privacy_update_friends_summary, R.string.privacy_update_friends_detail),
     PrivacyChange("homework", HugeIcons.BookOpen01, R.string.privacy_update_homework_title, R.string.privacy_update_homework_summary, R.string.privacy_update_homework_detail),
     PrivacyChange("messages", HugeIcons.Mail01, R.string.privacy_update_messages_title, R.string.privacy_update_messages_summary, R.string.privacy_update_messages_detail),
     PrivacyChange("reportCards", HugeIcons.GraduationScroll, R.string.privacy_update_report_cards_title, R.string.privacy_update_report_cards_summary, R.string.privacy_update_report_cards_detail),

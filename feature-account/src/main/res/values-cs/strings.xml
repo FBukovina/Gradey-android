@@ -162,4 +162,14 @@
     <string name="settings_credits_bakalari_message">Neoficiální integrace se připojuje ke školním systémům Bakaláři. Gradey není produktem Bakaláři a není s Bakaláři software nijak spojený ani jím schválený.</string>
     <string name="settings_credits_edupage_title">Podpora EduPage</string>
     <string name="settings_credits_edupage_message">Neoficiální integrace vychází z veřejně zdokumentovaného chování EduPage API. Gradey není produktem EduPage.</string>
+    <string name="settings_friends_title">Kamarádi</string>
+    <string name="settings_friends_add">Přidat kamaráda</string>
+    <string name="settings_friends_rename">Přejmenovat</string>
+    <string name="settings_friends_remove">Odebrat</string>
+    <string name="settings_friends_remove_title">Odebrat %s?</string>
+    <string name="settings_friends_remove_message">Jejich rozvrh i přihlášení se z tohohle zařízení smažou.</string>
+    <string name="settings_friends_source_bakalari">Bakaláři</string>
+    <string name="settings_friends_source_public">Veřejný rozvrh</string>
+    <string name="settings_friends_name">Jméno</string>
+    <string name="settings_friends_save">Uložit</string>
 </resources>

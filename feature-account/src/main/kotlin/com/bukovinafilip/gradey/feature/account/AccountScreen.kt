@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.bukovinafilip.gradey.model.AppLanguage
 import com.bukovinafilip.gradey.model.GradeyAccount
+import com.bukovinafilip.gradey.model.Friend
 import com.bukovinafilip.gradey.model.LinkedCanteenAccount
 import com.bukovinafilip.gradey.model.LinkedSchoolAccount
 import com.bukovinafilip.gradey.model.NotificationPreferences
@@ -67,6 +68,7 @@ import com.bukovinafilip.gradey.ui.GradeySpacing
 import com.bukovinafilip.gradey.ui.GradeyType
 import com.bukovinafilip.gradey.ui.HugeIcons
 import com.bukovinafilip.gradey.ui.ModalCloseButton
+import com.bukovinafilip.gradey.ui.BrandTextField
 import com.bukovinafilip.gradey.ui.ModalHeader
 import com.bukovinafilip.gradey.ui.SectionHeader
 import com.bukovinafilip.gradey.ui.SettingsActionRow
@@ -193,11 +195,18 @@ fun AccountScreen(
     onClose: (() -> Unit)? = null,
     onOpenSupport: (() -> Unit)? = null,
     initialDestination: SettingsDestination? = null,
+    friends: List<Friend> = emptyList(),
+    onAddFriend: (() -> Unit)? = null,
+    onRenameFriend: (Friend, String) -> Unit = { _, _ -> },
+    onRemoveFriend: (Friend) -> Unit = {},
 ) {
     var page by rememberSaveable { mutableStateOf(SettingsPage.of(initialDestination)) }
     var focusName by rememberSaveable { mutableStateOf(false) }
     var removing by remember { mutableStateOf<LinkedSchoolAccount?>(null) }
     var removingCanteen by remember { mutableStateOf<LinkedCanteenAccount?>(null) }
+    var renamingFriend by remember { mutableStateOf<Friend?>(null) }
+    var friendName by remember { mutableStateOf("") }
+    var removingFriend by remember { mutableStateOf<Friend?>(null) }
     var confirmation by remember { mutableStateOf(AccountConfirmation.NONE) }
     var quietTimeEdit by remember { mutableStateOf(QuietTimeEdit.NONE) }
     var pickingStudent by rememberSaveable { mutableStateOf(false) }
@@ -253,6 +262,8 @@ fun AccountScreen(
                     canteenAccounts = canteenAccounts, canteenSession = canteenSession, currentCanteenLinkID = currentCanteenLinkID,
                     onLinkCanteen = onLinkCanteen, onOpenMeals = onOpenMeals,
                     onRemoveCanteen = if (onUnlinkCanteen != null) ({ removingCanteen = it }) else null, onOpenWatch = onOpenWatch,
+                    friends = friends, onAddFriend = onAddFriend,
+                    onRenameFriend = { friendName = it.name; renamingFriend = it }, onRemoveFriend = { removingFriend = it },
                 )
             }
             SettingsPage.NOTIFICATIONS -> SettingsDetailPage(SettingsDestination.NOTIFICATIONS.title(), back, isLoading, errorMessage, onRetry) {
@@ -297,6 +308,22 @@ fun AccountScreen(
             title = stringResource(R.string.settings_unlink_title), text = stringResource(R.string.settings_unlink_canteen_message, linked.displayName),
             onDismiss = { removingCanteen = null }, confirmLabel = stringResource(R.string.settings_unlink_confirm), destructive = true,
             onConfirm = { removingCanteen = null; onUnlinkCanteen?.invoke(linked) }, dismissLabel = stringResource(R.string.settings_cancel),
+        )
+    }
+    renamingFriend?.let { friend ->
+        GradeyDialog(
+            title = stringResource(R.string.settings_friends_rename), onDismiss = { renamingFriend = null },
+            confirmLabel = stringResource(R.string.settings_friends_save), confirmEnabled = friendName.isNotBlank(),
+            onConfirm = { renamingFriend = null; onRenameFriend(friend, friendName) }, dismissLabel = stringResource(R.string.settings_cancel),
+        ) {
+            BrandTextField(friendName, { friendName = it.take(60) }, Modifier.fillMaxWidth().testTag("friendNameField"), placeholder = stringResource(R.string.settings_friends_name))
+        }
+    }
+    removingFriend?.let { friend ->
+        GradeyDialog(
+            title = stringResource(R.string.settings_friends_remove_title, friend.name), text = stringResource(R.string.settings_friends_remove_message),
+            onDismiss = { removingFriend = null }, confirmLabel = stringResource(R.string.settings_friends_remove), destructive = true,
+            onConfirm = { removingFriend = null; onRemoveFriend(friend) }, dismissLabel = stringResource(R.string.settings_cancel),
         )
     }
     val dismissConfirmation = { confirmation = AccountConfirmation.NONE }
