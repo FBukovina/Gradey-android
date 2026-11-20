@@ -3,6 +3,7 @@ package com.bukovinafilip.gradey.data
 import com.bukovinafilip.gradey.model.AbsenceResponse
 import com.bukovinafilip.gradey.model.DashboardData
 import com.bukovinafilip.gradey.model.FinalMarksResponse
+import com.bukovinafilip.gradey.model.HomeworkResponse
 import com.bukovinafilip.gradey.model.MarksResponse
 import com.bukovinafilip.gradey.model.NextLessonWidgetSnapshot
 import com.bukovinafilip.gradey.model.RecapArchive
@@ -29,6 +30,9 @@ class RoomGradeyCache(
 
     suspend fun loadReportCards(scope: String): FinalMarksResponse? = load(key(FinalMarksResponse.CachePrefix, scope), FinalMarksResponse.serializer())
     suspend fun saveReportCards(scope: String, data: FinalMarksResponse) = save(key(FinalMarksResponse.CachePrefix, scope), data, FinalMarksResponse.serializer())
+
+    suspend fun loadHomework(scope: String): HomeworkResponse? = load(key(HomeworkResponse.CachePrefix, scope), HomeworkResponse.serializer())
+    suspend fun saveHomework(scope: String, data: HomeworkResponse) = save(key(HomeworkResponse.CachePrefix, scope), data, HomeworkResponse.serializer())
 
     suspend fun loadRecapArchive(scope: String): RecapArchive? = load(key(RecapArchive.CachePrefix, scope), RecapArchive.serializer())
     suspend fun saveRecapArchive(scope: String, data: RecapArchive) = save(key(RecapArchive.CachePrefix, scope), data, RecapArchive.serializer())
@@ -65,6 +69,7 @@ class RoomGradeyCache(
         dao.clear("absence:$scope")
         dao.clear("absence-v2:$scope")
         dao.clear("${FinalMarksResponse.CachePrefix}:$scope")
+        dao.clear("${HomeworkResponse.CachePrefix}:$scope")
         dao.clear("${RecapArchive.CachePrefix}:$scope")
         dao.clearPrefix("timetable-week:$scope-")
         dao.clearPrefix("timetable-raw:$scope-")

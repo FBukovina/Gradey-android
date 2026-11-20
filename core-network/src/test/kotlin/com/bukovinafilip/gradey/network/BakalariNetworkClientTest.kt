@@ -54,6 +54,74 @@ class BakalariNetworkClientTest {
         } finally { foreign.shutdown() }
     }
 
+    @Test fun homeworkIsReadForADayRangeAndToleratesMissingAndNullFields() = runTest {
+        server.enqueue(MockResponse().setBody("""{"Homeworks":[
+            {"ID":"K0;AB/1","DateStart":"2026-11-10T00:00:00+01:00","DateEnd":"2026-11-17T00:00:00+01:00","Content":"Workbook p. 34","Notice":null,
+             "Done":true,"Closed":false,"Electronic":null,"Hour":3,"Subject":{"Id":"7","Abbrev":"AJ","Name":"Angličtina"},"Teacher":{"Id":"U1","Name":"Eva S."},
+             "Attachments":[{"Id":"att/1","Name":"zadani.pdf","Type":"application/pdf","Size":2048}],"Class":{"Id":"ZV"}},
+            {"ID":"second","Content":null,"Attachments":null}
+        ]}"""))
+        val response = BakalariNetworkClient().fetchHomeworks(server.url("/bakalari/").toString(), "session-access", "2026-10-20", "2027-02-17")
+        val request = server.takeRequest()
+        assertEquals("/bakalari/api/3/homeworks?from=2026-10-20&to=2027-02-17", request.path)
+        assertEquals("Bearer session-access", request.getHeader("Authorization"))
+        val first = response.homeworks!!.first()
+        assertEquals("K0;AB/1", first.id)
+        assertEquals(true, first.done)
+        assertNull(first.electronic)
+        assertEquals("Angličtina", first.subject?.name)
+        assertEquals(2048L, first.attachments!!.single().size)
+        assertNull(response.homeworks!![1].content)
+        // A school without the module answers with no list at all.
+        server.enqueue(MockResponse().setBody("{}"))
+        assertNull(BakalariNetworkClient().fetchHomeworks(server.url("/").toString(), "t", "2026-10-20", "2027-02-17").homeworks)
+    }
+
+    @Test fun homeworkTickIsAnEmptyPutWithTheIdKeptAsOnePathSegment() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200))
+        BakalariNetworkClient().setHomeworkDone(server.url("/bakalari/").toString(), "session-access", "K0;AB/1", true)
+        val done = server.takeRequest()
+        assertEquals("PUT", done.method)
+        assertEquals("/bakalari/api/3/homeworks/K0;AB%2F1/student-done/true", done.path)
+        assertEquals("0", done.getHeader("Content-Length"))
+        assertEquals("Bearer session-access", done.getHeader("Authorization"))
+
+        server.enqueue(MockResponse().setResponseCode(204))
+        BakalariNetworkClient().setHomeworkDone(server.url("/").toString(), "t", "plain", false)
+        assertEquals("/api/3/homeworks/plain/student-done/false", server.takeRequest().path)
+
+        // An expired session is reported as one, so the repository refreshes the token and tries again.
+        server.enqueue(MockResponse().setResponseCode(401).setBody("private"))
+        val failure = runCatching { BakalariNetworkClient().setHomeworkDone(server.url("/").toString(), "t", "plain", true) }.exceptionOrNull()
+        assertEquals(401, (failure as BakalariApiException).statusCode)
+        assertFalse(failure.message.orEmpty().contains("private"))
+    }
+
+    @Test fun attachmentsComeFromTheKomensEndpointAsBytes() = runTest {
+        val bytes = ByteArray(4096) { (it % 251).toByte() }
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(bytes)))
+        val downloaded = BakalariNetworkClient().downloadAttachment(server.url("/bakalari/").toString(), "session-access", "att/1")
+        val request = server.takeRequest()
+        assertEquals("/bakalari/api/3/komens/attachment/att%2F1", request.path)
+        assertEquals("Bearer session-access", request.getHeader("Authorization"))
+        assertArrayEquals(bytes, downloaded)
+
+        server.enqueue(MockResponse().setResponseCode(404))
+        assertEquals(404, (runCatching { BakalariNetworkClient().downloadAttachment(server.url("/").toString(), "t", "gone") }.exceptionOrNull() as BakalariApiException).statusCode)
+    }
+
+    @Test fun downloadsOverTheLimitAreRefusedWithOrWithoutADeclaredLength() = runTest {
+        val client = okhttp3.OkHttpClient()
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(ByteArray(2048))))
+        val declared = runCatching { client.executeBytes(okhttp3.Request.Builder().url(server.url("/file")).build(), maxBytes = 1024) }.exceptionOrNull()
+        assertTrue(declared is java.io.IOException)
+        server.enqueue(MockResponse().setChunkedBody(okio.Buffer().write(ByteArray(2048)), 256))
+        val chunked = runCatching { client.executeBytes(okhttp3.Request.Builder().url(server.url("/file")).build(), maxBytes = 1024) }.exceptionOrNull()
+        assertTrue(chunked is java.io.IOException)
+        server.enqueue(MockResponse().setChunkedBody(okio.Buffer().write(ByteArray(1024)), 256))
+        assertEquals(1024, client.executeBytes(okhttp3.Request.Builder().url(server.url("/file")).build(), maxBytes = 1024).size)
+    }
+
     @Test fun malformedResponseDoesNotLeakPayloadThroughSerializationError() = runTest {
         server.enqueue(MockResponse().setBody("<html>private-password server configuration</html>"))
         val failure = runCatching { BakalariNetworkClient().login(server.url("/").toString(), "student", "password") }.exceptionOrNull()

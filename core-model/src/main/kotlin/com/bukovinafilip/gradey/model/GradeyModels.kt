@@ -445,6 +445,8 @@ data class ScheduledLesson(
     val subjectID: String? = null,
     val groupIDs: List<String> = emptyList(),
     val cycles: List<String> = emptyList(),
+    /** Homework given in this lesson, by its Bakaláři id. */
+    val homeworkIDs: List<String> = emptyList(),
 ) {
     val title: String get() = subjectAbbrev ?: subjectName ?: "Lesson"
     val roomTitle: String? get() = roomAbbrev ?: roomName

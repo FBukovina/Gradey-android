@@ -5,6 +5,7 @@ import com.bukovinafilip.gradey.domain.UserFacingFailure
 import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.model.FinalMarksResponse
+import com.bukovinafilip.gradey.model.HomeworkResponse
 import com.bukovinafilip.gradey.model.LoginResponse
 import com.bukovinafilip.gradey.model.Mark
 import com.bukovinafilip.gradey.model.MarksResponse
@@ -15,8 +16,11 @@ import com.bukovinafilip.gradey.model.UserResponse
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -73,6 +77,29 @@ class BakalariNetworkClient(
 
     override suspend fun fetchFinalMarks(baseURL: String, accessToken: String): FinalMarksResponse =
         get(baseURL, "api/3/marks/final", accessToken = accessToken)
+
+    override suspend fun fetchHomeworks(baseURL: String, accessToken: String, from: String, to: String): HomeworkResponse =
+        get(baseURL, "api/3/homeworks", query = mapOf("from" to from, "to" to to), accessToken = accessToken)
+
+    override suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean) {
+        val request = Request.Builder()
+            .url(segmentURL(baseURL, "api", "3", "homeworks", homeworkID, "student-done", if (isDone) "true" else "false"))
+            // IIS answers 411 to a PUT without a length.
+            .put(ByteArray(0).toRequestBody())
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer $accessToken")
+            .build()
+        school(request) { client.executeString(request) }
+    }
+
+    override suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray {
+        val request = Request.Builder()
+            .url(segmentURL(baseURL, "api", "3", "komens", "attachment", attachmentID))
+            .get()
+            .header("Authorization", "Bearer $accessToken")
+            .build()
+        return school(request) { client.executeBytes(request, MaxAttachmentBytes) }
+    }
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         postJson(
@@ -136,21 +163,31 @@ class BakalariNetworkClient(
         return decodeResponse(request)
     }
 
-    private suspend inline fun <reified T> decodeResponse(request: Request): T {
-        val body = try {
-            client.executeString(request)
-        } catch (error: GradeyApiException) {
-            val reason = when (error.statusCode) {
-                400, 401 -> if (request.url.encodedPath.endsWith("api/login")) AccountFailureReason.SCHOOL_BAD_CREDENTIALS
-                    else AccountFailureReason.SCHOOL_SESSION_EXPIRED
-                403 -> AccountFailureReason.SCHOOL_ACCESS_DENIED
-                404 -> AccountFailureReason.SCHOOL_ADDRESS_NOT_FOUND
-                in 300..399 -> AccountFailureReason.SCHOOL_ADDRESS_REDIRECTED
-                429 -> AccountFailureReason.RATE_LIMITED
-                else -> AccountFailureReason.SCHOOL_UNAVAILABLE
-            }
-            throw BakalariApiException(error.statusCode, reason.defaultMessage, reason)
+    /** Each segment is escaped on its own, so an id with a slash or a semicolon stays one segment. */
+    private fun segmentURL(baseURL: String, vararg segments: String): HttpUrl {
+        val base = baseURL.trimEnd('/').toHttpUrlOrNull()
+            ?: throw BakalariApiException(404, AccountFailureReason.SCHOOL_ADDRESS_NOT_FOUND.defaultMessage, AccountFailureReason.SCHOOL_ADDRESS_NOT_FOUND)
+        return segments.fold(base.newBuilder()) { builder, segment -> builder.addPathSegment(segment) }.build()
+    }
+
+    /** Runs a school request and turns an HTTP failure into the text the app shows for it. */
+    private suspend inline fun <T> school(request: Request, call: () -> T): T = try {
+        call()
+    } catch (error: GradeyApiException) {
+        val reason = when (error.statusCode) {
+            400, 401 -> if (request.url.encodedPath.endsWith("api/login")) AccountFailureReason.SCHOOL_BAD_CREDENTIALS
+                else AccountFailureReason.SCHOOL_SESSION_EXPIRED
+            403 -> AccountFailureReason.SCHOOL_ACCESS_DENIED
+            404 -> AccountFailureReason.SCHOOL_ADDRESS_NOT_FOUND
+            in 300..399 -> AccountFailureReason.SCHOOL_ADDRESS_REDIRECTED
+            429 -> AccountFailureReason.RATE_LIMITED
+            else -> AccountFailureReason.SCHOOL_UNAVAILABLE
         }
+        throw BakalariApiException(error.statusCode, reason.defaultMessage, reason)
+    }
+
+    private suspend inline fun <reified T> decodeResponse(request: Request): T {
+        val body = school(request) { client.executeString(request) }
         return try { GradeyJson.decodeFromString(body) }
         catch (_: kotlinx.serialization.SerializationException) {
             throw BakalariApiException(502, AccountFailureReason.SCHOOL_MALFORMED_RESPONSE.defaultMessage, AccountFailureReason.SCHOOL_MALFORMED_RESPONSE)
@@ -158,6 +195,11 @@ class BakalariNetworkClient(
     }
 
     private fun String.urlEncoded(): String = URLEncoder.encode(this, StandardCharsets.UTF_8.name())
+
+    private companion object {
+        /** Larger than any worksheet or scan a school sends; anything bigger is not opened in the app. */
+        const val MaxAttachmentBytes = 25L * 1024 * 1024
+    }
 }
 
 @Serializable
@@ -227,6 +269,18 @@ class DemoAwareBakalariClient(
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.fetchFinalMarks(baseURL, accessToken)
         else liveClient.fetchFinalMarks(baseURL, accessToken)
 
+    override suspend fun fetchHomeworks(baseURL: String, accessToken: String, from: String, to: String): HomeworkResponse =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.fetchHomeworks(baseURL, accessToken, from, to)
+        else liveClient.fetchHomeworks(baseURL, accessToken, from, to)
+
+    override suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean) =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.setHomeworkDone(baseURL, accessToken, homeworkID, isDone)
+        else liveClient.setHomeworkDone(baseURL, accessToken, homeworkID, isDone)
+
+    override suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.downloadAttachment(baseURL, accessToken, attachmentID)
+        else liveClient.downloadAttachment(baseURL, accessToken, attachmentID)
+
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.predictSubject(baseURL, accessToken, subject, markText, weight)
         else liveClient.predictSubject(baseURL, accessToken, subject, markText, weight)
@@ -269,6 +323,21 @@ class DemoBakalariClient : BakalariClient {
 
     override suspend fun fetchFinalMarks(baseURL: String, accessToken: String): FinalMarksResponse =
         com.bukovinafilip.gradey.domain.DemoData.finalMarksResponse
+
+    /** Ticks made in the demo, kept while the app runs. */
+    private val demoDone = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+
+    override suspend fun fetchHomeworks(baseURL: String, accessToken: String, from: String, to: String): HomeworkResponse =
+        com.bukovinafilip.gradey.domain.HomeworkDemoData.response().let { response ->
+            response.copy(homeworks = response.homeworks.orEmpty().map { it.copy(done = demoDone[it.id] ?: it.done) })
+        }
+
+    override suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean) {
+        demoDone[homeworkID] = isDone
+    }
+
+    override suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray =
+        com.bukovinafilip.gradey.domain.DemoData.attachment(attachmentID)
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject {
         val value = GradeMath.parseMarkValue(markText) ?: return subject

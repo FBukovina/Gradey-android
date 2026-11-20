@@ -53,6 +53,16 @@ class MockSchoolRepository : SchoolRepository {
     override suspend fun loadAbsence(forceRefresh: Boolean): AbsenceResponse = com.bukovinafilip.gradey.domain.DemoData.absenceResponse
     override suspend fun loadRecapArchive(): com.bukovinafilip.gradey.model.RecapArchive =
         com.bukovinafilip.gradey.domain.RecapDemoData.archive(java.time.ZonedDateTime.now())
+    /** Ticks made in the demo, kept while the app runs. */
+    private val homeworkDone = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+    override suspend fun loadCachedHomework(): List<com.bukovinafilip.gradey.domain.Homework> = loadHomework()
+    override suspend fun loadHomework(): List<com.bukovinafilip.gradey.domain.Homework> =
+        if (session?.provider == SchoolProvider.EDU_PAGE) emptyList()
+        else com.bukovinafilip.gradey.domain.Homework.from(com.bukovinafilip.gradey.domain.HomeworkDemoData.response())
+            .map { it.copy(isDone = homeworkDone[it.id] ?: it.isDone) }
+    override suspend fun setHomeworkDone(id: String, isDone: Boolean) { homeworkDone[id] = isDone }
+    override suspend fun downloadAttachment(attachment: com.bukovinafilip.gradey.domain.SchoolAttachment): ByteArray =
+        com.bukovinafilip.gradey.domain.DemoData.attachment(attachment.id)
     override suspend fun loadCachedReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> = loadReportCards()
     override suspend fun loadReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> =
         if (session?.provider == SchoolProvider.EDU_PAGE) emptyList()

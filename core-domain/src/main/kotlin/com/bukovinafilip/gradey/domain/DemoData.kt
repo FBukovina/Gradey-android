@@ -128,7 +128,7 @@ object DemoData {
             teacherID = teacher,
             roomID = "room-12",
             theme = theme,
-            homeworkIDs = if (hasHomework) listOf("homework-$hour") else emptyList(),
+            homeworkIDs = if (hasHomework) listOf("homework-$subject") else emptyList(),
         )
 
         val lessonsByDay = listOf(
@@ -180,6 +180,24 @@ object DemoData {
             teachers = timetableTeachers,
             rooms = timetableRooms,
         )
+    }
+
+    /** A one-page PDF that stands in for every attachment of the demo account. */
+    fun attachment(@Suppress("UNUSED_PARAMETER") attachmentID: String): ByteArray {
+        val objects = listOf(
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+            "BT /F1 24 Tf 72 760 Td (Gradey demo attachment) Tj ET".let { "<< /Length ${it.length} >>\nstream\n$it\nendstream" },
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        )
+        val out = StringBuilder("%PDF-1.4\n")
+        val offsets = objects.mapIndexed { index, body -> out.length.also { out.append("${index + 1} 0 obj\n$body\nendobj\n") } }
+        val xref = out.length
+        out.append("xref\n0 ${objects.size + 1}\n0000000000 65535 f \n")
+        offsets.forEach { out.append("%010d 00000 n \n".format(it)) }
+        out.append("trailer\n<< /Size ${objects.size + 1} /Root 1 0 R >>\nstartxref\n$xref\n%%EOF\n")
+        return out.toString().toByteArray(Charsets.US_ASCII)
     }
 
     fun permanentTimetableResponse(): TimetableResponse {

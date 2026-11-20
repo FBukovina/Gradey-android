@@ -5,7 +5,10 @@ import com.bukovinafilip.gradey.domain.EduPageClient
 import com.bukovinafilip.gradey.domain.EduPageURLNormalizer
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.domain.RecapArchives
+import com.bukovinafilip.gradey.domain.Homework
+import com.bukovinafilip.gradey.domain.HomeworkList
 import com.bukovinafilip.gradey.domain.ReportCardTerm
+import com.bukovinafilip.gradey.domain.SchoolAttachment
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
 import com.bukovinafilip.gradey.domain.SchoolRepository
 import com.bukovinafilip.gradey.domain.SchoolURLNormalizer
@@ -223,6 +226,35 @@ class AndroidSchoolRepository(
 
     private fun reportCardTerms(response: FinalMarksResponse): List<ReportCardTerm> =
         ReportCardTerm.sorted(response.terms.map(ReportCardTerm::from))
+
+    override suspend fun loadCachedHomework(): List<Homework> {
+        val session = sessionStore.load()?.takeIf { it.provider == SchoolProvider.BAKALARI } ?: return emptyList()
+        return cache.loadHomework(session.cacheScope)?.let(Homework::from).orEmpty()
+    }
+
+    override suspend fun loadHomework(): List<Homework> {
+        val session = validSession()
+        if (session.provider != SchoolProvider.BAKALARI) return emptyList()
+        val (from, to) = HomeworkList.requestRange(dateProvider())
+        val response = withBakalariRetry(session) { bakalariClient.fetchHomeworks(it.baseURL, it.accessToken, from.toString(), to.toString()) }
+        cache.saveHomework(session.cacheScope, response)
+        return Homework.from(response)
+    }
+
+    override suspend fun setHomeworkDone(id: String, isDone: Boolean) {
+        val session = validSession()
+        if (session.provider != SchoolProvider.BAKALARI) return
+        withBakalariRetry(session) { bakalariClient.setHomeworkDone(it.baseURL, it.accessToken, id, isDone) }
+        // The saved list follows, so the tick is still there offline.
+        val cached = cache.loadHomework(session.cacheScope) ?: return
+        cache.saveHomework(session.cacheScope, cached.copy(homeworks = cached.homeworks.orEmpty().map { if (it.id == id) it.copy(done = isDone) else it }))
+    }
+
+    override suspend fun downloadAttachment(attachment: SchoolAttachment): ByteArray {
+        val session = validSession()
+        check(session.provider == SchoolProvider.BAKALARI) { "Attachments are not available for this school account." }
+        return withBakalariRetry(session) { bakalariClient.downloadAttachment(it.baseURL, it.accessToken, attachment.id) }
+    }
 
     override suspend fun predictSubjectAverage(subject: Subject, markText: String, weight: Int): Double? {
         val session = validSession()

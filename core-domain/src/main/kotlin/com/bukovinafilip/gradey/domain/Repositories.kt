@@ -41,6 +41,15 @@ interface BakalariClient {
     suspend fun fetchFinalMarks(baseURL: String, accessToken: String): com.bukovinafilip.gradey.model.FinalMarksResponse =
         throw UnsupportedOperationException("Report cards are not available for this school account.")
     suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject
+    /** Homework due between two days, both `yyyy-MM-dd` (`api/3/homeworks`). */
+    suspend fun fetchHomeworks(baseURL: String, accessToken: String, from: String, to: String): com.bukovinafilip.gradey.model.HomeworkResponse =
+        throw UnsupportedOperationException("Homework is not available for this school account.")
+    /** Sets the student's own done tick, as the official app does. */
+    suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean): Unit =
+        throw UnsupportedOperationException("Homework is not available for this school account.")
+    /** A homework or Komens attachment; both come from the Komens endpoint. */
+    suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray =
+        throw UnsupportedOperationException("Attachments are not available for this school account.")
 }
 
 interface EduPageClient {
@@ -83,6 +92,15 @@ interface SchoolRepository {
     suspend fun loadCachedReportCards(): List<ReportCardTerm> = emptyList()
     /** Report cards from the school, newest first. Bakaláři only; other providers return nothing. */
     suspend fun loadReportCards(): List<ReportCardTerm> = emptyList()
+    /** The saved homework list; empty when none is saved or the school has none. */
+    suspend fun loadCachedHomework(): List<Homework> = emptyList()
+    /** Homework from the school, by due day. Bakaláři only; other providers return nothing. */
+    suspend fun loadHomework(): List<Homework> = emptyList()
+    /** Ticks homework off at the school, then in the saved list. */
+    suspend fun setHomeworkDone(id: String, isDone: Boolean) {}
+    /** The bytes of a homework or Komens attachment. */
+    suspend fun downloadAttachment(attachment: SchoolAttachment): ByteArray =
+        throw UnsupportedOperationException("Attachments are not available for this school account.")
     /** Every semester of marks and absence this device has seen for the account, for Gradey Recap. */
     suspend fun loadRecapArchive(): com.bukovinafilip.gradey.model.RecapArchive = com.bukovinafilip.gradey.model.RecapArchive()
 }

@@ -69,6 +69,7 @@ object TimetableMapper {
                     cycles = if (kind == TimetableKind.PERMANENT && !atom.cycleIDs.containsAll(cycles.keys)) atom.cycleIDs.mapNotNull { cycles[it]?.let { cycle -> cycle.name?.trimmed() ?: cycle.abbrev?.trimmed() } } else emptyList(),
                     theme = atom.theme?.trimmed(),
                     hasHomework = atom.homeworkIDs.isNotEmpty(),
+                    homeworkIDs = atom.homeworkIDs,
                     changeDescription = atom.change?.description?.trimmed(),
                     changeKind = LessonChangeKind.fromApi(atom.change?.changeType),
                 )

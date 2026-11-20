@@ -49,6 +49,35 @@ suspend fun OkHttpClient.executeString(request: Request): String = suspendCancel
     })
 }
 
+/** The response body as bytes, refusing anything over [maxBytes] so a wrong link cannot fill the device. */
+suspend fun OkHttpClient.executeBytes(request: Request, maxBytes: Long): ByteArray = suspendCancellableCoroutine { continuation ->
+    val call = newCall(request)
+    continuation.invokeOnCancellation { call.cancel() }
+    call.enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            if (continuation.isActive) continuation.resumeWithException(e)
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            try {
+                val bytes = response.use {
+                    if (!it.isSuccessful) throw GradeyApiException(it.code, "HTTP ${it.code}")
+                    val body = it.body ?: throw IOException("Empty response")
+                    if (body.contentLength() > maxBytes) throw IOException("The file is too large.")
+                    val source = body.source()
+                    // One byte past the limit is enough to tell that a body without a length is too long.
+                    source.request(maxBytes + 1)
+                    if (source.buffer.size > maxBytes) throw IOException("The file is too large.")
+                    source.readByteArray()
+                }
+                if (continuation.isActive) continuation.resume(bytes)
+            } catch (error: Exception) {
+                if (continuation.isActive) continuation.resumeWithException(error)
+            }
+        }
+    })
+}
+
 fun formBody(fields: Map<String, String>): FormBody =
     FormBody.Builder().apply { fields.forEach { (key, value) -> add(key, value) } }.build()
 
