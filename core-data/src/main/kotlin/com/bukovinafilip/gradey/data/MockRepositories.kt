@@ -61,6 +61,13 @@ class MockSchoolRepository : SchoolRepository {
         else com.bukovinafilip.gradey.domain.Homework.from(com.bukovinafilip.gradey.domain.HomeworkDemoData.response())
             .map { it.copy(isDone = homeworkDone[it.id] ?: it.isDone) }
     override suspend fun setHomeworkDone(id: String, isDone: Boolean) { homeworkDone[id] = isDone }
+    /** Messages opened in the demo, kept while the app runs. */
+    private val komensRead = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+    override suspend fun loadCachedKomens(): com.bukovinafilip.gradey.model.KomensSnapshot? = loadKomens()
+    override suspend fun loadKomens(): com.bukovinafilip.gradey.model.KomensSnapshot =
+        if (session?.provider == SchoolProvider.EDU_PAGE) com.bukovinafilip.gradey.model.KomensSnapshot()
+        else komensRead.fold(com.bukovinafilip.gradey.domain.KomensDemoData.snapshot()) { snapshot, id -> snapshot.markingRead(id) }
+    override suspend fun markKomensRead(id: String) { komensRead += id }
     override suspend fun downloadAttachment(attachment: com.bukovinafilip.gradey.domain.SchoolAttachment): ByteArray =
         com.bukovinafilip.gradey.domain.DemoData.attachment(attachment.id)
     override suspend fun loadCachedReportCards(): List<com.bukovinafilip.gradey.domain.ReportCardTerm> = loadReportCards()

@@ -47,6 +47,12 @@ interface BakalariClient {
     /** Sets the student's own done tick, as the official app does. */
     suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean): Unit =
         throw UnsupportedOperationException("Homework is not available for this school account.")
+    /** One Komens list (`api/3/komens/messages/received` or `…/noticeboard`). */
+    suspend fun fetchKomens(baseURL: String, accessToken: String, box: KomensBox): com.bukovinafilip.gradey.model.KomensResponse =
+        throw UnsupportedOperationException("Komens is not available for this school account.")
+    /** Marks a Komens message read at the school, as opening it in the official app does. */
+    suspend fun markKomensRead(baseURL: String, accessToken: String, messageID: String): Unit =
+        throw UnsupportedOperationException("Komens is not available for this school account.")
     /** A homework or Komens attachment; both come from the Komens endpoint. */
     suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray =
         throw UnsupportedOperationException("Attachments are not available for this school account.")
@@ -98,6 +104,12 @@ interface SchoolRepository {
     suspend fun loadHomework(): List<Homework> = emptyList()
     /** Ticks homework off at the school, then in the saved list. */
     suspend fun setHomeworkDone(id: String, isDone: Boolean) {}
+    /** The saved Komens lists; null when none are saved or the school has no Komens. */
+    suspend fun loadCachedKomens(): com.bukovinafilip.gradey.model.KomensSnapshot? = null
+    /** Received messages and the noticeboard from the school. Bakaláři only; other providers return empty lists. */
+    suspend fun loadKomens(): com.bukovinafilip.gradey.model.KomensSnapshot = com.bukovinafilip.gradey.model.KomensSnapshot()
+    /** Marks a message read at the school, then in the saved lists. */
+    suspend fun markKomensRead(id: String) {}
     /** The bytes of a homework or Komens attachment. */
     suspend fun downloadAttachment(attachment: SchoolAttachment): ByteArray =
         throw UnsupportedOperationException("Attachments are not available for this school account.")

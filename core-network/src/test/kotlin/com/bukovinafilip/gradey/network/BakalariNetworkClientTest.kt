@@ -122,6 +122,52 @@ class BakalariNetworkClientTest {
         assertEquals(1024, client.executeBytes(okhttp3.Request.Builder().url(server.url("/file")).build(), maxBytes = 1024).size)
     }
 
+    @Test fun komensListsArePostsWithAnEmptyFormAndOneOddMessageNeverHidesTheRest() = runTest {
+        server.enqueue(MockResponse().setBody("""{"Messages":[
+            {"${'$'}type":"GeneralMessage","Id":"K1","Title":"Třídní schůzky","Text":"<p>V úterý</p>","SentDate":"2026-11-19T08:15:00+01:00",
+             "Sender":{"${'$'}type":"Sender","Id":"U1","Type":"teacher","Name":"Eva S."},"Attachments":[{"Id":"a/1","Name":"p.pdf","Type":"application/pdf","Size":10}],
+             "Read":false,"LifeTime":"ToRead","CanAnswer":true,"Hidden":false,"RelevantName":"Eva S."},
+            {"Id":"K2","Title":42,"Text":null,"SentDate":false,"Sender":"office","Attachments":"none","Read":"yes","Hidden":1},
+            {"Id":"K3"}
+        ]}"""))
+        val response = BakalariNetworkClient().fetchKomens(server.url("/bakalari/").toString(), "session-access", com.bukovinafilip.gradey.domain.KomensBox.RECEIVED)
+        val request = server.takeRequest()
+        assertEquals("POST", request.method)
+        assertEquals("/bakalari/api/3/komens/messages/received", request.path)
+        assertEquals("application/x-www-form-urlencoded; charset=utf-8", request.getHeader("Content-Type"))
+        assertEquals("0", request.getHeader("Content-Length"))
+        assertEquals("Bearer session-access", request.getHeader("Authorization"))
+        val messages = response.messages!!
+        assertEquals(listOf("K1", "K2", "K3"), messages.map { it.id })
+        assertEquals(false, messages[0].read)
+        assertEquals("Eva S.", messages[0].sender?.name)
+        assertEquals("a/1", messages[0].attachments!!.single().id)
+        // Fields of the wrong type are read as missing, as on iOS.
+        assertNull(messages[1].title)
+        assertNull(messages[1].sentDate)
+        assertNull(messages[1].sender)
+        assertNull(messages[1].attachments)
+        assertNull(messages[1].read)
+        assertNull(messages[1].hidden)
+        assertNull(messages[2].text)
+
+        server.enqueue(MockResponse().setBody("{}"))
+        val board = BakalariNetworkClient().fetchKomens(server.url("/").toString(), "t", com.bukovinafilip.gradey.domain.KomensBox.NOTICEBOARD)
+        assertEquals("/api/3/komens/messages/noticeboard", server.takeRequest().path)
+        assertNull(board.messages)
+    }
+
+    @Test fun openingAKomensMessageMarksItReadWithAnEmptyPut() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200))
+        BakalariNetworkClient().markKomensRead(server.url("/bakalari/").toString(), "session-access", "K0/AB;1")
+        val request = server.takeRequest()
+        assertEquals("PUT", request.method)
+        assertEquals("/bakalari/api/3/komens/message/K0%2FAB;1/mark-as-read", request.path)
+        assertEquals("0", request.getHeader("Content-Length"))
+        server.enqueue(MockResponse().setResponseCode(403))
+        assertEquals(403, (runCatching { BakalariNetworkClient().markKomensRead(server.url("/").toString(), "t", "K1") }.exceptionOrNull() as BakalariApiException).statusCode)
+    }
+
     @Test fun malformedResponseDoesNotLeakPayloadThroughSerializationError() = runTest {
         server.enqueue(MockResponse().setBody("<html>private-password server configuration</html>"))
         val failure = runCatching { BakalariNetworkClient().login(server.url("/").toString(), "student", "password") }.exceptionOrNull()

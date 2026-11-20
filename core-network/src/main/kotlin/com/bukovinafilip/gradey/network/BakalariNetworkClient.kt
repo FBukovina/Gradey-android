@@ -6,6 +6,8 @@ import com.bukovinafilip.gradey.domain.BakalariClient
 import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.model.FinalMarksResponse
 import com.bukovinafilip.gradey.model.HomeworkResponse
+import com.bukovinafilip.gradey.model.KomensResponse
+import com.bukovinafilip.gradey.domain.KomensBox
 import com.bukovinafilip.gradey.model.LoginResponse
 import com.bukovinafilip.gradey.model.Mark
 import com.bukovinafilip.gradey.model.MarksResponse
@@ -18,6 +20,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -84,6 +87,28 @@ class BakalariNetworkClient(
     override suspend fun setHomeworkDone(baseURL: String, accessToken: String, homeworkID: String, isDone: Boolean) {
         val request = Request.Builder()
             .url(segmentURL(baseURL, "api", "3", "homeworks", homeworkID, "student-done", if (isDone) "true" else "false"))
+            // IIS answers 411 to a PUT without a length.
+            .put(ByteArray(0).toRequestBody())
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer $accessToken")
+            .build()
+        school(request) { client.executeString(request) }
+    }
+
+    /** The lists are POSTs with an empty form, like the official app sends. */
+    override suspend fun fetchKomens(baseURL: String, accessToken: String, box: KomensBox): KomensResponse {
+        val request = Request.Builder()
+            .url(segmentURL(baseURL, "api", "3", "komens", "messages", box.path))
+            .post(ByteArray(0).toRequestBody("application/x-www-form-urlencoded; charset=utf-8".toMediaType()))
+            .header("Accept", "application/json")
+            .header("Authorization", "Bearer $accessToken")
+            .build()
+        return decodeResponse(request)
+    }
+
+    override suspend fun markKomensRead(baseURL: String, accessToken: String, messageID: String) {
+        val request = Request.Builder()
+            .url(segmentURL(baseURL, "api", "3", "komens", "message", messageID, "mark-as-read"))
             // IIS answers 411 to a PUT without a length.
             .put(ByteArray(0).toRequestBody())
             .header("Accept", "application/json")
@@ -281,6 +306,14 @@ class DemoAwareBakalariClient(
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.downloadAttachment(baseURL, accessToken, attachmentID)
         else liveClient.downloadAttachment(baseURL, accessToken, attachmentID)
 
+    override suspend fun fetchKomens(baseURL: String, accessToken: String, box: KomensBox): KomensResponse =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.fetchKomens(baseURL, accessToken, box)
+        else liveClient.fetchKomens(baseURL, accessToken, box)
+
+    override suspend fun markKomensRead(baseURL: String, accessToken: String, messageID: String) =
+        if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.markKomensRead(baseURL, accessToken, messageID)
+        else liveClient.markKomensRead(baseURL, accessToken, messageID)
+
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject =
         if (DemoAccount.isDemoBaseURL(baseURL) || DemoAccount.isDemoToken(accessToken)) demoClient.predictSubject(baseURL, accessToken, subject, markText, weight)
         else liveClient.predictSubject(baseURL, accessToken, subject, markText, weight)
@@ -338,6 +371,19 @@ class DemoBakalariClient : BakalariClient {
 
     override suspend fun downloadAttachment(baseURL: String, accessToken: String, attachmentID: String): ByteArray =
         com.bukovinafilip.gradey.domain.DemoData.attachment(attachmentID)
+
+    /** Messages opened in the demo, kept while the app runs. */
+    private val demoRead = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
+    override suspend fun fetchKomens(baseURL: String, accessToken: String, box: KomensBox): KomensResponse {
+        val snapshot = com.bukovinafilip.gradey.domain.KomensDemoData.snapshot()
+        val messages = if (box == KomensBox.RECEIVED) snapshot.received else snapshot.noticeboard
+        return KomensResponse(messages.map { if (it.id in demoRead) it.copy(read = true) else it })
+    }
+
+    override suspend fun markKomensRead(baseURL: String, accessToken: String, messageID: String) {
+        demoRead += messageID
+    }
 
     override suspend fun predictSubject(baseURL: String, accessToken: String, subject: Subject, markText: String, weight: Int): Subject {
         val value = GradeMath.parseMarkValue(markText) ?: return subject

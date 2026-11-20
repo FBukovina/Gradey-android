@@ -7,6 +7,8 @@ import com.bukovinafilip.gradey.domain.GradeMath
 import com.bukovinafilip.gradey.domain.RecapArchives
 import com.bukovinafilip.gradey.domain.Homework
 import com.bukovinafilip.gradey.domain.HomeworkList
+import com.bukovinafilip.gradey.domain.KomensBox
+import com.bukovinafilip.gradey.model.KomensSnapshot
 import com.bukovinafilip.gradey.domain.ReportCardTerm
 import com.bukovinafilip.gradey.domain.SchoolAttachment
 import com.bukovinafilip.gradey.domain.SchoolLoginStep
@@ -248,6 +250,30 @@ class AndroidSchoolRepository(
         // The saved list follows, so the tick is still there offline.
         val cached = cache.loadHomework(session.cacheScope) ?: return
         cache.saveHomework(session.cacheScope, cached.copy(homeworks = cached.homeworks.orEmpty().map { if (it.id == id) it.copy(done = isDone) else it }))
+    }
+
+    override suspend fun loadCachedKomens(): KomensSnapshot? {
+        val session = sessionStore.load()?.takeIf { it.provider == SchoolProvider.BAKALARI } ?: return null
+        return cache.loadKomens(session.cacheScope)
+    }
+
+    override suspend fun loadKomens(): KomensSnapshot {
+        val session = validSession()
+        if (session.provider != SchoolProvider.BAKALARI) return KomensSnapshot()
+        val received = withBakalariRetry(session) { bakalariClient.fetchKomens(it.baseURL, it.accessToken, KomensBox.RECEIVED) }.messages.orEmpty()
+        // A school without a noticeboard keeps the one saved earlier; the received messages still load.
+        val noticeboard = try {
+            withBakalariRetry(session) { bakalariClient.fetchKomens(it.baseURL, it.accessToken, KomensBox.NOTICEBOARD) }.messages.orEmpty()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+        } catch (_: Exception) { cache.loadKomens(session.cacheScope)?.noticeboard.orEmpty() }
+        return KomensSnapshot(received, noticeboard).also { cache.saveKomens(session.cacheScope, it) }
+    }
+
+    override suspend fun markKomensRead(id: String) {
+        val session = validSession()
+        if (session.provider != SchoolProvider.BAKALARI) return
+        withBakalariRetry(session) { bakalariClient.markKomensRead(it.baseURL, it.accessToken, id) }
+        cache.loadKomens(session.cacheScope)?.let { cache.saveKomens(session.cacheScope, it.markingRead(id)) }
     }
 
     override suspend fun downloadAttachment(attachment: SchoolAttachment): ByteArray {
